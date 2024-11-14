@@ -42,4 +42,4 @@ create table refresh_tokens
 
 UPDATE user
 SET permiso = b'1'
-WHERE username = 'NissanUIO';
+WHERE username = 'ChevroletUIO';
