@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.service;
 
+import com.tesis.tigmotors.Exceptions.AuthExceptions;
 import com.tesis.tigmotors.models.PasswordResetToken;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
@@ -18,14 +19,20 @@ import java.util.UUID;
 @Service
 public class PasswordResetService {
     private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
+
+    // Definir la constante de expiración del token
+    private static final long TOKEN_EXPIRATION_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Autowired
-    public PasswordResetService(UserRepository userRepository, PasswordResetTokenRepository passwordResetTokenRepository,
-                                PasswordEncoder passwordEncoder, EmailService emailService) {
+    public PasswordResetService(UserRepository userRepository,
+                                PasswordResetTokenRepository passwordResetTokenRepository,
+                                PasswordEncoder passwordEncoder,
+                                EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
@@ -35,21 +42,16 @@ public class PasswordResetService {
     @Transactional
     public String sendResetToken(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ese correo"));
+                .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado con ese correo"));
 
-        // Log antes de la eliminación
         log.info("Eliminando cualquier token anterior del usuario: {}", user.getEmail());
-
-        // Eliminar tokens previos del usuario, si existen
         passwordResetTokenRepository.deleteByUser(user);
 
-        // Generar un nuevo token y fecha de expiración
         String token = UUID.randomUUID().toString();
-        Instant expiryDate = Instant.now().plus(15, ChronoUnit.MINUTES);
+        Instant expiryDate = Instant.now().plus(TOKEN_EXPIRATION_MINUTES, ChronoUnit.MINUTES);
 
         log.info("Generando nuevo token para el usuario: {}", user.getEmail());
 
-        // Guardar el token en la base de datos
         PasswordResetToken passwordResetToken = PasswordResetToken.builder()
                 .token(token)
                 .expiryDate(expiryDate)
@@ -57,12 +59,14 @@ public class PasswordResetService {
                 .build();
         passwordResetTokenRepository.save(passwordResetToken);
 
-        // Enviar el correo con el token
-        emailService.sendEmail(email, "Código de recuperación de contraseña", "Su código de recuperación es: " + token);
-        log.info("Código de recuperación enviado exitosamente al correo: {}", email);
+        String subject = "Recuperación de contraseña - TigMotors";
+        String content = buildResetPasswordEmailContent(token);
+        emailService.sendEmail(email, subject, content);
 
+        log.info("Código de recuperación enviado exitosamente al correo: {}", email);
         return "Código de recuperación enviado al correo";
     }
+
 
     @Transactional
     public String resetPassword(String token, String newPassword) {
@@ -91,5 +95,31 @@ public class PasswordResetService {
         log.info("Token eliminado después de restablecer la contraseña: {}", token);
 
         return "Contraseña actualizada correctamente";
+    }
+
+    private String buildResetPasswordEmailContent(String token) {
+        return "<html>" +
+                "<meta charset='UTF-8'>"+
+                "<body style='font-family: Arial, sans-serif;'>" +
+                "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
+                "<div style='text-align: center;'>" +
+                "<img src='https://yourcompany.com/logo.png' alt='TigMotors Logo' style='width: 150px; margin-bottom: 20px;' />" +
+                "</div>" +
+                "<h2 style='color: #333;'>Recuperación de contraseña</h2>" +
+                "<p>Estimado usuario,</p>" +
+                "<p>Hemos recibido una solicitud para restablecer su contraseña. Para completar el proceso, utilice el siguiente código de recuperación:</p>" +
+                "<p style='font-size: 18px; font-weight: bold; color: #4CAF50; text-align: center;'>" + token + "</p>" +
+                "<p>Este código es válido durante 15 minutos. Si no solicitó este cambio, ignore este mensaje o comuníquese con nuestro equipo de soporte.</p>" +
+                "<p>Gracias por confiar en TigMotors.</p>" +
+                "<br>" +
+                "<p>Atentamente,</p>" +
+                "<p>El equipo de TigMotors</p>" +
+                "<div style='text-align: center; font-size: 12px; color: #888; margin-top: 20px;'>" +
+                "<p>TigMotors © 2024 | Todos los derechos reservados</p>" +
+                "<p><a href='https://yourcompany.com/terms' style='color: #888;'>Términos y Condiciones</a> | <a href='https://yourcompany.com/privacy' style='color: #888;'>Política de Privacidad</a></p>" +
+                "</div>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
     }
 }
