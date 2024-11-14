@@ -57,7 +57,12 @@ public class AuthService {
                         .message("Acceso denegado para este rol")
                         .build());
             }
-
+            if (!user.isPermiso()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
+                        .status("Error")
+                        .message("Su cuenta aún no ha sido aprobada por el administrador")
+                        .build());
+            }
             String accessToken = jwtService.generateAccessToken(user);
             RefreshToken refreshToken = refreshTokenService.createOrReuseRefreshToken(user);
 
@@ -65,7 +70,6 @@ public class AuthService {
                     .status("success")
                     .message("Autenticación exitosa")
                     .token(accessToken)
-                    .refreshToken(refreshToken.getToken())
                     .build());
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
@@ -90,6 +94,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .phone_number(request.getPhone_number())
                 .role(Role.USER)
+                .permiso(false)
                 .build();
 
         userRepository.save(user);
@@ -97,10 +102,7 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenService.createOrReuseRefreshToken(user);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
-                .status("success")
-                .message("Registro exitoso")
-                .token(accessToken)
-                .refreshToken(refreshToken.getToken())
+                .message("Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión")
                 .build());
     }
 

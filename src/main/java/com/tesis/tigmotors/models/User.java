@@ -41,6 +41,9 @@ public class User implements UserDetails {
 
     private String email;
 
+    @Column(name = "permiso", nullable = false)
+    private boolean permiso = false;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
