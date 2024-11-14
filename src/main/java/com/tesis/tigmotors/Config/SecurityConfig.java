@@ -46,16 +46,12 @@ public class SecurityConfig {
 
         // Permitir solo el origen del frontend local
         config.setAllowedOrigins(Arrays.asList("*"));
-
         // Permitir los métodos HTTP necesarios
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
         // Permitir los encabezados necesarios
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin"));
-
         // Permitir credenciales, importante para cookies
         config.setAllowCredentials(true);
-
         // Registrar la configuración para todos los endpoints
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

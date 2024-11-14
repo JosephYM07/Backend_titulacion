@@ -33,13 +33,11 @@ public class ResetPasswordController {
 
         Map<String, String> response = new HashMap<>();
         try {
-            // Intentar restablecer la contraseña utilizando el servicio
             String resultMessage = passwordResetService.resetPassword(resetPasswordRequest.getToken(), resetPasswordRequest.getNewPassword());
             response.put("message", resultMessage);
             log.info("Contraseña restablecida exitosamente para el token: {}", resetPasswordRequest.getToken());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            // Manejar errores y registrar el problema
             log.error("Error al restablecer la contraseña: {}", e.getMessage(), e);
             response.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

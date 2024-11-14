@@ -27,5 +27,5 @@ public class RefreshToken {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Referencia al usuario, sin modificar la clase User
+    private User user;
 }

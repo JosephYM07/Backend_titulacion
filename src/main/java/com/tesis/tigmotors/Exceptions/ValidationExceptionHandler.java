@@ -12,8 +12,6 @@ import java.util.Map;
 
 @ControllerAdvice
 public class ValidationExceptionHandler {
-
-    // Manejo de excepciones de validación de datos (Field level validation)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -23,7 +21,6 @@ public class ValidationExceptionHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
-    // Manejo de ConstraintViolationException (Class-level validation)
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Map<String, String>> handleConstraintViolationException(ConstraintViolationException ex) {
         Map<String, String> errors = new HashMap<>();

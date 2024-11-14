@@ -26,7 +26,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(text, true); // Enviar como HTML
+            helper.setText(text, true);
             mailSender.send(message);
             log.info("Correo enviado a: {} con asunto: {}", to, subject);
         } catch (MessagingException e) {

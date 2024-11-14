@@ -20,9 +20,7 @@ import java.util.UUID;
 public class PasswordResetService {
     private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
 
-    // Definir la constante de expiración del token
     private static final long TOKEN_EXPIRATION_MINUTES = 15;
-
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;

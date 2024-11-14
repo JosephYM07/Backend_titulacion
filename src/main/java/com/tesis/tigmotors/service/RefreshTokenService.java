@@ -24,7 +24,6 @@ public class RefreshTokenService {
 
     public RefreshToken createOrReuseRefreshToken(User user) {
         Optional<RefreshToken> existingToken = refreshTokenRepository.findByUser(user);
-
         if (existingToken.isPresent() && existingToken.get().getExpiryDate().isAfter(Instant.now())) {
             return existingToken.get();
         }

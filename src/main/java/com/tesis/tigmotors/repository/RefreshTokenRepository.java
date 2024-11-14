@@ -11,7 +11,7 @@ import java.util.Optional;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByToken(String token);
-    Optional<RefreshToken> findByUser(User user); // Método para encontrar por usuario
+    Optional<RefreshToken> findByUser(User user);
     void deleteByUser(User user);
-    void deleteByExpiryDateBefore(Instant now); // Para limpieza de tokens expirados
+    void deleteByExpiryDateBefore(Instant now);
 }
