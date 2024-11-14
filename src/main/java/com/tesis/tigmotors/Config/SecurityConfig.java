@@ -44,7 +44,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Permitir solo el origen del frontend local
+        // Permitir solo el origen del frontend
         config.setAllowedOrigins(Arrays.asList("*"));
         // Permitir los métodos HTTP necesarios
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
