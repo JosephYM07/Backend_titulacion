@@ -3,37 +3,52 @@ package com.tesis.tigmotors.controller;
 import com.tesis.tigmotors.dto.AuthResponse;
 import com.tesis.tigmotors.dto.LoginRequest;
 import com.tesis.tigmotors.dto.RegisterRequest;
+import com.tesis.tigmotors.dto.UserInfoResponse;
 import com.tesis.tigmotors.service.AuthService;
+import com.tesis.tigmotors.service.UserInfoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("api/v1/")
+@RequestMapping("api/v1")
 @RequiredArgsConstructor
-public class UserAuthController {
+public class AuthController {
 
     private final AuthService authService;
+    private final UserInfoService userInfoService;
 
-    @PostMapping("/login")
+
+    @PostMapping("/login-users")
     public ResponseEntity<AuthResponse> userLogin(@Valid @RequestBody LoginRequest request) {
         if (request.getUsername() == null || request.getUsername().isEmpty() ||
                 request.getPassword() == null || request.getPassword().isEmpty()) {
             throw new IllegalArgumentException("Se deben proporcionar tanto el nombre de usuario como la contraseña.");
         }
         log.info("Solicitud de inicio de sesión recibida para el usuario: " + request.getUsername());
-        return authService.login(request);
+        return authService.loginAsUser(request);
     }
 
-    @PostMapping("/register")
+    // Endpoint de inicio de sesión para administradores
+    @PostMapping("/admin-login")
+    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest request) {
+        return authService.loginAsAdmin(request);
+    }
+
+    // Endpoint de inicio de sesión para el personal de centro de servicios
+    @PostMapping("/service-staff-login")
+    public ResponseEntity<AuthResponse> serviceStaffLogin(@Valid @RequestBody LoginRequest request) {
+        return authService.loginAsServiceStaff(request);
+    }
+
+    //Endpoint para registrar solo usuarios
+    @PostMapping("/register-user")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         try {
             if (request.getUsername() == null || request.getUsername().isEmpty() ||
@@ -49,10 +64,11 @@ public class UserAuthController {
         return authService.register(request);
     }
 
-    @PostMapping("/refresh-token")
+/*    @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestBody Map<String, String> requestBody) {
         String refreshToken = requestBody.get("refreshToken");
         log.info("Solicitud recibida para actualizar el token: " + refreshToken);
         return authService.refreshToken(refreshToken);
     }
+    */
 }

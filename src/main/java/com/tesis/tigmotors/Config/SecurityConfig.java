@@ -28,8 +28,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Configuración de CORS global
                 .authorizeHttpRequests(authRequest -> authRequest
-                        .requestMatchers("/api/v1/**", "/password/reset", "/password-reset/**", "/password-reset-token/**").permitAll()
-                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/v1/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/user/**","/api/v1/password-reset-token/").hasAuthority("USER")
                         .requestMatchers("/service-staff/**").hasAuthority("PERSONAL_CENTRO_DE_SERVICIOS")
                         .anyRequest().authenticated())

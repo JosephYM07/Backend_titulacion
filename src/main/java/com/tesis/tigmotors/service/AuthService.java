@@ -33,7 +33,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
 
-    public ResponseEntity<AuthResponse> login(LoginRequest request) {
+    public ResponseEntity<AuthResponse> loginAsUser(LoginRequest request) {
         return loginWithRole(request, Role.USER);
     }
 

@@ -1,6 +1,7 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.AuthExceptions;
+import com.tesis.tigmotors.Exceptions.UnauthorizedOperationException;
 import com.tesis.tigmotors.models.PasswordResetToken;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.tesis.tigmotors.roles.Role;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -41,6 +43,11 @@ public class PasswordResetService {
     public String sendResetToken(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado con ese correo"));
+
+        // Verificar que el rol del usuario sea "USER"
+        if (!user.getRole().equals(Role.USER)) {
+            throw new UnauthorizedOperationException("Solo los usuarios con rol USER pueden solicitar el restablecimiento de contraseña.");
+        }
 
         log.info("Eliminando cualquier token anterior del usuario: {}", user.getEmail());
         passwordResetTokenRepository.deleteByUser(user);
@@ -97,7 +104,7 @@ public class PasswordResetService {
 
     private String buildResetPasswordEmailContent(String token) {
         return "<html>" +
-                "<meta charset='UTF-8'>"+
+                "<meta charset='UTF-8'>" +
                 "<body style='font-family: Arial, sans-serif;'>" +
                 "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
                 "<div style='text-align: center;'>" +
@@ -120,4 +127,5 @@ public class PasswordResetService {
                 "</body>" +
                 "</html>";
     }
+
 }
