@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/password-reset-token")
+@RequestMapping("api/v1/password-reset-token")
 @RequiredArgsConstructor
 public class TokenSendController {
     private static final Logger log = LoggerFactory.getLogger(TokenSendController.class);

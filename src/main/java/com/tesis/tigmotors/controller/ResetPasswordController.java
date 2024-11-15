@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/password")
+@RequestMapping("api/v1/password")
 @RequiredArgsConstructor
 public class ResetPasswordController {
     private static final Logger log = LoggerFactory.getLogger(ResetPasswordController.class);

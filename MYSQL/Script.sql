@@ -31,7 +31,7 @@ create table refresh_tokens
 (
     id          bigint auto_increment
         primary key,
-    token varchar(255) not null,
+    token       varchar(255) not null,
     expiry_date datetime(6)  not null,
     user_id     int          not null,
     constraint UK_ghpmfn23vmxfu3spu3lfg4r2d
@@ -40,6 +40,11 @@ create table refresh_tokens
         foreign key (user_id) references user (id)
 );
 
+
 UPDATE user
 SET permiso = b'1'
 WHERE username = 'ChevroletUIO';
+
+DELETE
+FROM user
+WHERE username = 'JeepUIO';
