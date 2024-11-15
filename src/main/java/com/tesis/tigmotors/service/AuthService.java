@@ -84,7 +84,7 @@ public class AuthService {
     public ResponseEntity<AuthResponse> register(RegisterRequest request) {
         try {
             // Verificar si el nombre de usuario ya está en uso en la base de datos y correo electrónico
-            if (userRepository.findByUsername(request.getUsername()).isPresent() || userRepository.findByEmail(request.getEmail()).isPresent()) {
+            if (userRepository.findByUsername(request.getUsername()).isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(AuthResponse.builder()
                         .status("Error")
                         .message("El nombre de usuario ya está en uso")
