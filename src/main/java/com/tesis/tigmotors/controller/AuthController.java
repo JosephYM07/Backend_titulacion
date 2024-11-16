@@ -1,19 +1,15 @@
 package com.tesis.tigmotors.controller;
 
-import com.tesis.tigmotors.dto.AuthResponse;
-import com.tesis.tigmotors.dto.LoginRequest;
-import com.tesis.tigmotors.dto.RegisterRequest;
-import com.tesis.tigmotors.dto.UserInfoResponse;
+import com.tesis.tigmotors.dto.Response.AuthResponse;
+import com.tesis.tigmotors.dto.Request.LoginRequest;
+import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.service.AuthService;
 import com.tesis.tigmotors.service.UserInfoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Slf4j
 @RestController

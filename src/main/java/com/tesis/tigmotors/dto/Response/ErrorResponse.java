@@ -1,4 +1,4 @@
-package com.tesis.tigmotors.dto;
+package com.tesis.tigmotors.dto.Response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

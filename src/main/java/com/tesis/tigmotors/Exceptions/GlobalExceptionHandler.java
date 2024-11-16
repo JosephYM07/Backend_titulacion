@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.Exceptions;
 
-import com.tesis.tigmotors.dto.ErrorResponse;
+import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.controller;
 
-import com.tesis.tigmotors.dto.ResetPasswordRequest;
+import com.tesis.tigmotors.dto.Request.ResetPasswordRequest;
 import com.tesis.tigmotors.service.PasswordResetService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

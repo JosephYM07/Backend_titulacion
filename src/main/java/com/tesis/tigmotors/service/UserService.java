@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.service;
 
 
-import com.tesis.tigmotors.dto.ErrorResponse;
+import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

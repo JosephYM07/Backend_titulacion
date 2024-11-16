@@ -1,9 +1,9 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.AuthExceptions;
-import com.tesis.tigmotors.dto.AuthResponse;
-import com.tesis.tigmotors.dto.LoginRequest;
-import com.tesis.tigmotors.dto.RegisterRequest;
+import com.tesis.tigmotors.dto.Response.AuthResponse;
+import com.tesis.tigmotors.dto.Request.LoginRequest;
+import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.models.RefreshToken;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;

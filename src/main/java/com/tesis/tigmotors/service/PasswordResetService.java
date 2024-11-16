@@ -41,35 +41,40 @@ public class PasswordResetService {
 
     @Transactional
     public String sendResetToken(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado con ese correo"));
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado con ese correo"));
 
-        // Verificar que el rol del usuario sea "USER"
-        if (!user.getRole().equals(Role.USER)) {
-            throw new UnauthorizedOperationException("Solo los usuarios con rol USER pueden solicitar el restablecimiento de contraseña.");
+            // Verificar que el rol del usuario sea "USER"
+            if (!user.getRole().equals(Role.USER)) {
+                throw new UnauthorizedOperationException("Solo los usuarios con rol USER pueden solicitar el restablecimiento de contraseña.");
+            }
+
+            log.info("Eliminando cualquier token anterior del usuario: {}", user.getEmail());
+            passwordResetTokenRepository.deleteByUser(user);
+
+            String token = UUID.randomUUID().toString();
+            Instant expiryDate = Instant.now().plus(TOKEN_EXPIRATION_MINUTES, ChronoUnit.MINUTES);
+
+            log.info("Generando nuevo token para el usuario: {}", user.getEmail());
+
+            PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+                    .token(token)
+                    .expiryDate(expiryDate)
+                    .user(user)
+                    .build();
+            passwordResetTokenRepository.save(passwordResetToken);
+
+            String subject = "Recuperación de contraseña - TigMotors";
+            String content = buildResetPasswordEmailContent(token);
+            emailService.sendEmail(email, subject, content);
+
+            log.info("Código de recuperación enviado exitosamente al correo: {}", email);
+            return "Código de recuperación enviado al correo";
+        }catch (AuthExceptions.UserNotFoundException e){
+            log.error("Usuario no encontrado con ese correo: {}", email);
+            throw new AuthExceptions.UserNotFoundException("Usuario no encontrado con ese correo");
         }
-
-        log.info("Eliminando cualquier token anterior del usuario: {}", user.getEmail());
-        passwordResetTokenRepository.deleteByUser(user);
-
-        String token = UUID.randomUUID().toString();
-        Instant expiryDate = Instant.now().plus(TOKEN_EXPIRATION_MINUTES, ChronoUnit.MINUTES);
-
-        log.info("Generando nuevo token para el usuario: {}", user.getEmail());
-
-        PasswordResetToken passwordResetToken = PasswordResetToken.builder()
-                .token(token)
-                .expiryDate(expiryDate)
-                .user(user)
-                .build();
-        passwordResetTokenRepository.save(passwordResetToken);
-
-        String subject = "Recuperación de contraseña - TigMotors";
-        String content = buildResetPasswordEmailContent(token);
-        emailService.sendEmail(email, subject, content);
-
-        log.info("Código de recuperación enviado exitosamente al correo: {}", email);
-        return "Código de recuperación enviado al correo";
     }
 
 

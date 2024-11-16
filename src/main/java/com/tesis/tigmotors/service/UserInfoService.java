@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.service;
 
-import com.tesis.tigmotors.dto.UserInfoResponse;
+import com.tesis.tigmotors.dto.Response.UserInfoResponse;
 import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;

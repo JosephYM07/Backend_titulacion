@@ -1,4 +1,4 @@
-package com.tesis.tigmotors.dto;
+package com.tesis.tigmotors.dto.Request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
