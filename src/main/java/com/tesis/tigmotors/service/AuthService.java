@@ -119,26 +119,4 @@ public class AuthService {
                     .build());
         }
     }
-
-    public ResponseEntity<AuthResponse> refreshToken(String refreshToken) {
-        Optional<RefreshToken> storedToken = refreshTokenService.findByToken(refreshToken);
-
-        if (storedToken.isEmpty() || storedToken.get().getExpiryDate().isBefore(Instant.now())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    AuthResponse.builder()
-                            .status("error")
-                            .message("Actualizar token caducado o inválido")
-                            .build()
-            );
-        }
-
-        User user = storedToken.get().getUser();
-        String newAccessToken = jwtService.generateAccessToken(user);
-
-        return ResponseEntity.ok(AuthResponse.builder()
-                .status("success")
-                .message("Nuevo token de acceso generado")
-                .token(newAccessToken)
-                .build());
-    }
 }

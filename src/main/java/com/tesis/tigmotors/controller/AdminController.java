@@ -1,14 +1,12 @@
 package com.tesis.tigmotors.controller;
 
 
-import com.tesis.tigmotors.service.UserService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import com.tesis.tigmotors.dto.Request.AdminProfileUpdateRequest;
+import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
 import com.tesis.tigmotors.service.AdminProfileService;
+import com.tesis.tigmotors.service.TicketService;
+import com.tesis.tigmotors.service.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -28,6 +27,10 @@ public class AdminController {
 
     @Autowired
     private AdminProfileService adminProfileService;
+
+    @Autowired
+    private TicketService ticketService;
+
 
     @GetMapping("/users/status")
     public ResponseEntity<Object> getUsersStatus() {
@@ -66,5 +69,24 @@ public class AdminController {
         log.info("Eliminando perfil del administrador: {}", username);
         adminProfileService.deleteProfile(username);
         return ResponseEntity.ok(Map.of("message", "Perfil eliminado con éxito"));
+    }
+
+    //TIckets
+    @PutMapping("/aprobar/{ticketId}")
+    public ResponseEntity<Map<String, Object>> aprobarTicket(@PathVariable String ticketId) {
+        TicketDTO ticketAprobado = ticketService.aprobarTicket(ticketId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "Ticket aprobado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketAprobado.getUsername());
+        response.put("ticket", ticketAprobado);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/rechazar/{ticketId}")
+    public ResponseEntity<Map<String, Object>> rechazarTicket(@PathVariable String ticketId) {
+        TicketDTO ticketRechazado = ticketService.rechazarTicket(ticketId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensaje", "Ticket rechazado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketRechazado.getUsername());
+        response.put("ticket", ticketRechazado);
+        return ResponseEntity.ok(response);
     }
 }

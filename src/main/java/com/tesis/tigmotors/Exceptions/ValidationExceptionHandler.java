@@ -1,3 +1,4 @@
+/*
 package com.tesis.tigmotors.Exceptions;
 
 import jakarta.validation.ConstraintViolationException;
@@ -37,4 +38,4 @@ public class ValidationExceptionHandler {
                 "error", "InvalidRequestException"
         ));
     }
-}
+}*/
