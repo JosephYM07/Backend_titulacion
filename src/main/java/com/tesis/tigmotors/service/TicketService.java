@@ -22,10 +22,13 @@ public class TicketService {
 
     @Autowired
     private TicketConverter ticketConverter;
+    @Autowired
+    private SequenceGeneratorService sequenceGeneratorService;
 
     public TicketDTO crearTicket(TicketDTO ticketDTO, String username) {
         try {
             Ticket ticket = ticketConverter.dtoToEntity(ticketDTO);
+            ticket.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
             ticket.setUsername(username);
             Ticket ticketGuardado = ticketRepository.save(ticket);
             return ticketConverter.entityToDto(ticketGuardado);

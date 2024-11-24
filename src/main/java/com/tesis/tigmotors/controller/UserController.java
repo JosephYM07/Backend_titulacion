@@ -25,7 +25,7 @@ public class UserController {
 
     // Solicitud
     // Endpoint para crear una solicitud
-    @PostMapping("/crear")
+    @PostMapping("/crear-solicitud")
     public ResponseEntity<SolicitudDTO> crearSolicitud(@RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
         String username = authentication.getName();
         SolicitudDTO nuevaSolicitud = solicitudService.crearSolicitud(solicitudDTO, username);
@@ -33,7 +33,7 @@ public class UserController {
     }
 
     // Endpoint para obtener historial de solicitudes del usuario autenticado
-    @GetMapping("/historial")
+    @GetMapping("/historial-solicitud")
     public ResponseEntity<List<SolicitudDTO>> obtenerHistorialSolicitudes(Authentication authentication) {
         String username = authentication.getName();
         List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialSolicitudesPorUsuario(username);
@@ -41,7 +41,7 @@ public class UserController {
     }
 
     // Endpoint para obtener solicitudes del usuario autenticado por estado
-    @GetMapping("/estado/{estado}")
+    @GetMapping("/estado-solicitud/{estado}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorEstado(@PathVariable String estado, Authentication authentication) {
         String username = authentication.getName();
         List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorUsuarioYEstado(username, estado);
@@ -49,7 +49,7 @@ public class UserController {
     }
 
     // Endpoint para obtener solicitudes del usuario autenticado por prioridad
-    @GetMapping("/prioridad/{prioridad}")
+    @GetMapping("/prioridad-solicitud/{prioridad}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
         String username = authentication.getName();
         List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorPrioridadYUsuario(prioridad, username);
@@ -57,7 +57,7 @@ public class UserController {
     }
 
     // Endpoint para modificar una solicitud del usuario autenticado
-    @PutMapping("/modificar/{solicitudId}")
+    @PutMapping("/modificar-solicitud/{solicitudId}")
     public ResponseEntity<SolicitudDTO> modificarSolicitud(@PathVariable String solicitudId, @RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
         String username = authentication.getName();
         SolicitudDTO solicitudModificada = solicitudService.modificarSolicitud(solicitudId, solicitudDTO, username);
@@ -65,7 +65,7 @@ public class UserController {
     }
 
     // Endpoint para eliminar una solicitud del usuario autenticado
-    @DeleteMapping("/eliminar/{solicitudId}")
+    @DeleteMapping("/eliminar-soliitud/{solicitudId}")
     public ResponseEntity<Void> eliminarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
         String username = authentication.getName();
         solicitudService.eliminarSolicitud(solicitudId, username);
