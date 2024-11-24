@@ -8,9 +8,8 @@ import lombok.Data;
 public class TicketDTO {
     private String id;
 
-    @NotBlank(message = "El nombre de usuario no puede estar vacío")
     private String username;
-
+    private String solicitudId;
     @NotBlank(message = "La descripción no puede estar vacía")
     private String descripcion;
 

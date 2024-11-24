@@ -2,9 +2,11 @@ package com.tesis.tigmotors.controller;
 
 
 import com.tesis.tigmotors.dto.Request.AdminProfileUpdateRequest;
+import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
 import com.tesis.tigmotors.service.AdminProfileService;
+import com.tesis.tigmotors.service.SolicitudService;
 import com.tesis.tigmotors.service.TicketService;
 import com.tesis.tigmotors.service.UserService;
 import jakarta.validation.Valid;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -31,6 +34,8 @@ public class AdminController {
     @Autowired
     private TicketService ticketService;
 
+    @Autowired
+    private SolicitudService solicitudService;
 
     @GetMapping("/users/status")
     public ResponseEntity<Object> getUsersStatus() {
@@ -71,6 +76,48 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Perfil eliminado con éxito"));
     }
 
+    //Solicitud
+    // Endpoint para aceptar una solicitud (solo para administradores)
+    @PutMapping("/aceptar/{solicitudId}")
+    public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId) {
+        SolicitudDTO solicitudAceptada = solicitudService.aceptarSolicitud(solicitudId);
+        return ResponseEntity.ok(solicitudAceptada);
+    }
+
+    // Endpoint para rechazar una solicitud (solo para administradores)
+    @PutMapping("/rechazar/{solicitudId}")
+    public ResponseEntity<SolicitudDTO> rechazarSolicitud(@PathVariable String solicitudId) {
+        SolicitudDTO solicitudRechazada = solicitudService.rechazarSolicitud(solicitudId);
+        return ResponseEntity.ok(solicitudRechazada);
+    }
+
+    // Endpoint para obtener todas las solicitudes filtradas por estado (solo para administradores)
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorEstado(@PathVariable String estado) {
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorEstado(estado);
+        return ResponseEntity.ok(solicitudes);
+    }
+
+    // Endpoint para obtener todas las solicitudes filtradas por prioridad (solo para administradores)
+    @GetMapping("/prioridad/{prioridad}")
+    public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad) {
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorPrioridad(prioridad);
+        return ResponseEntity.ok(solicitudes);
+    }
+
+    // Endpoint para obtener historial completo de todas las solicitudes (solo para administradores)
+    @GetMapping("/historial")
+    public ResponseEntity<List<SolicitudDTO>> obtenerHistorialCompletoSolicitudes() {
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialCompletoSolicitudes();
+        return ResponseEntity.ok(solicitudes);
+    }
+
+    // Endpoint para eliminar cualquier solicitud (solo para administradores)
+    @DeleteMapping("/eliminar/{solicitudId}")
+    public ResponseEntity<Void> eliminarSolicitudAdmin(@PathVariable String solicitudId) {
+        solicitudService.eliminarSolicitudAdmin(solicitudId);
+        return ResponseEntity.noContent().build();
+    }
     //TIckets
     @PutMapping("/aprobar/{ticketId}")
     public ResponseEntity<Map<String, Object>> aprobarTicket(@PathVariable String ticketId) {

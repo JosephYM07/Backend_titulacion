@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authRequest -> authRequest
                         .requestMatchers("/api/v1/**","/api/v1/password-reset-token/send-token","/api/v1/password/reset").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/user/**").hasAuthority("USER")
+                        .requestMatchers("/api/user/**").hasAuthority("USER")
                         .requestMatchers("/service-staff/**").hasAuthority("PERSONAL_CENTRO_DE_SERVICIOS")
                         .anyRequest().authenticated())
                 .sessionManagement(sessionManager -> sessionManager
