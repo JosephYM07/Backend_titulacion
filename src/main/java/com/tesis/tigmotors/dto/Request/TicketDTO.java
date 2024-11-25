@@ -17,4 +17,8 @@ public class TicketDTO {
 
     @NotNull(message = "El campo aprobado no puede ser nulo")
     private boolean aprobado;
+
+    // Nuevos campos añadidos
+    private String descripcionInicial; // Descripción inicial del problema
+    private String descripcionTrabajo;
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SolicitudConverter {
 
-    // Convierte de DTO a Entidad
+    // Convertir de DTO a Entidad
     public Solicitud dtoToEntity(SolicitudDTO solicitudDTO) {
         Solicitud solicitud = new Solicitud();
         solicitud.setIdSolicitud(solicitudDTO.getIdSolicitud());
@@ -20,7 +20,7 @@ public class SolicitudConverter {
         return solicitud;
     }
 
-    // Convierte de Entidad a DTO
+    // Convertir de Entidad a DTO
     public SolicitudDTO entityToDto(Solicitud solicitud) {
         SolicitudDTO solicitudDTO = new SolicitudDTO();
         solicitudDTO.setIdSolicitud(solicitud.getIdSolicitud());

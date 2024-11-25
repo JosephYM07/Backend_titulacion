@@ -25,11 +25,21 @@ public class TicketService {
     @Autowired
     private SequenceGeneratorService sequenceGeneratorService;
 
-    public TicketDTO crearTicket(TicketDTO ticketDTO, String username) {
+    public TicketDTO crearTicketAutomatico(TicketDTO ticketDTO, String username) {
         try {
             Ticket ticket = ticketConverter.dtoToEntity(ticketDTO);
-            ticket.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-            ticket.setUsername(username);
+            // Asignar valores desde el DTO y los valores correctos de la solicitud
+            //Sequencia ticket
+            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
+            ticket.setSolicitudId(ticketDTO.getSolicitudId() != null ? ticketDTO.getSolicitudId() : ticketDTO.getSolicitudId()); // Verificar y asignar el ID de la solicitud
+            ticket.setUsername(username); // Asignar el nombre del usuario
+            ticket.setDescripcion(ticketDTO.getDescripcion()); // Asignar la descripción combinada
+            ticket.setEstado(ticketDTO.getEstado());
+            ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial()); // Asignar la descripción inicial
+            ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo()); // Asignar la descripción del trabajo
+            ticket.setAprobado(ticketDTO.isAprobado());
+
+            // Guardar el ticket en la base de datos
             Ticket ticketGuardado = ticketRepository.save(ticket);
             return ticketConverter.entityToDto(ticketGuardado);
         } catch (Exception e) {

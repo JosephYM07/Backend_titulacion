@@ -87,6 +87,7 @@ public class SolicitudService {
     }
 
     // Usuario acepta la cotización y se genera el ticket automáticamente
+
     public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
         try {
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
@@ -105,12 +106,15 @@ public class SolicitudService {
                 // Generar ticket automáticamente al aceptar la cotización
                 TicketDTO ticketDTO = new TicketDTO();
                 ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-                ticketDTO.setSolicitudId(solicitudId);
-                ticketDTO.setEstado("Generado");
+                ticketDTO.setSolicitudId(solicitud.getIdSolicitud());
                 ticketDTO.setUsername(solicitud.getUsername());
-                ticketDTO.setDescripcion(solicitud.getDescripcionTrabajo());
+                ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
+                ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
+                ticketDTO.setEstado("Generado");
                 ticketDTO.setAprobado(true);
-                return ticketService.crearTicket(ticketDTO, solicitud.getUsername());
+
+                // Llamar al servicio para crear el ticket pasando los valores correctos
+                return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
             } else {
                 throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
             }

@@ -9,9 +9,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Ticket {
     @Id
     private String id;
-    private String idSolicitud;
+    private String solicitudId;
     private String username;
     private String descripcion;
     private String estado = "Pendiente";
     private boolean aprobado;
+
+    // Nuevos campos añadidos
+    private String descripcionInicial; // Descripción inicial del problema
+    private String descripcionTrabajo;
 }

@@ -19,7 +19,7 @@ public class TicketController {
     @Autowired
     private TicketService ticketService;
 
-    @PostMapping("/crear")
+  /*  @PostMapping("/crear")
     public ResponseEntity<Map<String, Object>> crearTicket(@Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
         String username = authentication.getName();
         ticketDTO.setEstado("Pendiente"); // Establece el estado como "Pendiente" por defecto
@@ -28,7 +28,7 @@ public class TicketController {
         response.put("mensaje", "Ticket creado exitosamente");
         response.put("ticket", ticketCreado);
         return ResponseEntity.ok(response);
-    }
+    }*/
 
     @GetMapping("/historial")
     public ResponseEntity<List<TicketDTO>> obtenerHistorialTickets(Authentication authentication) {

@@ -58,13 +58,11 @@ public class UserController {
         }
     }
 
-    // Endpoint para que el usuario acepte la cotización y genere el ticket automáticamente
     // Endpoint para aceptar la cotización y generar un ticket automáticamente (solo para usuarios)
-    @PutMapping("/aceptar-cotizacion/{solicitudId}")
-    public ResponseEntity<TicketDTO> aceptarCotizacionGenerarTicket(@PathVariable String solicitudId, Authentication authentication) {
+    @PutMapping("/aceptar-cotizacion/{idSolicitud}")
+    public ResponseEntity<TicketDTO> aceptarCotizacion(@PathVariable String idSolicitud, Authentication authentication) {
         String username = authentication.getName();
-        logger.info("Usuario {} aceptando la cotización para la solicitud con ID: {}", username, solicitudId);
-        TicketDTO ticketGenerado = solicitudService.aceptarCotizacionGenerarTicket(solicitudId, username);
+        TicketDTO ticketGenerado = solicitudService.aceptarCotizacionGenerarTicket(idSolicitud, username);
         return ResponseEntity.ok(ticketGenerado);
     }
 
@@ -141,7 +139,7 @@ public class UserController {
     }
 
     // Tickets
-    @PostMapping("/tickets/crear")
+    /*@PostMapping("/tickets/crear")
     public ResponseEntity<?> crearTicket(@Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
         try {
             String username = authentication.getName();
@@ -156,7 +154,7 @@ public class UserController {
             logger.error("Error al crear el ticket: ", e);
             return ResponseEntity.internalServerError().body("Error al crear el ticket");
         }
-    }
+    }*/
 
     @GetMapping("/tickets/historial")
     public ResponseEntity<?> obtenerHistorialTickets(Authentication authentication) {
