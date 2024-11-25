@@ -81,8 +81,7 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Perfil eliminado con éxito"));
     }
 
-    //Solicitud
-    // Endpoint para aceptar una solicitud (solo para administradores)
+    //Solicitudes
     // Endpoint para aceptar una solicitud (solo para administradores)
     @PutMapping("/aceptar/{solicitudId}")
     public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
