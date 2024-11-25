@@ -21,7 +21,7 @@ public class AuthController {
     private final UserInfoService userInfoService;
 
 
-    @PostMapping("/login-users")
+    /*@PostMapping("/login-users")
     public ResponseEntity<AuthResponse> userLogin(@Valid @RequestBody LoginRequest request) {
         if (request.getUsername() == null || request.getUsername().isEmpty() ||
                 request.getPassword() == null || request.getPassword().isEmpty()) {
@@ -41,7 +41,17 @@ public class AuthController {
     @PostMapping("/service-staff-login")
     public ResponseEntity<AuthResponse> serviceStaffLogin(@Valid @RequestBody LoginRequest request) {
         return authService.loginAsServiceStaff(request);
+    }*/
+    @PostMapping("/login-global")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        if (request.getUsername() == null || request.getUsername().isEmpty() ||
+                request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Se deben proporcionar tanto el nombre de usuario como la contraseña.");
+        }
+        log.info("Solicitud de inicio de sesión recibida para el usuario: " + request.getUsername());
+        return authService.login(request);
     }
+
 
     //Endpoint para registrar solo usuarios
     @PostMapping("/register-user")

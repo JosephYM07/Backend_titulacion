@@ -33,7 +33,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
 
-    public ResponseEntity<AuthResponse> loginAsUser(LoginRequest request) {
+    /*public ResponseEntity<AuthResponse> loginAsUser(LoginRequest request) {
         return loginWithRole(request, Role.USER);
     }
 
@@ -43,23 +43,28 @@ public class AuthService {
 
     public ResponseEntity<AuthResponse> loginAsServiceStaff(LoginRequest request) {
         return loginWithRole(request, Role.PERSONAL_CENTRO_DE_SERVICIOS);
-    }
+    }*/
 
-    private ResponseEntity<AuthResponse> loginWithRole(LoginRequest request, Role expectedRole) {
+    public ResponseEntity<AuthResponse> login(LoginRequest request) {
         try {
+            // Autenticar al usuario con nombre de usuario y contraseña
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
+            // Buscar al usuario en la base de datos
             User user = userRepository.findByUsername(request.getUsername())
                     .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado"));
 
-            if (!user.getRole().equals(expectedRole)) {
+            // Validar el rol si se envía en la solicitud
+/*            if (request.getRole() != null && !user.getRole().equals(request.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(AuthResponse.builder()
                         .status("Error")
                         .message("Acceso denegado para este rol")
                         .build());
-            }
+            }*/
+
+            // Validar que el usuario esté aprobado
             if (!user.isPermiso()) {
                 log.warn("Usuario no aprobado: " + user.getUsername());
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
@@ -67,6 +72,8 @@ public class AuthService {
                         .message("Su cuenta aún no ha sido aprobada por el administrador")
                         .build());
             }
+
+            // Generar el token JWT para el usuario autenticado
             String accessToken = jwtService.generateAccessToken(user);
             return ResponseEntity.ok(AuthResponse.builder()
                     .status("success")
@@ -74,12 +81,14 @@ public class AuthService {
                     .token(accessToken)
                     .build());
         } catch (AuthenticationException e) {
+            // Manejar error de autenticación
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
                     .status("Error")
                     .message("Nombre de usuario o contraseña no válidos")
                     .build());
         }
     }
+
 
     public ResponseEntity<AuthResponse> register(RegisterRequest request) {
         try {
