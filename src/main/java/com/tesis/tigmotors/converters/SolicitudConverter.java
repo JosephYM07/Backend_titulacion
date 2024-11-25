@@ -11,9 +11,12 @@ public class SolicitudConverter {
     public Solicitud dtoToEntity(SolicitudDTO solicitudDTO) {
         Solicitud solicitud = new Solicitud();
         solicitud.setIdSolicitud(solicitudDTO.getIdSolicitud());
-        solicitud.setDescripcion(solicitudDTO.getDescripcion());
+        solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
+        solicitud.setDescripcionTrabajo(solicitudDTO.getDescripcionTrabajo());
         solicitud.setEstado(solicitudDTO.getEstado());
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
+        solicitud.setCotizacion(solicitudDTO.getCotizacion());
+        solicitud.setCotizacionAceptada(solicitudDTO.isCotizacionAceptada());
         return solicitud;
     }
 
@@ -21,9 +24,12 @@ public class SolicitudConverter {
     public SolicitudDTO entityToDto(Solicitud solicitud) {
         SolicitudDTO solicitudDTO = new SolicitudDTO();
         solicitudDTO.setIdSolicitud(solicitud.getIdSolicitud());
-        solicitudDTO.setDescripcion(solicitud.getDescripcion());
+        solicitudDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
+        solicitudDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
         solicitudDTO.setEstado(solicitud.getEstado());
         solicitudDTO.setPrioridad(solicitud.getPrioridad());
+        solicitudDTO.setCotizacion(solicitud.getCotizacion());
+        solicitudDTO.setCotizacionAceptada(solicitud.isCotizacionAceptada());
         return solicitudDTO;
     }
 }

@@ -11,6 +11,8 @@ import com.tesis.tigmotors.service.TicketService;
 import com.tesis.tigmotors.service.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,10 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
+
 @Slf4j
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+    private static final Logger logger = LoggerFactory.getLogger(SolicitudService.class);
+
 
     @Autowired
     private UserService userService;
@@ -78,10 +83,28 @@ public class AdminController {
 
     //Solicitud
     // Endpoint para aceptar una solicitud (solo para administradores)
+    // Endpoint para aceptar una solicitud (solo para administradores)
     @PutMapping("/aceptar/{solicitudId}")
-    public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId) {
+    public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
+        String username = authentication.getName();
+        logger.info("Usuario {} aceptando la solicitud con ID: {}", username, solicitudId);
         SolicitudDTO solicitudAceptada = solicitudService.aceptarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudAceptada);
+    }
+
+    // Endpoint para añadir cotización y descripción del trabajo (solo para administradores)
+    @PutMapping("/anadir-cotizacion/{solicitudId}")
+    public ResponseEntity<SolicitudDTO> anadirCotizacion(@PathVariable String solicitudId,
+                                                         @RequestBody Map<String, String> requestBody,
+                                                         Authentication authentication) {
+        String username = authentication.getName();
+        logger.info("Usuario {} añadiendo cotización a la solicitud con ID: {}", username, solicitudId);
+
+        String cotizacion = requestBody.get("cotizacion");
+        String descripcionTrabajo = requestBody.get("descripcionTrabajo");
+
+        SolicitudDTO solicitudConCotizacion = solicitudService.añadirCotizacion(solicitudId, cotizacion, descripcionTrabajo);
+        return ResponseEntity.ok(solicitudConCotizacion);
     }
 
     // Endpoint para rechazar una solicitud (solo para administradores)
@@ -118,6 +141,7 @@ public class AdminController {
         solicitudService.eliminarSolicitudAdmin(solicitudId);
         return ResponseEntity.noContent().build();
     }
+
     //TIckets
     @PutMapping("/aprobar/{ticketId}")
     public ResponseEntity<Map<String, Object>> aprobarTicket(@PathVariable String ticketId) {

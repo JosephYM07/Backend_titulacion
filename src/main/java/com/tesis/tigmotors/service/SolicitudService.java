@@ -9,6 +9,7 @@ import com.tesis.tigmotors.repository.SolicitudRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -43,6 +44,103 @@ public class SolicitudService {
         } catch (Exception e) {
             logger.error("Error creando la solicitud: ", e);
             throw new RuntimeException("Error creando la solicitud");
+        }
+    }
+
+    // Aceptar una solicitud (Administrador)
+    public SolicitudDTO aceptarSolicitud(String solicitudId) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (solicitud.getEstado().equals("Pendiente")) {
+                solicitud.setEstado("Aceptado");
+                Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
+                return solicitudConverter.entityToDto(solicitudAceptada);
+            } else {
+                throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+            }
+        } catch (Exception e) {
+            logger.error("Error aceptando la solicitud: ", e);
+            throw new RuntimeException("Error aceptando la solicitud");
+        }
+    }
+
+    // Añadir cotización y descripción del trabajo (Administrador)
+    public SolicitudDTO añadirCotizacion(String solicitudId, String cotizacion, String descripcionTrabajo) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (solicitud.getEstado().equals("Aceptado")) {
+                solicitud.setCotizacion(cotizacion);
+                solicitud.setDescripcionTrabajo(descripcionTrabajo);
+                Solicitud solicitudConCotizacion = solicitudRepository.save(solicitud);
+                return solicitudConverter.entityToDto(solicitudConCotizacion);
+            } else {
+                throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
+            }
+        } catch (Exception e) {
+            logger.error("Error añadiendo la cotización: ", e);
+            throw new RuntimeException("Error añadiendo la cotización");
+        }
+    }
+
+    // Usuario acepta la cotización y se genera el ticket automáticamente
+    public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (!solicitud.getUsername().equals(username)) {
+                throw new AccessDeniedException("No tiene permisos para aceptar esta cotización.");
+            }
+
+            if (solicitud.getEstado().equals("Aceptado")) {
+                // Cambiar el estado de la solicitud para reflejar que la cotización fue aceptada
+                solicitud.setCotizacionAceptada(true);
+                solicitud.setEstado("Cotización Aceptada");
+                solicitudRepository.save(solicitud);
+
+                // Generar ticket automáticamente al aceptar la cotización
+                TicketDTO ticketDTO = new TicketDTO();
+                ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
+                ticketDTO.setSolicitudId(solicitudId);
+                ticketDTO.setEstado("Generado");
+                ticketDTO.setUsername(solicitud.getUsername());
+                ticketDTO.setDescripcion(solicitud.getDescripcionTrabajo());
+                ticketDTO.setAprobado(true);
+                return ticketService.crearTicket(ticketDTO, solicitud.getUsername());
+            } else {
+                throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
+            }
+        } catch (Exception e) {
+            logger.error("Error aceptando la cotización y generando el ticket: ", e);
+            throw new RuntimeException("Error aceptando la cotización y generando el ticket");
+        }
+    }
+
+    // Usuario rechaza la cotización
+    public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (!solicitud.getUsername().equals(username)) {
+                throw new AccessDeniedException("No tiene permisos para rechazar esta cotización.");
+            }
+
+            if (solicitud.getEstado().equals("Aceptado")) {
+                solicitud.setCotizacionAceptada(false);
+                solicitud.setEstado("Rechazada por Usuario");
+                Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
+                return solicitudConverter.entityToDto(solicitudRechazada);
+            } else {
+                throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
+            }
+        } catch (Exception e) {
+            logger.error("Error rechazando la cotización: ", e);
+            throw new RuntimeException("Error rechazando la cotización");
         }
     }
 
@@ -126,73 +224,85 @@ public class SolicitudService {
 
     // Modificar una solicitud (usuario autenticado)
     public SolicitudDTO modificarSolicitud(String solicitudId, SolicitudDTO solicitudDTO, String username) {
-        Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-        if (solicitud.getUsername().equals(username) && solicitud.getEstado().equals("Pendiente")) {
-            solicitud.setDescripcion(solicitudDTO.getDescripcion());
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (!solicitud.getUsername().equals(username) || !solicitud.getEstado().equals("Pendiente")) {
+                throw new AccessDeniedException("No tiene permisos para modificar esta solicitud o la solicitud no está en estado 'Pendiente'");
+            }
+
+            solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
             solicitud.setPrioridad(solicitudDTO.getPrioridad());
             Solicitud solicitudModificada = solicitudRepository.save(solicitud);
             return solicitudConverter.entityToDto(solicitudModificada);
-        } else {
-            throw new RuntimeException("La solicitud no puede ser modificada o no pertenece al usuario");
+        } catch (Exception e) {
+            logger.error("Error modificando la solicitud: ", e);
+            throw new RuntimeException("Error modificando la solicitud");
         }
     }
 
-
     // Eliminar una solicitud (usuario autenticado)
     public void eliminarSolicitud(String solicitudId, String username) {
-        Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-        if (solicitud.getUsername().equals(username) && solicitud.getEstado().equals("Pendiente")) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (!solicitud.getUsername().equals(username) || !solicitud.getEstado().equals("Pendiente")) {
+                throw new AccessDeniedException("No tiene permisos para eliminar esta solicitud o la solicitud no está en estado 'Pendiente'");
+            }
+
             solicitudRepository.delete(solicitud);
-        } else {
-            throw new RuntimeException("La solicitud no puede ser eliminada o no pertenece al usuario");
+            logger.info("Solicitud eliminada exitosamente: {}", solicitudId);
+        } catch (SolicitudNotFoundException | AccessDeniedException e) {
+            logger.error("Error al eliminar la solicitud: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error inesperado al eliminar la solicitud: ", e);
+            throw new RuntimeException("Error inesperado al eliminar la solicitud");
         }
     }
 
     // Eliminar una solicitud (administrador)
     public void eliminarSolicitudAdmin(String solicitudId) {
-        Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-        if (solicitud.getEstado().equals("Pendiente")) {
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (!solicitud.getEstado().equals("Pendiente")) {
+                throw new RuntimeException("La solicitud no puede ser eliminada porque no está en estado 'Pendiente'");
+            }
+
             solicitudRepository.delete(solicitud);
-        } else {
-            throw new RuntimeException("La solicitud no puede ser eliminada porque no está en estado 'Pendiente'");
-        }
-    }
-
-    // Aceptar una solicitud (Administrador)
-    public SolicitudDTO aceptarSolicitud(String solicitudId) {
-        Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-        if (solicitud.getEstado().equals("Pendiente")) {
-            solicitud.setEstado("Aceptado");
-            Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
-
-            // Generar ticket automáticamente al aceptar la solicitud
-            TicketDTO ticketDTO = new TicketDTO();
-            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-            ticketDTO.setSolicitudId(solicitudId);
-            ticketDTO.setEstado("Generado");
-            ticketDTO.setUsername(solicitud.getUsername());
-            ticketService.crearTicket(ticketDTO, solicitud.getUsername());
-
-            return solicitudConverter.entityToDto(solicitudAceptada);
-        } else {
-            throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+            logger.info("Solicitud eliminada por administrador: {}", solicitudId);
+        } catch (SolicitudNotFoundException e) {
+            logger.error("Solicitud no encontrada al intentar eliminar: ", e);
+            throw e;
+        } catch (RuntimeException e) {
+            logger.error("La solicitud no puede ser eliminada: ", e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error inesperado al eliminar la solicitud por administrador: ", e);
+            throw new RuntimeException("Error inesperado al eliminar la solicitud por administrador");
         }
     }
 
     // Rechazar una solicitud (Administrador)
     public SolicitudDTO rechazarSolicitud(String solicitudId) {
-        Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-        if (solicitud.getEstado().equals("Pendiente")) {
-            solicitud.setEstado("Rechazado");
-            Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
-            return solicitudConverter.entityToDto(solicitudRechazada);
-        } else {
-            throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+        try {
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+
+            if (solicitud.getEstado().equals("Pendiente")) {
+                solicitud.setEstado("Rechazado");
+                Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
+                return solicitudConverter.entityToDto(solicitudRechazada);
+            } else {
+                throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+            }
+        } catch (Exception e) {
+            logger.error("Error rechazando la solicitud: ", e);
+            throw new RuntimeException("Error rechazando la solicitud");
         }
     }
 }
