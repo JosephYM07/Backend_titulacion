@@ -40,11 +40,13 @@ public class AdminController {
         return userService.getUsersStatus();
     }
 
+    // Endpoint para obtener todos los usuarios pendientes de aprobación (solo para administradores)
     @GetMapping("/users/pending")
     public ResponseEntity<Object> getPendingUsers() {
         return userService.getPendingUsers();
     }
 
+    // Endpoint para aprobar un usuario (solo para administradores)
     @PutMapping("/users/approve/{userId}")
     public ResponseEntity<Object> approveUser(@PathVariable Integer userId) {
         return userService.approveUser(userId);

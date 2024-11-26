@@ -24,7 +24,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     List<User> findByPermiso(boolean permiso);
 
-
     //update
     @Modifying
     @Transactional
