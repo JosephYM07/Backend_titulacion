@@ -1,15 +1,17 @@
 package com.tesis.tigmotors.controller;
 
-import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.dto.Request.LoginRequest;
 import com.tesis.tigmotors.dto.Request.RegisterRequest;
+import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.service.AuthService;
-import com.tesis.tigmotors.service.UserInfoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserInfoService userInfoService;
 
 
     /*@PostMapping("/login-users")

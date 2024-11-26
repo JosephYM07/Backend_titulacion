@@ -5,10 +5,12 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class UserInfoResponse {
+public class UserResponseUser {
+    private Integer id;
     private String username;
     private String role;
     private String business_name;
     private String email;
     private String phoneNumber;
+    private Boolean permiso;
 }

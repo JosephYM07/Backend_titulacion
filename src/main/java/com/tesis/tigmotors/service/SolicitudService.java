@@ -7,6 +7,8 @@ import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.repository.SolicitudRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,21 +19,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class SolicitudService {
 
     private static final Logger logger = LoggerFactory.getLogger(SolicitudService.class);
 
-    @Autowired
-    private SolicitudRepository solicitudRepository;
-
-    @Autowired
-    private SolicitudConverter solicitudConverter;
-
-    @Autowired
-    private SequenceGeneratorService sequenceGeneratorService;
-
-    @Autowired
-    private TicketService ticketService;
+    private final SolicitudRepository solicitudRepository;
+    private final SolicitudConverter solicitudConverter;
+    private final SequenceGeneratorService sequenceGeneratorService;
+    private final TicketService ticketService;
 
     // Crear una solicitud
     public SolicitudDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
@@ -118,7 +115,7 @@ public class SolicitudService {
                 ticketDTO.setUsername(solicitud.getUsername());
                 ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
                 ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-                ticketDTO.setEstado("Generado");
+                ticketDTO.setEstado(SolicitudEstado.COTIZACION_ACEPTADA.name());
                 ticketDTO.setAprobado(true);
 
                 // Llamar al servicio de tickets para crear el ticket

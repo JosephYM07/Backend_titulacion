@@ -1,8 +1,8 @@
 package com.tesis.tigmotors.Config;
 
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
-import com.tesis.tigmotors.enums.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,12 +71,12 @@ public class AdminUserInitializer {
                             .permiso(true)
                             .build();
                     userRepository.save(serviceStaff);
-                    log.info("Usuario administrador creado con éxito");
+                    log.info("Usuario Personal Centro de Servicios creado con éxito");
                 } else {
-                    log.info("El usuario administrador ya existe");
+                    log.info("Usuario Personal Centro de Servicios ya existe");
                 }
             } catch (Exception e) {
-                log.error("Error al crear el usuario administrador");
+                log.error("Usuario Personal Centro de Servicios creado con éxito");
                 e.printStackTrace();
             }
         };

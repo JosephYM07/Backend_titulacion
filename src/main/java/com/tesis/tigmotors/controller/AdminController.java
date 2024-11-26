@@ -1,46 +1,39 @@
 package com.tesis.tigmotors.controller;
 
 
-import com.tesis.tigmotors.dto.Request.AdminProfileUpdateRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Request.UserUpdateRequestDTO;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
-import com.tesis.tigmotors.service.AdminProfileService;
-import com.tesis.tigmotors.service.SolicitudService;
-import com.tesis.tigmotors.service.TicketService;
-import com.tesis.tigmotors.service.UserService;
+import com.tesis.tigmotors.dto.Response.UserResponseUser;
+import com.tesis.tigmotors.service.*;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController {
     private static final Logger logger = LoggerFactory.getLogger(SolicitudService.class);
 
+    private final AdminVerificationUserService userService;
+    private final AdminProfileService adminProfileService;
+    private final TicketService ticketService;
+    private final SolicitudService solicitudService;
+    private final UserServiceUpdate UserServiceUpdate;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private AdminProfileService adminProfileService;
-
-    @Autowired
-    private TicketService ticketService;
-
-    @Autowired
-    private SolicitudService solicitudService;
 
     @GetMapping("/users/status")
     public ResponseEntity<Object> getUsersStatus() {
@@ -66,19 +59,23 @@ public class AdminController {
         return ResponseEntity.ok(adminProfileService.getProfile(username));
     }
 
-    @PostMapping("/update")
-    public ResponseEntity<AdminProfileResponse> updateProfile(Authentication authentication, @RequestBody @Valid AdminProfileUpdateRequest request) {
-        String username = authentication.getName();
-        log.info("Actualizando perfil del administrador: {}", username);
-        return ResponseEntity.ok(adminProfileService.updateProfile(username, request));
+    //Modiciar informacion de usuario (solo para administradores)
+    @PutMapping("/update")
+    public ResponseEntity<UserResponseUser> updateUser(@Valid @RequestBody UserUpdateRequestDTO updateRequest) {
+        UserResponseUser updatedUser = UserServiceUpdate.updateUser(updateRequest);
+        return ResponseEntity.ok(updatedUser);
     }
 
-    @DeleteMapping("/delete")
-    public ResponseEntity<Map<String, String>> deleteProfile(Authentication authentication) {
-        String username = authentication.getName();
-        log.info("Eliminando perfil del administrador: {}", username);
-        adminProfileService.deleteProfile(username);
-        return ResponseEntity.ok(Map.of("message", "Perfil eliminado con éxito"));
+    // Endpoint para eliminar un usuario (solo para administradores)
+    @PostMapping("/users/delete")
+    public ResponseEntity<Object> deleteUser(@RequestBody Map<String, Integer> requestBody) {
+        Integer userId = requestBody.get("userId");
+
+        if (userId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "El campo 'userId' es obligatorio"));
+        }
+
+        return userService.deleteUserById(userId);
     }
 
     //Solicitudes

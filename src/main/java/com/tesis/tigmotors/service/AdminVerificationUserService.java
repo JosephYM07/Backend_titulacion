@@ -1,9 +1,14 @@
 package com.tesis.tigmotors.service;
 
 
+import com.tesis.tigmotors.dto.Request.PendingUserDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.models.User;
+import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
+import com.tesis.tigmotors.repository.RefreshTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,15 +17,20 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
-public class UserService {
+@RequiredArgsConstructor
+public class AdminVerificationUserService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private EmailService emailService;
+
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    private RefreshTokenRepository refreshTokenRepository;
 
     public ResponseEntity<Object> getUsersStatus() {
         try {
@@ -45,28 +55,48 @@ public class UserService {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
 
-            return ResponseEntity.ok(pendingUsers);
+            // Convertir usuarios a PendingUserDTO
+            List<PendingUserDTO> pendingUsersDTOs = pendingUsers.stream()
+                    .map(user -> new PendingUserDTO(
+                            user.getId(),
+                            user.getUsername(),
+                            user.getBusiness_name(), // Ajustar según el nombre de tu columna
+                            user.getPhone_number(),
+                            user.getRole(),
+                            user.getEmail(),
+                            user.isPermiso()
+                    ))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(pendingUsersDTOs);
         } catch (Exception ex) {
+            log.error("Error al obtener usuarios pendientes", ex);
             ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al obtener los usuarios pendientes");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
+    // Método para aprobar un usuario
     public ResponseEntity<Object> approveUser(Integer userId) {
         try {
+            // Buscar el usuario por ID
             Optional<User> userOptional = userRepository.findById(userId);
 
             if (userOptional.isEmpty()) {
-                ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Usuario no encontrado");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+                // Usuario no encontrado
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Usuario no encontrado"));
             }
 
             User user = userOptional.get();
+
+            // Validar si ya está aprobado
             if (user.isPermiso()) {
-                ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "El usuario ya ha sido aprobado previamente");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "El usuario ya ha sido aprobado previamente"));
             }
 
+            // Aprobar al usuario
             user.setPermiso(true);
             userRepository.save(user);
 
@@ -78,16 +108,48 @@ public class UserService {
             try {
                 emailService.sendEmail(to, subject, content);
             } catch (RuntimeException e) {
-                // Registrar el error, pero continuar con la aprobación
                 System.err.println("Error al enviar correo de aprobación: " + e.getMessage());
             }
 
             return ResponseEntity.ok(Map.of("message", "Usuario aprobado con éxito"));
+
         } catch (Exception ex) {
-            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al aprobar el usuario");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al aprobar el usuario"));
         }
     }
+
+    // Método para eliminar un usuario por ID
+    public ResponseEntity<Object> deleteUserById(Integer userId) {
+        try {
+            // Buscar el usuario por ID
+            Optional<User> userOptional = userRepository.findById(userId);
+
+            if (userOptional.isEmpty()) {
+                // Usuario no encontrado
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Usuario no encontrado"));
+            }
+
+            User user = userOptional.get();
+
+            // Eliminar registros dependientes
+            passwordResetTokenRepository.deleteByUserId(userId);
+            refreshTokenRepository.deleteByUserId(userId);
+
+            // Eliminar usuario
+            userRepository.delete(user);
+
+            return ResponseEntity.ok(Map.of("message", "Usuario eliminado con éxito"));
+
+        } catch (Exception ex) {
+            // Manejo de errores generales
+            log.error("Error al eliminar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al eliminar el usuario"));
+        }
+    }
+    //
 
 
     private String buildAccountApprovalEmailContent(String username) {
