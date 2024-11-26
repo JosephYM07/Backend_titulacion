@@ -5,6 +5,7 @@ import com.tesis.tigmotors.converters.SolicitudConverter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.Solicitud;
+import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.repository.SolicitudRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +39,16 @@ public class SolicitudService {
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
             solicitud.setUsername(username);
-            solicitud.setEstado("Pendiente"); // Estado inicial
+            solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
             return solicitudConverter.entityToDto(solicitudGuardada);
+
         } catch (Exception e) {
-            logger.error("Error creando la solicitud: ", e);
-            throw new RuntimeException("Error creando la solicitud");
+            logger.error("Error creando la solicitud: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creando la solicitud", e);
         }
     }
+
 
     // Aceptar una solicitud (Administrador)
     public SolicitudDTO aceptarSolicitud(String solicitudId) {
@@ -53,26 +56,28 @@ public class SolicitudService {
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
 
-            if (solicitud.getEstado().equals("Pendiente")) {
-                solicitud.setEstado("Aceptado");
+            if (solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
+                solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
                 Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
                 return solicitudConverter.entityToDto(solicitudAceptada);
             } else {
                 throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
             }
         } catch (Exception e) {
-            logger.error("Error aceptando la solicitud: ", e);
-            throw new RuntimeException("Error aceptando la solicitud");
+            logger.error("Error aceptando la solicitud: {}", e.getMessage(), e);
+            throw new RuntimeException("Error aceptando la solicitud", e);
         }
     }
+
 
     // Añadir cotización y descripción del trabajo (Administrador)
     public SolicitudDTO añadirCotizacion(String solicitudId, String cotizacion, String descripcionTrabajo) {
         try {
+            // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
 
-            if (solicitud.getEstado().equals("Aceptado")) {
+            if (solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
                 solicitud.setCotizacion(cotizacion);
                 solicitud.setDescripcionTrabajo(descripcionTrabajo);
                 Solicitud solicitudConCotizacion = solicitudRepository.save(solicitud);
@@ -81,26 +86,29 @@ public class SolicitudService {
                 throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
             }
         } catch (Exception e) {
-            logger.error("Error añadiendo la cotización: ", e);
-            throw new RuntimeException("Error añadiendo la cotización");
+            logger.error("Error añadiendo la cotización: {}", e.getMessage(), e);
+            throw new RuntimeException("Error añadiendo la cotización", e);
         }
     }
 
-    // Usuario acepta la cotización y se genera el ticket automáticamente
 
+    // Usuario acepta la cotización y se genera el ticket automáticamente
     public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
         try {
+            // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
 
+            // Validar que el usuario tiene permisos para aceptar la cotización
             if (!solicitud.getUsername().equals(username)) {
                 throw new AccessDeniedException("No tiene permisos para aceptar esta cotización.");
             }
 
-            if (solicitud.getEstado().equals("Aceptado")) {
-                // Cambiar el estado de la solicitud para reflejar que la cotización fue aceptada
+            // Verificar que el estado actual sea "ACEPTADO"
+            if (solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
+                // Cambiar el estado de la solicitud y reflejar que la cotización fue aceptada
                 solicitud.setCotizacionAceptada(true);
-                solicitud.setEstado("Cotización Aceptada");
+                solicitud.setEstado(SolicitudEstado.COTIZACION_ACEPTADA.name());
                 solicitudRepository.save(solicitud);
 
                 // Generar ticket automáticamente al aceptar la cotización
@@ -113,16 +121,17 @@ public class SolicitudService {
                 ticketDTO.setEstado("Generado");
                 ticketDTO.setAprobado(true);
 
-                // Llamar al servicio para crear el ticket pasando los valores correctos
+                // Llamar al servicio de tickets para crear el ticket
                 return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
             } else {
                 throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
             }
         } catch (Exception e) {
-            logger.error("Error aceptando la cotización y generando el ticket: ", e);
-            throw new RuntimeException("Error aceptando la cotización y generando el ticket");
+            logger.error("Error aceptando la cotización y generando el ticket: {}", e.getMessage(), e);
+            throw new RuntimeException("Error aceptando la cotización y generando el ticket", e);
         }
     }
+
 
     // Usuario rechaza la cotización
     public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {

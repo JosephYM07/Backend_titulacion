@@ -1,4 +1,4 @@
-package com.tesis.tigmotors.roles;
+package com.tesis.tigmotors.enums;
 
 public enum Role {
     ADMIN,

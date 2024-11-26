@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.models;
 
-import com.tesis.tigmotors.roles.Role;
+import com.tesis.tigmotors.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

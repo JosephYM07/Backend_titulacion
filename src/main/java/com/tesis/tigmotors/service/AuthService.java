@@ -4,10 +4,9 @@ import com.tesis.tigmotors.Exceptions.AuthExceptions;
 import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.dto.Request.LoginRequest;
 import com.tesis.tigmotors.dto.Request.RegisterRequest;
-import com.tesis.tigmotors.models.RefreshToken;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
-import com.tesis.tigmotors.roles.Role;
+import com.tesis.tigmotors.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +17,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

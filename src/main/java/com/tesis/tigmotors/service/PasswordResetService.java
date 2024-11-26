@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.tesis.tigmotors.roles.Role;
+import com.tesis.tigmotors.enums.Role;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

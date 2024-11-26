@@ -2,7 +2,7 @@ package com.tesis.tigmotors.Config;
 
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
-import com.tesis.tigmotors.roles.Role;
+import com.tesis.tigmotors.enums.Role;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
