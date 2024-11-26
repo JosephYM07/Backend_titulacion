@@ -5,9 +5,10 @@ public enum TicketEstado {
     APROBADO,
     RECHAZADO;
 
+    // Puedes agregar métodos de validación como el isValidEstado
     public static boolean isValidEstado(String estado) {
-        for (TicketEstado te : TicketEstado.values()) {
-            if (te.name().equalsIgnoreCase(estado)) {
+        for (TicketEstado ticketEstado : TicketEstado.values()) {
+            if (ticketEstado.name().equalsIgnoreCase(estado)) {
                 return true;
             }
         }

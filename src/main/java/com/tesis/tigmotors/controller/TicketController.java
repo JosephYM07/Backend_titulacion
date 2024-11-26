@@ -2,6 +2,7 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.service.TicketService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,10 +15,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
+@RequiredArgsConstructor
 public class TicketController {
 
-    @Autowired
-    private TicketService ticketService;
+    private final TicketService ticketService;
 
   /*  @PostMapping("/crear")
     public ResponseEntity<Map<String, Object>> crearTicket(@Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {

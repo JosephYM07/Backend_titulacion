@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminVerificationUserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private EmailService emailService;
+    private final EmailService emailService;
 
-    private PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    private RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public ResponseEntity<Object> getUsersStatus() {
         try {

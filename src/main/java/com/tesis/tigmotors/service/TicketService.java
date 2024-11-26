@@ -38,7 +38,6 @@ public class TicketService {
             ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
             ticket.setSolicitudId(ticketDTO.getSolicitudId());
             ticket.setUsername(username);
-            ticket.setDescripcion(ticketDTO.getDescripcion());
             ticket.setEstado(ticketDTO.getEstado().toUpperCase());
             ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial());
             ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo());
