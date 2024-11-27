@@ -8,7 +8,6 @@ public enum SolicitudEstado {
     RECHAZO_COTIZACION_USUARIO; // Cuando el usuario rechaza la cotización
 
     /**
-     * Verifica si un estado dado es válido en este enum.
      *
      * @param estado Estado a validar.
      * @return true si el estado es válido, de lo contrario false.

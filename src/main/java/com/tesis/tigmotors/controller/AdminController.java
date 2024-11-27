@@ -52,7 +52,6 @@ public class AdminController {
         return userService.approveUser(userId);
     }
 
-    //Crud
 
     @GetMapping("/me")
     public ResponseEntity<AdminProfileResponse> getProfile(Authentication authentication) {
@@ -62,7 +61,7 @@ public class AdminController {
     }
 
     //Modiciar informacion de usuario (solo para administradores)
-    @PutMapping("/update")
+    @PutMapping("/actualizar-datos-user")
     public ResponseEntity<UserResponseUser> updateUser(@Valid @RequestBody UserUpdateRequestDTO updateRequest) {
         UserResponseUser updatedUser = UserServiceUpdate.updateUser(updateRequest);
         return ResponseEntity.ok(updatedUser);

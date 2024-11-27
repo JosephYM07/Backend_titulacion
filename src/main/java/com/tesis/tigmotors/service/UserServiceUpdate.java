@@ -19,17 +19,17 @@ public class UserServiceUpdate {
         User user = userRepository.findById(updateRequest.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Actualizar solo los campos presentes en la solicitud
-        if (updateRequest.getUsername() != null) {
+        // Actualizar solo los campos presentes y no vacíos
+        if (updateRequest.getUsername() != null && !updateRequest.getUsername().isBlank()) {
             user.setUsername(updateRequest.getUsername());
         }
-        if (updateRequest.getBusiness_name() != null) {
+        if (updateRequest.getBusiness_name() != null && !updateRequest.getBusiness_name().isBlank()) {
             user.setBusiness_name(updateRequest.getBusiness_name());
         }
-        if (updateRequest.getEmail() != null) {
+        if (updateRequest.getEmail() != null && !updateRequest.getEmail().isBlank()) {
             user.setEmail(updateRequest.getEmail());
         }
-        if (updateRequest.getPhone_number() != null) {
+        if (updateRequest.getPhone_number() != null && !updateRequest.getPhone_number().isBlank()) {
             user.setPhone_number(updateRequest.getPhone_number());
         }
 

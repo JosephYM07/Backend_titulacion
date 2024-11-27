@@ -3,6 +3,7 @@ package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.dto.Request.PendingUserDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.RefreshTokenRepository;
@@ -34,14 +35,21 @@ public class AdminVerificationUserService {
 
     public ResponseEntity<Object> getUsersStatus() {
         try {
-            long pendingUsersCount = userRepository.countByPermiso(false);
-            long approvedUsersCount = userRepository.countByPermiso(true);
+            long pendingUsersCount = userRepository.countByPermisoAndRole(false, Role.USER);
+            long approvedUsersCount = userRepository.countByPermisoAndRole(true, Role.USER);
 
-            Map<String, Long> response = Map.of("pending", pendingUsersCount, "approved", approvedUsersCount);
+            Map<String, Long> response = Map.of(
+                    "Pendiente", pendingUsersCount,
+                    "Por Aprobar", approvedUsersCount
+            );
 
             return ResponseEntity.ok(response);
         } catch (Exception ex) {
-            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al obtener el estado de los usuarios");
+            log.error("Error al obtener el estado de los usuarios: {}", ex.getMessage(), ex);
+            ErrorResponse errorResponse = new ErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Error al obtener el estado de los usuarios"
+            );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -55,12 +63,11 @@ public class AdminVerificationUserService {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
             }
 
-            // Convertir usuarios a PendingUserDTO
             List<PendingUserDTO> pendingUsersDTOs = pendingUsers.stream()
                     .map(user -> new PendingUserDTO(
                             user.getId(),
                             user.getUsername(),
-                            user.getBusiness_name(), // Ajustar según el nombre de tu columna
+                            user.getBusiness_name(),
                             user.getPhone_number(),
                             user.getRole(),
                             user.getEmail(),
@@ -132,24 +139,22 @@ public class AdminVerificationUserService {
             }
 
             User user = userOptional.get();
-
-            // Eliminar registros dependientes
+            if (!user.getRole().equals(Role.USER)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), "No tienes permiso para eliminar este usuario"));
+            }
             passwordResetTokenRepository.deleteByUserId(userId);
             refreshTokenRepository.deleteByUserId(userId);
-
-            // Eliminar usuario
             userRepository.delete(user);
 
             return ResponseEntity.ok(Map.of("message", "Usuario eliminado con éxito"));
 
         } catch (Exception ex) {
-            // Manejo de errores generales
             log.error("Error al eliminar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al eliminar el usuario"));
         }
     }
-    //
 
 
     private String buildAccountApprovalEmailContent(String username) {

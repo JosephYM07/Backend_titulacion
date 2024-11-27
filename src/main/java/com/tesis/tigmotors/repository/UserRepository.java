@@ -2,6 +2,7 @@ package com.tesis.tigmotors.repository;
 
 import java.util.Optional;
 
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -20,7 +21,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByEmail(String email);
 
-    long countByPermiso(boolean permiso);
+    long countByPermisoAndRole(boolean permiso, Role role);
 
     List<User> findByPermiso(boolean permiso);
 

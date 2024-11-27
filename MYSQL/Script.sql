@@ -10,7 +10,6 @@ CREATE TABLE user
     role          ENUM ('ADMIN', 'PERSONAL_CENTRO_DE_SERVICIOS', 'USER') NULL,
     permiso       BIT                                                    NOT NULL
 );
-
 -- Crear tabla 'password_reset_tokens' con ON DELETE CASCADE
 CREATE TABLE password_reset_tokens
 (
