@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.converters;
 
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Response.Solicitud;
+import com.tesis.tigmotors.models.Solicitud;
 import org.springframework.stereotype.Component;
 
 @Component

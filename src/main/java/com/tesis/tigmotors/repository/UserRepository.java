@@ -23,6 +23,12 @@ import java.util.List;
  * Esta clase nos sirve para realizar operaciones de lectura y escritura en la base de datos.
  */
 public interface UserRepository extends JpaRepository<User, Integer> {
+    // Guardar el usuario
+    @Modifying
+    @Transactional
+    @Query(value = "INSERT INTO user_sequence (user_id, created_at) VALUES (:userId, NOW())", nativeQuery = true)
+    void guardarSecuencia(@Param("userId") Integer userId);
+
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);

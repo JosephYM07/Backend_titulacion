@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.converters;
 
 import com.tesis.tigmotors.dto.Request.TicketDTO;
-import com.tesis.tigmotors.dto.Response.Ticket;
+import com.tesis.tigmotors.models.Ticket;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.repository;
 
-import com.tesis.tigmotors.dto.Response.Ticket;
+import com.tesis.tigmotors.models.Ticket;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

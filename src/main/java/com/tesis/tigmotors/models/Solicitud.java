@@ -1,4 +1,4 @@
-package com.tesis.tigmotors.dto.Response;
+package com.tesis.tigmotors.models;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;

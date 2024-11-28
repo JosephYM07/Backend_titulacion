@@ -33,3 +33,26 @@ CREATE TABLE refresh_tokens
         REFERENCES user (id)
         ON DELETE CASCADE
 );
+
+CREATE TABLE user_sequence (
+                               sequence_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               user_id     INT NOT NULL,
+                               created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               CONSTRAINT FK_user_sequence_user FOREIGN KEY (user_id)
+                                   REFERENCES user (id)
+                                   ON DELETE CASCADE
+) AUTO_INCREMENT=3;
+
+DELIMITER //
+
+CREATE TRIGGER before_insert_user_sequence
+    BEFORE INSERT ON user_sequence
+    FOR EACH ROW
+BEGIN
+    IF NEW.created_at IS NULL THEN
+        SET NEW.created_at = NOW();
+    END IF;
+END;
+
+//
+DELIMITER ;

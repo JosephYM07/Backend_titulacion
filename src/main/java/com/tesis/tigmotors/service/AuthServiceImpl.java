@@ -28,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtServiceImpl jwtServiceImpl;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+
     public ResponseEntity<AuthResponse> login(LoginRequest request) {
         try {
             // Autenticar al usuario con nombre de usuario y contraseña
@@ -90,8 +91,15 @@ public class AuthServiceImpl implements AuthService {
                     .permiso(false)
                     .build();
 
-            userRepository.save(user);
-            String accessToken = jwtServiceImpl.generateAccessToken(user);
+            /*userRepository.save(user);*/
+            // Guardar el usuario
+            User savedUser = userRepository.save(user);
+            log.info("Usuario guardado con ID: {}", savedUser.getId());
+
+            // Crear la secuencia asociada al usuario
+            userRepository.guardarSecuencia(savedUser.getId());
+            log.info("Secuencia creada para el usuario con ID: {}", savedUser.getId());
+
             return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
                     .message("Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión")
                     .build());
