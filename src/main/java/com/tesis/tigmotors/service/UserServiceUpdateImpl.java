@@ -5,12 +5,13 @@ import com.tesis.tigmotors.dto.Request.UserUpdateRequestDTO;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
+import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceUpdate {
+public class UserServiceUpdateImpl implements UserServiceUpdate {
 
     private final UserRepository userRepository;
 

@@ -9,6 +9,7 @@ import com.tesis.tigmotors.dto.Response.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.repository.SolicitudRepository;
+import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -22,14 +23,14 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SolicitudService {
+public class SolicitudServiceImpl implements SolicitudService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SolicitudService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SolicitudServiceImpl.class);
 
     private final SolicitudRepository solicitudRepository;
     private final SolicitudConverter solicitudConverter;
     private final SequenceGeneratorService sequenceGeneratorService;
-    private final TicketService ticketService;
+    private final TicketServiceImpl ticketServiceImpl;
 
     // Crear una solicitud
     public SolicitudDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
@@ -121,7 +122,7 @@ public class SolicitudService {
             ticketDTO.setAprobado(true); // Aquí el ticket ya se considera aprobado
 
             // Llamar al servicio de tickets para crear el ticket
-            return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
+            return ticketServiceImpl.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
         } catch (SolicitudNotFoundException e) {
             logger.error("Solicitud no encontrada, ID: {}", solicitudId, e);
             throw e;

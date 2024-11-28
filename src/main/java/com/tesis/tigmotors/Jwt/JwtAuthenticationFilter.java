@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.Jwt;
 
-import com.tesis.tigmotors.service.JwtService;
+import com.tesis.tigmotors.service.JwtServiceImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,7 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtServiceImpl;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-                String usernameFromToken = jwtService.getUsernameFromToken(token);
+                String usernameFromToken = jwtServiceImpl.getUsernameFromToken(token);
                 logger.info("Extrayendo nombre de usuario del token: {}", usernameFromToken);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(usernameFromToken);
@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Validación para asegurarnos de que el token pertenece al usuario autenticado
                 Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
-                if (jwtService.isTokenValid(token, userDetails) && currentAuth == null) {
+                if (jwtServiceImpl.isTokenValid(token, userDetails) && currentAuth == null) {
                     logger.info("Token válido para el usuario: {}, asignando contexto de seguridad.", usernameFromToken);
 
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

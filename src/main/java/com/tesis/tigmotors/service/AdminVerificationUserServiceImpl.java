@@ -8,9 +8,9 @@ import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.RefreshTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
+import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,11 +23,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AdminVerificationUserService {
+public class AdminVerificationUserServiceImpl implements AdminVerificationUserService {
 
     private final UserRepository userRepository;
 
-    private final EmailService emailService;
+    private final EmailServiceImpl emailServiceImpl;
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
@@ -113,7 +113,7 @@ public class AdminVerificationUserService {
             String content = buildAccountApprovalEmailContent(user.getUsername());
 
             try {
-                emailService.sendEmail(to, subject, content);
+                emailServiceImpl.sendEmail(to, subject, content);
             } catch (RuntimeException e) {
                 System.err.println("Error al enviar correo de aprobación: " + e.getMessage());
             }

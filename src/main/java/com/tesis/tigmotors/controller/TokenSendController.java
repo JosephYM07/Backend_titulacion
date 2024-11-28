@@ -1,7 +1,7 @@
 // TokenSendController.java
 package com.tesis.tigmotors.controller;
 
-import com.tesis.tigmotors.service.PasswordResetService;
+import com.tesis.tigmotors.service.PasswordResetServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
 @RequiredArgsConstructor
 public class TokenSendController {
     private static final Logger log = LoggerFactory.getLogger(TokenSendController.class);
-    private final PasswordResetService passwordResetService;
+    private final PasswordResetServiceImpl passwordResetServiceImpl;
 
     @PostMapping("/send-token")
     public String sendResetToken(@RequestParam String email) {
         log.info("Solicitud de envío de código de recuperación para el correo: {}", email);
         try {
-            String response = passwordResetService.sendResetToken(email);
+            String response = passwordResetServiceImpl.sendResetToken(email);
             log.info("Código de recuperación enviado exitosamente a: {}", email);
             return response;
         } catch (Exception e) {

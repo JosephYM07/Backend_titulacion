@@ -1,11 +1,10 @@
 package com.tesis.tigmotors.controller;
 
-import com.tesis.tigmotors.Exceptions.SolicitudNotFoundException;
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
-import com.tesis.tigmotors.service.SolicitudService;
-import com.tesis.tigmotors.service.TicketService;
+import com.tesis.tigmotors.service.SolicitudServiceImpl;
+import com.tesis.tigmotors.service.TicketServiceImpl;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api-user")
@@ -25,10 +22,10 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
-    private TicketService ticketService;
+    private TicketServiceImpl ticketServiceImpl;
 
     @Autowired
-    private SolicitudService solicitudService;
+    private SolicitudServiceImpl solicitudServiceImpl;
 
     //Endpoints de prueba
     @GetMapping("/hello")
@@ -48,7 +45,7 @@ public class UserController {
             String username = authentication.getName();
             logger.info("Usuario autenticado: {}", username);
 
-            SolicitudDTO nuevaSolicitud = solicitudService.crearSolicitud(solicitudDTO, username);
+            SolicitudDTO nuevaSolicitud = solicitudServiceImpl.crearSolicitud(solicitudDTO, username);
             logger.info("Solicitud creada exitosamente: {}", nuevaSolicitud.getIdSolicitud());
 
             return ResponseEntity.ok(nuevaSolicitud);
@@ -62,7 +59,7 @@ public class UserController {
     @PutMapping("/aceptar-cotizacion/{idSolicitud}")
     public ResponseEntity<TicketDTO> aceptarCotizacion(@PathVariable String idSolicitud, Authentication authentication) {
         String username = authentication.getName();
-        TicketDTO ticketGenerado = solicitudService.aceptarCotizacionGenerarTicket(idSolicitud, username);
+        TicketDTO ticketGenerado = solicitudServiceImpl.aceptarCotizacionGenerarTicket(idSolicitud, username);
         return ResponseEntity.ok(ticketGenerado);
     }
 
@@ -71,7 +68,7 @@ public class UserController {
     public ResponseEntity<?> obtenerHistorialSolicitudes(Authentication authentication) {
         try {
             String username = authentication.getName();
-            List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialSolicitudesPorUsuario(username);
+            List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerHistorialSolicitudesPorUsuario(username);
             return ResponseEntity.ok(solicitudes);
         } catch (Exception e) {
             logger.error("Error al obtener el historial de solicitudes: ", e);
@@ -84,7 +81,7 @@ public class UserController {
     public ResponseEntity<?> obtenerSolicitudesPorEstado(@PathVariable String estado, Authentication authentication) {
         try {
             String username = authentication.getName();
-            List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorUsuarioYEstado(username, estado);
+            List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorUsuarioYEstado(username, estado);
             return ResponseEntity.ok(solicitudes);
         } catch (Exception e) {
             logger.error("Error al obtener las solicitudes por estado: ", e);
@@ -97,7 +94,7 @@ public class UserController {
     public ResponseEntity<?> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
         try {
             String username = authentication.getName();
-            List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorPrioridadYUsuario(prioridad, username);
+            List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorPrioridadYUsuario(prioridad, username);
             return ResponseEntity.ok(solicitudes);
         } catch (Exception e) {
             logger.error("Error al obtener las solicitudes por prioridad: ", e);
@@ -110,7 +107,7 @@ public class UserController {
     public ResponseEntity<?> modificarSolicitud(@PathVariable String solicitudId, @RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
         try {
             String username = authentication.getName();
-            SolicitudDTO solicitudModificada = solicitudService.modificarSolicitud(solicitudId, solicitudDTO, username);
+            SolicitudDTO solicitudModificada = solicitudServiceImpl.modificarSolicitud(solicitudId, solicitudDTO, username);
             return ResponseEntity.ok(solicitudModificada);
         } catch (AccessDeniedException e) {
             logger.error("Acceso denegado al modificar la solicitud: ", e);
@@ -126,7 +123,7 @@ public class UserController {
     public ResponseEntity<?> eliminarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
         try {
             String username = authentication.getName();
-            solicitudService.eliminarSolicitud(solicitudId, username);
+            solicitudServiceImpl.eliminarSolicitud(solicitudId, username);
             logger.info("Solicitud eliminada exitosamente: {}", solicitudId);
             return ResponseEntity.noContent().build();
         } catch (AccessDeniedException e) {
@@ -160,7 +157,7 @@ public class UserController {
     public ResponseEntity<?> obtenerHistorialTickets(Authentication authentication) {
         try {
             String username = authentication.getName();
-            List<TicketDTO> historialTickets = ticketService.obtenerHistorialTickets(username);
+            List<TicketDTO> historialTickets = ticketServiceImpl.obtenerHistorialTickets(username);
             return ResponseEntity.ok(historialTickets);
         } catch (Exception e) {
             logger.error("Error al obtener el historial de tickets: ", e);
@@ -172,7 +169,7 @@ public class UserController {
     public ResponseEntity<?> modificarTicket(@PathVariable String ticketId, @Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
         try {
             String username = authentication.getName();
-            TicketDTO ticketModificado = ticketService.modificarTicket(ticketId, ticketDTO, username);
+            TicketDTO ticketModificado = ticketServiceImpl.modificarTicket(ticketId, ticketDTO, username);
             return ResponseEntity.ok(ticketModificado);
         } catch (AccessDeniedException e) {
             logger.error("Acceso denegado al modificar el ticket: ", e);
@@ -187,7 +184,7 @@ public class UserController {
     public ResponseEntity<?> eliminarTicket(@PathVariable String ticketId, Authentication authentication) {
         try {
             String username = authentication.getName();
-            ticketService.eliminarTicket(ticketId, username);
+            ticketServiceImpl.eliminarTicket(ticketId, username);
             logger.info("Ticket eliminado exitosamente: {}", ticketId);
             return ResponseEntity.noContent().build();
         } catch (AccessDeniedException e) {

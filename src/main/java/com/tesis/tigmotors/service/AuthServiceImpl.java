@@ -7,6 +7,7 @@ import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.enums.Role;
+import com.tesis.tigmotors.service.interfaces.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +21,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthServiceImpl implements AuthService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final UserRepository userRepository;
-    private final JwtService jwtService;
+    private final JwtServiceImpl jwtServiceImpl;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     public ResponseEntity<AuthResponse> login(LoginRequest request) {
@@ -48,7 +49,7 @@ public class AuthService {
             }
 
             // Generar el token JWT para el usuario autenticado
-            String accessToken = jwtService.generateAccessToken(user);
+            String accessToken = jwtServiceImpl.generateAccessToken(user);
             return ResponseEntity.ok(AuthResponse.builder()
                     .status("success")
                     .message("Autenticación exitosa")
@@ -90,7 +91,7 @@ public class AuthService {
                     .build();
 
             userRepository.save(user);
-            String accessToken = jwtService.generateAccessToken(user);
+            String accessToken = jwtServiceImpl.generateAccessToken(user);
             return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
                     .message("Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión")
                     .build());

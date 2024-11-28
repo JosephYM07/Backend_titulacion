@@ -3,7 +3,7 @@ package com.tesis.tigmotors.controller;
 import com.tesis.tigmotors.dto.Request.LoginRequest;
 import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.dto.Response.AuthResponse;
-import com.tesis.tigmotors.service.AuthService;
+import com.tesis.tigmotors.service.AuthServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthServiceImpl authServiceImpl;
 
 
     /*@PostMapping("/login-users")
@@ -50,9 +50,8 @@ public class AuthController {
             throw new IllegalArgumentException("Se deben proporcionar tanto el nombre de usuario como la contraseña.");
         }
         log.info("Solicitud de inicio de sesión recibida para el usuario: " + request.getUsername());
-        return authService.login(request);
+        return authServiceImpl.login(request);
     }
-
 
     //Endpoint para registrar solo usuarios
     @PostMapping("/register-user")
@@ -68,14 +67,7 @@ public class AuthController {
             return ResponseEntity.badRequest().build();
         }
         log.info("Solicitud de registro recibida para el usuario: " + request.getUsername());
-        return authService.register(request);
+        return authServiceImpl.register(request);
     }
 
-/*    @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@RequestBody Map<String, String> requestBody) {
-        String refreshToken = requestBody.get("refreshToken");
-        log.info("Solicitud recibida para actualizar el token: " + refreshToken);
-        return authService.refreshToken(refreshToken);
-    }
-    */
 }

@@ -6,6 +6,7 @@ import com.tesis.tigmotors.models.PasswordResetToken;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
+import com.tesis.tigmotors.service.interfaces.PasswordResetService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,24 +20,24 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
-public class PasswordResetService {
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
+public class PasswordResetServiceImpl implements PasswordResetService {
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetServiceImpl.class);
 
     private static final long TOKEN_EXPIRATION_MINUTES = 15;
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final EmailServiceImpl emailServiceImpl;
 
     @Autowired
-    public PasswordResetService(UserRepository userRepository,
-                                PasswordResetTokenRepository passwordResetTokenRepository,
-                                PasswordEncoder passwordEncoder,
-                                EmailService emailService) {
+    public PasswordResetServiceImpl(UserRepository userRepository,
+                                    PasswordResetTokenRepository passwordResetTokenRepository,
+                                    PasswordEncoder passwordEncoder,
+                                    EmailServiceImpl emailServiceImpl) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.passwordEncoder = passwordEncoder;
-        this.emailService = emailService;
+        this.emailServiceImpl = emailServiceImpl;
     }
 
     @Transactional
@@ -67,7 +68,7 @@ public class PasswordResetService {
 
             String subject = "Recuperación de contraseña - TigMotors";
             String content = buildResetPasswordEmailContent(token);
-            emailService.sendEmail(email, subject, content);
+            emailServiceImpl.sendEmail(email, subject, content);
 
             log.info("Código de recuperación enviado exitosamente al correo: {}", email);
             return "Código de recuperación enviado al correo";

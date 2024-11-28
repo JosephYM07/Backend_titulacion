@@ -4,6 +4,7 @@ import com.tesis.tigmotors.converters.UserConverter;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
+import com.tesis.tigmotors.service.interfaces.AdminProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AdminProfileService {
+public class AdminProfileServiceImpl implements AdminProfileService {
 
     private final UserRepository userRepository;
     private final UserConverter userConverter;
@@ -29,6 +30,5 @@ public class AdminProfileService {
             throw new RuntimeException("Error al buscar el perfil del usuario: " + username, e);
         }
     }
-
 
 }

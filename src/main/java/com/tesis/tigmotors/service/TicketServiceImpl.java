@@ -4,6 +4,7 @@ import com.tesis.tigmotors.converters.TicketConverter;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.repository.TicketRepository;
+import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -16,9 +17,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TicketService {
+public class TicketServiceImpl implements TicketService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TicketServiceImpl.class);
 
     private final TicketRepository ticketRepository;
 

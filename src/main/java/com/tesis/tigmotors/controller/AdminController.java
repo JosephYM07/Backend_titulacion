@@ -28,17 +28,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController {
-    private static final Logger logger = LoggerFactory.getLogger(SolicitudService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SolicitudServiceImpl.class);
 
-    private final AdminVerificationUserService userService;
-    private final AdminProfileService adminProfileService;
-    private final TicketService ticketService;
-    private final SolicitudService solicitudService;
-    private final UserServiceUpdate UserServiceUpdate;
+    private final AdminVerificationUserServiceImpl userService;
+    private final AdminProfileServiceImpl adminProfileServiceImpl;
+    private final TicketServiceImpl ticketServiceImpl;
+    private final SolicitudServiceImpl solicitudServiceImpl;
+    private final UserServiceUpdateImpl UserServiceUpdateImpl;
     private final BusquedaUsuarioService busquedaUsuarioService;
 
 
-
+    // Endpoint para obtener el estado de los usuarios (solo para administradores)
     @GetMapping("/users/status")
     public ResponseEntity<Object> getUsersStatus() {
         return userService.getUsersStatus();
@@ -61,8 +61,9 @@ public class AdminController {
     public ResponseEntity<AdminProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
         log.info("Obteniendo perfil para el administrador: {}", username);
-        return ResponseEntity.ok(adminProfileService.getProfile(username));
+        return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
+
     //Buscar usuario por id, username o email (solo para administradores)
     @PostMapping("/buscar-usuario")
     public ResponseEntity<?> buscarUsuario(@Valid @RequestBody UserRequestDTO request) {
@@ -73,7 +74,7 @@ public class AdminController {
     //Modiciar informacion de usuario (solo para administradores)
     @PutMapping("/actualizar-datos-user")
     public ResponseEntity<UserResponseUser> updateUser(@Valid @RequestBody UserUpdateRequestDTO updateRequest) {
-        UserResponseUser updatedUser = UserServiceUpdate.updateUser(updateRequest);
+        UserResponseUser updatedUser = UserServiceUpdateImpl.updateUser(updateRequest);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -95,7 +96,7 @@ public class AdminController {
     public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
         String username = authentication.getName();
         logger.info("Usuario {} aceptando la solicitud con ID: {}", username, solicitudId);
-        SolicitudDTO solicitudAceptada = solicitudService.aceptarSolicitud(solicitudId);
+        SolicitudDTO solicitudAceptada = solicitudServiceImpl.aceptarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudAceptada);
     }
 
@@ -110,49 +111,49 @@ public class AdminController {
         String cotizacion = requestBody.get("cotizacion");
         String descripcionTrabajo = requestBody.get("descripcionTrabajo");
 
-        SolicitudDTO solicitudConCotizacion = solicitudService.añadirCotizacion(solicitudId, cotizacion, descripcionTrabajo);
+        SolicitudDTO solicitudConCotizacion = solicitudServiceImpl.añadirCotizacion(solicitudId, cotizacion, descripcionTrabajo);
         return ResponseEntity.ok(solicitudConCotizacion);
     }
 
     // Endpoint para rechazar una solicitud (solo para administradores)
     @PutMapping("/rechazar/{solicitudId}")
     public ResponseEntity<SolicitudDTO> rechazarSolicitud(@PathVariable String solicitudId) {
-        SolicitudDTO solicitudRechazada = solicitudService.rechazarSolicitud(solicitudId);
+        SolicitudDTO solicitudRechazada = solicitudServiceImpl.rechazarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudRechazada);
     }
 
     // Endpoint para obtener todas las solicitudes filtradas por estado (solo para administradores)
     @GetMapping("/estado/{estado}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorEstado(@PathVariable String estado) {
-        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorEstado(estado);
+        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorEstado(estado);
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para obtener todas las solicitudes filtradas por prioridad (solo para administradores)
     @GetMapping("/prioridad/{prioridad}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad) {
-        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorPrioridad(prioridad);
+        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorPrioridad(prioridad);
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para obtener historial completo de todas las solicitudes (solo para administradores)
     @GetMapping("/historial")
     public ResponseEntity<List<SolicitudDTO>> obtenerHistorialCompletoSolicitudes() {
-        List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialCompletoSolicitudes();
+        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerHistorialCompletoSolicitudes();
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para eliminar cualquier solicitud (solo para administradores)
     @DeleteMapping("/eliminar/{solicitudId}")
     public ResponseEntity<Void> eliminarSolicitudAdmin(@PathVariable String solicitudId) {
-        solicitudService.eliminarSolicitudAdmin(solicitudId);
+        solicitudServiceImpl.eliminarSolicitudAdmin(solicitudId);
         return ResponseEntity.noContent().build();
     }
 
     //TIckets
     @PutMapping("/aprobar/{ticketId}")
     public ResponseEntity<Map<String, Object>> aprobarTicket(@PathVariable String ticketId) {
-        TicketDTO ticketAprobado = ticketService.aprobarTicket(ticketId);
+        TicketDTO ticketAprobado = ticketServiceImpl.aprobarTicket(ticketId);
         Map<String, Object> response = new HashMap<>();
         response.put("mensaje", "Ticket aprobado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketAprobado.getUsername());
         response.put("ticket", ticketAprobado);
@@ -161,7 +162,7 @@ public class AdminController {
 
     @PutMapping("/rechazar/{ticketId}")
     public ResponseEntity<Map<String, Object>> rechazarTicket(@PathVariable String ticketId) {
-        TicketDTO ticketRechazado = ticketService.rechazarTicket(ticketId);
+        TicketDTO ticketRechazado = ticketServiceImpl.rechazarTicket(ticketId);
         Map<String, Object> response = new HashMap<>();
         response.put("mensaje", "Ticket rechazado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketRechazado.getUsername());
         response.put("ticket", ticketRechazado);

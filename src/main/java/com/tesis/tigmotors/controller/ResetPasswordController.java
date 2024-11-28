@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.ResetPasswordRequest;
-import com.tesis.tigmotors.service.PasswordResetService;
+import com.tesis.tigmotors.service.PasswordResetServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ResetPasswordController {
     private static final Logger log = LoggerFactory.getLogger(ResetPasswordController.class);
-    private final PasswordResetService passwordResetService;
+    private final PasswordResetServiceImpl passwordResetServiceImpl;
 
     @PostMapping("/reset")
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
@@ -33,7 +33,7 @@ public class ResetPasswordController {
 
         Map<String, String> response = new HashMap<>();
         try {
-            String resultMessage = passwordResetService.resetPassword(resetPasswordRequest.getToken(), resetPasswordRequest.getNewPassword());
+            String resultMessage = passwordResetServiceImpl.resetPassword(resetPasswordRequest.getToken(), resetPasswordRequest.getNewPassword());
             response.put("message", resultMessage);
             log.info("Contraseña restablecida exitosamente para el token: {}", resetPasswordRequest.getToken());
             return ResponseEntity.ok(response);
