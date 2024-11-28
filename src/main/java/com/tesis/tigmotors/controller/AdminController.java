@@ -3,10 +3,12 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Request.UserRequestDTO;
 import com.tesis.tigmotors.dto.Request.UserUpdateRequestDTO;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 import com.tesis.tigmotors.service.*;
+import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,8 @@ public class AdminController {
     private final TicketService ticketService;
     private final SolicitudService solicitudService;
     private final UserServiceUpdate UserServiceUpdate;
+    private final BusquedaUsuarioService busquedaUsuarioService;
+
 
 
     @GetMapping("/users/status")
@@ -58,6 +62,12 @@ public class AdminController {
         String username = authentication.getName();
         log.info("Obteniendo perfil para el administrador: {}", username);
         return ResponseEntity.ok(adminProfileService.getProfile(username));
+    }
+    //Buscar usuario por id, username o email (solo para administradores)
+    @PostMapping("/buscar-usuario")
+    public ResponseEntity<?> buscarUsuario(@Valid @RequestBody UserRequestDTO request) {
+        // Llama al servicio para procesar la búsqueda
+        return busquedaUsuarioService.buscarUsuario(request);
     }
 
     //Modiciar informacion de usuario (solo para administradores)

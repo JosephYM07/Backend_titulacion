@@ -2,6 +2,7 @@ package com.tesis.tigmotors.converters;
 
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
 import com.tesis.tigmotors.dto.Request.AdminProfileUpdateRequest;
+import com.tesis.tigmotors.dto.Response.UserResponseDTO;
 import com.tesis.tigmotors.models.User;
 import org.springframework.stereotype.Component;
 
@@ -38,5 +39,15 @@ public class UserConverter {
         if (request.getPhoneNumber() != null) {
             user.setPhone_number(request.getPhoneNumber());
         }
+    }
+    public UserResponseDTO convertToResponseDTO(User user) {
+        return new UserResponseDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getPhone_number(),  // Nombre exacto del campo en la entidad
+                user.getRole().toString(),
+                user.isPermiso()
+        );
     }
 }

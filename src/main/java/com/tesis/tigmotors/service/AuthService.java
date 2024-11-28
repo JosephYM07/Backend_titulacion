@@ -27,20 +27,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final RefreshTokenService refreshTokenService;
-
-    /*public ResponseEntity<AuthResponse> loginAsUser(LoginRequest request) {
-        return loginWithRole(request, Role.USER);
-    }
-
-    public ResponseEntity<AuthResponse> loginAsAdmin(LoginRequest request) {
-        return loginWithRole(request, Role.ADMIN);
-    }
-
-    public ResponseEntity<AuthResponse> loginAsServiceStaff(LoginRequest request) {
-        return loginWithRole(request, Role.PERSONAL_CENTRO_DE_SERVICIOS);
-    }*/
-
     public ResponseEntity<AuthResponse> login(LoginRequest request) {
         try {
             // Autenticar al usuario con nombre de usuario y contraseña
@@ -51,14 +37,6 @@ public class AuthService {
             // Buscar al usuario en la base de datos
             User user = userRepository.findByUsername(request.getUsername())
                     .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado"));
-
-            // Validar el rol si se envía en la solicitud
-/*            if (request.getRole() != null && !user.getRole().equals(request.getRole())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("Acceso denegado para este rol")
-                        .build());
-            }*/
 
             // Validar que el usuario esté aprobado
             if (!user.isPermiso()) {
