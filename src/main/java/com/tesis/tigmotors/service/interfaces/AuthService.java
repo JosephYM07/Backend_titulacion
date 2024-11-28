@@ -20,4 +20,12 @@ public interface AuthService {
      * @return ResponseEntity con un mensaje de éxito o de error.
      */
     ResponseEntity<AuthResponse> register(RegisterRequest request);
+
+    /**
+     * Método para restablecer la contraseña de un usuario.
+     * @param email Correo del usuario.
+     * @return ResponseEntity con un mensaje de éxito o de error.
+     */
+    // Firma del método para registrar un usuario por parte del administrador
+    ResponseEntity<AuthResponse> registerByAdmin(RegisterRequest request, String adminUsername);
 }

@@ -1,13 +1,12 @@
 package com.tesis.tigmotors.controller;
 
 
-import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Request.TicketDTO;
-import com.tesis.tigmotors.dto.Request.UserRequestDTO;
-import com.tesis.tigmotors.dto.Request.UserUpdateRequestDTO;
+import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
+import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 import com.tesis.tigmotors.service.*;
+import com.tesis.tigmotors.service.interfaces.AuthService;
 import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class AdminController {
     private final SolicitudServiceImpl solicitudServiceImpl;
     private final UserServiceUpdateImpl UserServiceUpdateImpl;
     private final BusquedaUsuarioService busquedaUsuarioService;
-
+    private final AuthService authService;
 
     // Endpoint para obtener el estado de los usuarios (solo para administradores)
     @GetMapping("/users/status")
@@ -64,6 +65,8 @@ public class AdminController {
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
 
+    /* CRUD*/
+
     //Buscar usuario por id, username o email (solo para administradores)
     @PostMapping("/buscar-usuario")
     public ResponseEntity<?> buscarUsuario(@Valid @RequestBody UserRequestDTO request) {
@@ -88,6 +91,19 @@ public class AdminController {
         }
 
         return userService.deleteUserById(userId);
+    }
+
+    // Registro de usuario por administrador
+    @PostMapping("/registrar-usuario")
+    public ResponseEntity<?> registerUserByAdmin(
+            @Valid @RequestBody RegisterRequest request,
+            @AuthenticationPrincipal UserDetails adminDetails) {
+        if (request.getUsername() == null || request.getUsername().isBlank() ||
+                request.getPassword() == null || request.getPassword().isBlank() ||
+                request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Campos obligatorios están vacíos o faltan");
+        }
+        return authService.registerByAdmin(request, adminDetails.getUsername());
     }
 
     //Solicitudes
