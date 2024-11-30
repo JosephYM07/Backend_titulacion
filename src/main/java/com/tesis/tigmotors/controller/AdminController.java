@@ -3,7 +3,6 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
-import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AuthService;
@@ -35,7 +34,7 @@ public class AdminController {
     private final AdminProfileServiceImpl adminProfileServiceImpl;
     private final TicketServiceImpl ticketServiceImpl;
     private final SolicitudServiceImpl solicitudServiceImpl;
-    private final UserServiceUpdateImpl UserServiceUpdateImpl;
+    private final CrudUserImpl crudUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
     private final AuthService authService;
 
@@ -57,7 +56,7 @@ public class AdminController {
         return userService.approveUser(userId);
     }
 
-
+    //Informacion Propia Adminsitrador
     @GetMapping("/me")
     public ResponseEntity<AdminProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
@@ -76,8 +75,17 @@ public class AdminController {
 
     //Modiciar informacion de usuario (solo para administradores)
     @PutMapping("/actualizar-datos-user")
-    public ResponseEntity<UserResponseUser> updateUser(@Valid @RequestBody UserUpdateRequestDTO updateRequest) {
-        UserResponseUser updatedUser = UserServiceUpdateImpl.updateUser(updateRequest);
+    public ResponseEntity<UserResponseUser> updateUser(
+            @Valid @RequestBody UserUpdateRequestDTO updateRequest,
+            Authentication authentication) {
+        // Obtener el username del administrador autenticado
+        String adminUsername = authentication.getName();
+        logger.info("Administrador '{}' actualizando información del usuario con ID: {}", adminUsername, updateRequest.getUserId());
+        if (updateRequest.getUserId() < 0) {
+            logger.error("El ID del usuario es inválido o no proporcionado.");
+            throw new IllegalArgumentException("El ID del usuario es obligatorio y debe ser mayor que 0.");
+        }
+        UserResponseUser updatedUser = crudUserService.updateUser(updateRequest, adminUsername);
         return ResponseEntity.ok(updatedUser);
     }
 
@@ -118,15 +126,20 @@ public class AdminController {
 
     // Endpoint para añadir cotización y descripción del trabajo (solo para administradores)
     @PutMapping("/anadir-cotizacion/{solicitudId}")
-    public ResponseEntity<SolicitudDTO> anadirCotizacion(@PathVariable String solicitudId,
-                                                         @RequestBody Map<String, String> requestBody,
-                                                         Authentication authentication) {
+    public ResponseEntity<SolicitudDTO> anadirCotizacion(
+            @PathVariable String solicitudId,
+            @RequestBody Map<String, String> requestBody,
+            Authentication authentication) {
         String username = authentication.getName();
         logger.info("Usuario {} añadiendo cotización a la solicitud con ID: {}", username, solicitudId);
-
-        String cotizacion = requestBody.get("cotizacion");
+        Double cotizacion;
+        try {
+            cotizacion = Double.parseDouble(requestBody.get("cotizacion"));
+        } catch (NumberFormatException e) {
+            logger.error("El valor de 'cotizacion' no es un número válido: {}", requestBody.get("cotizacion"));
+            return ResponseEntity.badRequest().body(null);
+        }
         String descripcionTrabajo = requestBody.get("descripcionTrabajo");
-
         SolicitudDTO solicitudConCotizacion = solicitudServiceImpl.añadirCotizacion(solicitudId, cotizacion, descripcionTrabajo);
         return ResponseEntity.ok(solicitudConCotizacion);
     }

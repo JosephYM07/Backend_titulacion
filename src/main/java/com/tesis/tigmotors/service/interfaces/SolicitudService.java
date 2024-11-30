@@ -31,7 +31,7 @@ public interface SolicitudService {
      * @param descripcionTrabajo Descripción del trabajo a realizar.
      * @return SolicitudDTO con los datos actualizados.
      */
-    SolicitudDTO añadirCotizacion(String solicitudId, String cotizacion, String descripcionTrabajo);
+    SolicitudDTO añadirCotizacion(String solicitudId, Double cotizacion, String descripcionTrabajo);
 
     /**
      * Acepta una cotización y genera un ticket automáticamente.

@@ -70,7 +70,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
 
     // Añadir cotización y descripción del trabajo (Administrador)
-    public SolicitudDTO añadirCotizacion(String solicitudId, String cotizacion, String descripcionTrabajo) {
+    public SolicitudDTO añadirCotizacion(String solicitudId, Double cotizacion, String descripcionTrabajo) {
         try {
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
@@ -107,8 +107,8 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'Aceptado' para aceptar la cotización.");
             }
 
-            // Cambiar el campo cotizacionAceptada a true
-            solicitud.setCotizacionAceptada(true); // Aquí cambiamos el estado de la cotización a aceptada
+            // Cambiar el campo cotizacionAceptada
+            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name()); // Aquí cambiamos el estado de la cotización a aceptada
             solicitudRepository.save(solicitud);  // Guardamos la solicitud actualizada
 
             // Generar el ticket automáticamente al aceptar la cotización
@@ -138,7 +138,6 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
-
     // Usuario rechaza la cotización
     public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {
         try {
@@ -150,7 +149,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             }
 
             if (solicitud.getEstado().equals("Aceptado")) {
-                solicitud.setCotizacionAceptada(false);
+                solicitud.setCotizacionAceptada(SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name());
                 solicitud.setEstado("Rechazada por Usuario");
                 Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
                 return solicitudConverter.entityToDto(solicitudRechazada);

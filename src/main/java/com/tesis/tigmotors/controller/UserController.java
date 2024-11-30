@@ -3,12 +3,16 @@ package com.tesis.tigmotors.controller;
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
+import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
 import com.tesis.tigmotors.service.TicketServiceImpl;
+import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -16,24 +20,53 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api-user")
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    @Autowired
-    private TicketServiceImpl ticketServiceImpl;
+    private final TicketServiceImpl ticketServiceImpl;
+    private final SolicitudServiceImpl solicitudServiceImpl;
+    private final UserServiceUpdate userServiceUpdate;
 
-    @Autowired
-    private SolicitudServiceImpl solicitudServiceImpl;
-
-    //Endpoints de prueba
-    @GetMapping("/hello")
-    public String hello() {
-        return "Hello, User!";
+    /**
+     * Obtener información del perfil del usuario autenticado.
+     * @param authentication Contexto de autenticación para obtener el username.
+     * @return Respuesta con los datos del perfil del usuario.
+     */
+    @GetMapping("/informacion-usuario")
+    public ResponseEntity<UserBasicInfoResponseDTO> getUserProfile(Authentication authentication) {
+        String username = authentication.getName(); // Obtener el username desde el token JWT
+        UserBasicInfoResponseDTO userProfile = userServiceUpdate.getUserProfile(username);
+        return ResponseEntity.ok(userProfile);
     }
 
-    // Solicitud
+    /**
+     * Actualizar información del usuario autenticado.
+     * @param updateRequest Datos que el usuario desea actualizar.
+     * @param authentication Información del usuario autenticado.
+     * @return Respuesta con los datos actualizados del usuario.
+     */
+    @PutMapping("/actualizar-informacion")
+    public ResponseEntity<UserBasicInfoResponseDTO> updateMyProfile(
+            @Valid @RequestBody UserSelfUpdateRequestDTO updateRequest,
+            Authentication authentication) {
+        // Obtener el username del token
+        String usernameFromToken = authentication.getName();
+
+        UserBasicInfoResponseDTO updatedUser = userServiceUpdate.updateMyProfile(updateRequest, usernameFromToken);
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * Endpoint para crear una solicitud.
+     * @param solicitudDTO Objeto con los datos de la solicitud.
+     * Debe contener: nombre, email, teléfono, dirección, descripción, prioridad-
+     * @return ResponseEntity con la solicitud creada.
+     */
     @PostMapping("/crear-solicitud")
     public ResponseEntity<?> crearSolicitud(@RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
         try {

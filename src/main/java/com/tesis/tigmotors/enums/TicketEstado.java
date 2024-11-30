@@ -3,7 +3,9 @@ package com.tesis.tigmotors.enums;
 public enum TicketEstado {
     PENDIENTE,
     APROBADO,
-    RECHAZADO;
+    RECHAZADO,
+    VALOR_PAGADO,
+    PENDIENTE_PAGO;
 
     public static boolean isValidEstado(String estado) {
         for (TicketEstado ticketEstado : TicketEstado.values()) {

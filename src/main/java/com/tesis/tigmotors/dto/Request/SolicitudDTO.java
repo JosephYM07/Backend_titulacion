@@ -27,6 +27,6 @@ public class SolicitudDTO {
     @Pattern(regexp = "^[a-zA-Z0-9 À-ſ]+$", message = "La prioridad contiene caracteres no permitidos")
     private String prioridad;
 
-    private String cotizacion; // Valor de la cotización (si aplica)
-    private boolean cotizacionAceptada = false;
+    private Double cotizacion;
+    private String cotizacionAceptada;
 }

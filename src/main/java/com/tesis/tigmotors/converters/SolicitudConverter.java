@@ -16,7 +16,7 @@ public class SolicitudConverter {
         solicitud.setEstado(solicitudDTO.getEstado());
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
         solicitud.setCotizacion(solicitudDTO.getCotizacion());
-        solicitud.setCotizacionAceptada(solicitudDTO.isCotizacionAceptada());
+        solicitud.setCotizacionAceptada(solicitudDTO.getCotizacionAceptada());
         return solicitud;
     }
 
@@ -29,7 +29,7 @@ public class SolicitudConverter {
         solicitudDTO.setEstado(solicitud.getEstado());
         solicitudDTO.setPrioridad(solicitud.getPrioridad());
         solicitudDTO.setCotizacion(solicitud.getCotizacion());
-        solicitudDTO.setCotizacionAceptada(solicitud.isCotizacionAceptada());
+        solicitudDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
         return solicitudDTO;
     }
 }
