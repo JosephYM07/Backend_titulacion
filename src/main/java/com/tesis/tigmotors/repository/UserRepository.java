@@ -40,15 +40,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query(value = "SELECT * FROM user WHERE id = :id AND role = 'USER'", nativeQuery = true)
     Optional<User> buscarPorId(@Param("id") int id);
-
     /**
-     * Query personalizada para obtener solo la información básica del usuario.
-     * Devuelve un DTO con los campos seleccionados.
-     * @param username Username del usuario.
-     * @return UserBasicInfoResponseDTO con la información básica del usuario.
+     * Encuentra usuarios por permiso y rol.
+     *
+     * @param permiso true si los usuarios están aprobados.
+     * @param role el rol del usuario (por ejemplo, USER).
+     * @return Lista de usuarios que coinciden con los criterios.
      */
-    @Query("SELECT new com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO" +
-            "(u.id, u.username, u.business_name, u.email, u.phone_number) " +
-            "FROM User u WHERE u.username = :username")
-    Optional<UserBasicInfoResponseDTO> findBasicInfoByUsername(String username);
+    List<User> findByPermisoAndRole(boolean permiso, Role role);
 }

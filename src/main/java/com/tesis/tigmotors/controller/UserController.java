@@ -4,9 +4,11 @@ import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
+import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
 import com.tesis.tigmotors.service.TicketServiceImpl;
+import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class UserController {
     private final TicketServiceImpl ticketServiceImpl;
     private final SolicitudServiceImpl solicitudServiceImpl;
     private final UserServiceUpdate userServiceUpdate;
+    private final SolicitudService solicitudService;
 
     /**
      * Obtener información del perfil del usuario autenticado.
@@ -69,23 +72,9 @@ public class UserController {
      */
     @PostMapping("/crear-solicitud")
     public ResponseEntity<?> crearSolicitud(@RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
-        try {
-            if (authentication == null) {
-                logger.error("No se pudo autenticar al usuario.");
-                throw new AccessDeniedException("No se pudo autenticar al usuario.");
-            }
-
-            String username = authentication.getName();
-            logger.info("Usuario autenticado: {}", username);
-
-            SolicitudDTO nuevaSolicitud = solicitudServiceImpl.crearSolicitud(solicitudDTO, username);
-            logger.info("Solicitud creada exitosamente: {}", nuevaSolicitud.getIdSolicitud());
-
-            return ResponseEntity.ok(nuevaSolicitud);
-        } catch (Exception e) {
-            logger.error("Error al crear la solicitud: ", e);
-            return ResponseEntity.internalServerError().body("Error al crear la solicitud");
-        }
+        String username = authentication.getName(); // Extrae el username del token
+        SolicitudResponseDTO response = solicitudService.crearSolicitud(solicitudDTO, username);
+        return ResponseEntity.ok(response);
     }
 
     // Endpoint para aceptar la cotización y generar un ticket automáticamente (solo para usuarios)

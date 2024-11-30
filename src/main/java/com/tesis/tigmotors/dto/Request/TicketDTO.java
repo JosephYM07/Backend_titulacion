@@ -10,8 +10,6 @@ public class TicketDTO {
 
     private String username;
     private String solicitudId;
-    @NotBlank(message = "La descripción no puede estar vacía")
-    private String descripcion;
 
     private String estado;
 

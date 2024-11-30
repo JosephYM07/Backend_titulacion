@@ -1,25 +1,19 @@
-package com.tesis.tigmotors.models;
+package com.tesis.tigmotors.dto.Response;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-@Document(collection = "solicitudes")
 @Data
-public class Solicitud {
-    @Id
+public class SolicitudResponseDTO {
     private String idSolicitud;
-    private String username;
     private String descripcionInicial;
     private String descripcionTrabajo;
     private String estado;
     private String prioridad;
     private Double cotizacion;
     private String cotizacionAceptada;
-
     private LocalDate fechaCreacion; // Fecha de creación
     private LocalTime horaCreacion; // Hora de creación
 }

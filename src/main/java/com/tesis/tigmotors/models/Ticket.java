@@ -12,7 +12,7 @@ public class Ticket {
     private String solicitudId;
     private String username;
     private String descripcion;
-    private String estado = "Pendiente";
+    private String estado;
     private boolean aprobado;
 
     // Nuevos campos añadidos

@@ -2,6 +2,7 @@ package com.tesis.tigmotors.service.interfaces;
 
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public interface SolicitudService {
      * @param username     Nombre de usuario que crea la solicitud.
      * @return SolicitudDTO con los datos de la solicitud creada.
      */
-    SolicitudDTO crearSolicitud(SolicitudDTO solicitudDTO, String username);
+    SolicitudResponseDTO crearSolicitud(SolicitudDTO solicitudDTO, String username);
 
     /**
      * Acepta una solicitud pendiente. Solo accesible por administradores.
@@ -21,7 +22,7 @@ public interface SolicitudService {
      * @param solicitudId ID de la solicitud a aceptar.
      * @return SolicitudDTO con el estado actualizado.
      */
-    SolicitudDTO aceptarSolicitud(String solicitudId);
+    SolicitudResponseDTO aceptarSolicitud(String solicitudId);
 
     /**
      * Añade una cotización y descripción del trabajo a una solicitud aceptada.

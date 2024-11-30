@@ -3,6 +3,7 @@ package com.tesis.tigmotors.service;
 import com.tesis.tigmotors.converters.TicketConverter;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
+import com.tesis.tigmotors.models.Ticket;
 import com.tesis.tigmotors.repository.TicketRepository;
 import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -27,29 +28,12 @@ public class TicketServiceImpl implements TicketService {
 
     private final SequenceGeneratorService sequenceGeneratorService;
 
+    @Override
     public TicketDTO crearTicketAutomatico(TicketDTO ticketDTO, String username) {
-        try {
-            var ticket = ticketConverter.dtoToEntity(ticketDTO);
-
-            // Validar estado inicial
-            if (!TicketEstado.isValidEstado(ticketDTO.getEstado())) {
-                throw new IllegalArgumentException("Estado del ticket no válido: " + ticketDTO.getEstado());
-            }
-
-            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-            ticket.setSolicitudId(ticketDTO.getSolicitudId());
-            ticket.setUsername(username);
-            ticket.setEstado(ticketDTO.getEstado().toUpperCase());
-            ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial());
-            ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo());
-            ticket.setAprobado(ticketDTO.isAprobado());
-
-            var ticketGuardado = ticketRepository.save(ticket);
-            return ticketConverter.entityToDto(ticketGuardado);
-        } catch (Exception e) {
-            logger.error("Error creando el ticket: {}", e.getMessage(), e);
-            throw new RuntimeException("Error creando el ticket", e);
-        }
+        Ticket ticket = ticketConverter.dtoToEntity(ticketDTO);
+        ticket.setUsername(username);
+        Ticket ticketGuardado = ticketRepository.save(ticket);
+        return ticketConverter.entityToDto(ticketGuardado);
     }
 
     public List<TicketDTO> obtenerHistorialTickets(String username) {
@@ -81,7 +65,6 @@ public class TicketServiceImpl implements TicketService {
                 throw new IllegalArgumentException("Estado del ticket no válido: " + ticketDTO.getEstado());
             }
 
-            ticket.setDescripcion(ticketDTO.getDescripcion());
             ticket.setEstado(ticketDTO.getEstado().toUpperCase());
 
             var ticketModificado = ticketRepository.save(ticket);
@@ -126,11 +109,9 @@ public class TicketServiceImpl implements TicketService {
             if (ticket.isAprobado()) {
                 throw new RuntimeException("El ticket ya está aprobado");
             }
-
             if (!ticket.getEstado().equals(TicketEstado.PENDIENTE.name())) {
                 throw new RuntimeException("El ticket no está en estado 'Pendiente'");
             }
-
             ticket.setAprobado(true);
             ticket.setEstado(TicketEstado.APROBADO.name());
 

@@ -13,12 +13,10 @@ public class TicketConverter {
         ticket.setId(ticketDTO.getId());
         ticket.setUsername(ticketDTO.getUsername());
         ticket.setSolicitudId(ticketDTO.getSolicitudId());
-        ticket.setDescripcion(ticketDTO.getDescripcion());
         ticket.setEstado(ticketDTO.getEstado());
         ticket.setAprobado(ticketDTO.isAprobado());
         ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial());
         ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo());
-
         return ticket;
     }
 
@@ -28,12 +26,10 @@ public class TicketConverter {
         ticketDTO.setId(ticket.getId());
         ticketDTO.setUsername(ticket.getUsername());
         ticketDTO.setSolicitudId(ticket.getSolicitudId());
-        ticketDTO.setDescripcion(ticket.getDescripcion());
         ticketDTO.setEstado(ticket.getEstado());
         ticketDTO.setAprobado(ticket.isAprobado());
         ticketDTO.setDescripcionInicial(ticket.getDescripcionInicial());
         ticketDTO.setDescripcionTrabajo(ticket.getDescripcionTrabajo());
-
         return ticketDTO;
     }
 

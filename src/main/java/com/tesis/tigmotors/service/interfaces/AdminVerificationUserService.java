@@ -1,6 +1,12 @@
 package com.tesis.tigmotors.service.interfaces;
 
+import com.tesis.tigmotors.dto.Request.PendingUserDTO;
+import com.tesis.tigmotors.enums.Role;
+import com.tesis.tigmotors.models.User;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+
+import java.util.List;
 
 public interface AdminVerificationUserService {
 
@@ -10,6 +16,14 @@ public interface AdminVerificationUserService {
      * @return ResponseEntity con el conteo de usuarios pendientes y aprobados.
      */
     ResponseEntity<Object> getUsersStatus();
+
+    /**
+     * Obtiene una lista de usuarios aprobados con el rol USER.
+     *
+     * @return Lista de PendingUserDTO que representan a los usuarios aprobados.
+     */
+    List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication);
+
 
     /**
      * Obtiene una lista de usuarios pendientes de aprobación.

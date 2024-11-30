@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,6 +55,40 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
+    @Override
+    public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
+        // Validar que el usuario autenticado tenga el rol ADMIN
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
+
+        if (!esAdmin) {
+            throw new AccessDeniedException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
+        }
+
+        try {
+            // Obtener usuarios aprobados con rol USER
+            List<User> usuariosAprobados = userRepository.findByPermisoAndRole(true, Role.USER);
+
+            // Convertir usuarios aprobados a DTO
+            return usuariosAprobados.stream()
+                    .map(user -> new PendingUserDTO(
+                            user.getId(),
+                            user.getUsername(),
+                            user.getBusiness_name(),
+                            user.getPhone_number(),
+                            user.getRole(),
+                            user.getEmail(),
+                            user.isPermiso()
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception ex) {
+            log.error("Error al obtener usuarios aprobados: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error al obtener usuarios aprobados.", ex);
+        }
+    }
+
+
 
     public ResponseEntity<Object> getPendingUsers() {
         try {

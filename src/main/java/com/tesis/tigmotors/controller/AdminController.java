@@ -3,8 +3,11 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
+import com.tesis.tigmotors.dto.Response.ErrorResponse;
+import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 import com.tesis.tigmotors.service.*;
+import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
 import com.tesis.tigmotors.service.interfaces.AuthService;
 import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
 import jakarta.validation.Valid;
@@ -12,7 +15,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,7 +41,20 @@ public class AdminController {
     private final SolicitudServiceImpl solicitudServiceImpl;
     private final CrudUserImpl crudUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
+    private final AdminVerificationUserService adminVerificationUserService;
     private final AuthService authService;
+
+    /**
+     * Endpoint para obtener la lista de usuarios aprobados con el rol USER.
+     *
+     * @return Lista de usuarios aprobados.
+     */
+    @GetMapping("/lista-usuarios")
+    public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
+        List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
+        return ResponseEntity.ok(usuariosAprobados);
+    }
+
 
     // Endpoint para obtener el estado de los usuarios (solo para administradores)
     @GetMapping("/users/status")
@@ -80,7 +98,6 @@ public class AdminController {
             Authentication authentication) {
         // Obtener el username del administrador autenticado
         String adminUsername = authentication.getName();
-        logger.info("Administrador '{}' actualizando información del usuario con ID: {}", adminUsername, updateRequest.getUserId());
         if (updateRequest.getUserId() < 0) {
             logger.error("El ID del usuario es inválido o no proporcionado.");
             throw new IllegalArgumentException("El ID del usuario es obligatorio y debe ser mayor que 0.");
@@ -117,10 +134,10 @@ public class AdminController {
     //Solicitudes
     // Endpoint para aceptar una solicitud (solo para administradores)
     @PutMapping("/aceptar/{solicitudId}")
-    public ResponseEntity<SolicitudDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
+    public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
         String username = authentication.getName();
         logger.info("Usuario {} aceptando la solicitud con ID: {}", username, solicitudId);
-        SolicitudDTO solicitudAceptada = solicitudServiceImpl.aceptarSolicitud(solicitudId);
+        SolicitudResponseDTO solicitudAceptada = solicitudServiceImpl.aceptarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudAceptada);
     }
 

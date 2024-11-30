@@ -5,11 +5,13 @@ import com.tesis.tigmotors.Exceptions.SolicitudNotFoundException;
 import com.tesis.tigmotors.converters.SolicitudConverter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.repository.SolicitudRepository;
 import com.tesis.tigmotors.service.interfaces.SolicitudService;
+import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -17,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,17 +35,30 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final SolicitudRepository solicitudRepository;
     private final SolicitudConverter solicitudConverter;
     private final SequenceGeneratorService sequenceGeneratorService;
-    private final TicketServiceImpl ticketServiceImpl;
+    private final TicketService ticketService;
 
-    // Crear una solicitud
-    public SolicitudDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
+    @Override
+    public SolicitudResponseDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
         try {
+            // Convertir el DTO a entidad
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
+
+            // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
+
+            // Asignar datos al modelo
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
+
+            // Asignar fecha y hora de creación automáticas
+            solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
+            solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
+
+            // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
-            return solicitudConverter.entityToDto(solicitudGuardada);
+
+            // Convertir la entidad guardada a DTO de respuesta
+            return solicitudConverter.entityToResponseDto(solicitudGuardada);
 
         } catch (Exception e) {
             logger.error("Error creando la solicitud: {}", e.getMessage(), e);
@@ -50,7 +68,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
 
     // Aceptar una solicitud (Administrador)
-    public SolicitudDTO aceptarSolicitud(String solicitudId) {
+    public SolicitudResponseDTO aceptarSolicitud(String solicitudId) {
         try {
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
@@ -58,7 +76,9 @@ public class SolicitudServiceImpl implements SolicitudService {
             if (solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
                 solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
                 Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
-                return solicitudConverter.entityToDto(solicitudAceptada);
+
+                // Convertir a DTO de Respuesta con el converter
+                return solicitudConverter.entityToResponseDto(solicitudAceptada);
             } else {
                 throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
             }
@@ -67,6 +87,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error aceptando la solicitud", e);
         }
     }
+
 
 
     // Añadir cotización y descripción del trabajo (Administrador)
@@ -91,49 +112,50 @@ public class SolicitudServiceImpl implements SolicitudService {
     }
 
 
+    @Override
     public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
+        logger.info("Usuario '{}' intentando aceptar cotización para solicitud ID '{}'", username, solicitudId);
+
         try {
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
 
             // Validar que el usuario tiene permisos para aceptar la cotización
             if (!solicitud.getUsername().equals(username)) {
+                logger.error("Acceso denegado: usuario '{}' no coincide con el propietario de la solicitud '{}'", username, solicitud.getUsername());
                 throw new AccessDeniedException("No tiene permisos para aceptar esta cotización.");
             }
 
             // Verificar que el estado de la solicitud sea 'ACEPTADO'
-            if (!solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
-                throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'Aceptado' para aceptar la cotización.");
+            if (!SolicitudEstado.ACEPTADO.name().equals(solicitud.getEstado())) {
+                logger.error("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
+                throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
             }
 
-            // Cambiar el campo cotizacionAceptada
-            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name()); // Aquí cambiamos el estado de la cotización a aceptada
-            solicitudRepository.save(solicitud);  // Guardamos la solicitud actualizada
+            // Cambiar el estado de la cotización a 'COTIZACION_ACEPTADA'
+            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
+            solicitudRepository.save(solicitud);
+            logger.info("Cotización aceptada para solicitud ID '{}'", solicitudId);
 
-            // Generar el ticket automáticamente al aceptar la cotización
+            // Crear el ticket utilizando la interfaz del servicio
             TicketDTO ticketDTO = new TicketDTO();
             ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
             ticketDTO.setSolicitudId(solicitud.getIdSolicitud());
             ticketDTO.setUsername(solicitud.getUsername());
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.PENDIENTE.name());  // El ticket refleja el estado pendiente
-            ticketDTO.setAprobado(true); // Aquí el ticket ya se considera aprobado
+            ticketDTO.setEstado(TicketEstado.PENDIENTE.name()); // Estado inicial del ticket
+            ticketDTO.setAprobado(true);
 
-            // Llamar al servicio de tickets para crear el ticket
-            return ticketServiceImpl.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
-        } catch (SolicitudNotFoundException e) {
-            logger.error("Solicitud no encontrada, ID: {}", solicitudId, e);
-            throw e;
-        } catch (AccessDeniedException e) {
-            logger.error("Acceso denegado para usuario: {} en solicitud ID: {}", username, solicitudId, e);
-            throw e;
-        } catch (InvalidSolicitudStateException e) {
-            logger.error("Estado inválido para aceptar cotización en solicitud ID: {}", solicitudId, e);
+            // Usar el servicio a través de la interfaz para crear el ticket
+            return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
+
+        } catch (SolicitudNotFoundException | AccessDeniedException | InvalidSolicitudStateException e) {
+            logger.error("Error procesando la solicitud ID '{}': {}", solicitudId, e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            logger.error("Error aceptando la cotización y generando el ticket para solicitud ID: {} y usuario: {}", solicitudId, username, e);
+            logger.error("Error inesperado aceptando cotización y generando ticket para solicitud ID '{}', usuario '{}': {}", solicitudId, username, e.getMessage(), e);
             throw new RuntimeException("Error aceptando la cotización y generando el ticket", e);
         }
     }
