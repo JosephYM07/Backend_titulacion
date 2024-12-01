@@ -1,6 +1,7 @@
 package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
+import com.tesis.tigmotors.dto.Request.ChangePasswordRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
@@ -8,6 +9,7 @@ import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
 import com.tesis.tigmotors.service.TicketServiceImpl;
+import com.tesis.tigmotors.service.interfaces.PasswordResetService;
 import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import jakarta.validation.Valid;
@@ -33,6 +35,7 @@ public class UserController {
     private final SolicitudServiceImpl solicitudServiceImpl;
     private final UserServiceUpdate userServiceUpdate;
     private final SolicitudService solicitudService;
+    private final PasswordResetService passwordResetService;
 
     /**
      * Obtener información del perfil del usuario autenticado.
@@ -62,6 +65,24 @@ public class UserController {
         UserBasicInfoResponseDTO updatedUser = userServiceUpdate.updateMyProfile(updateRequest, usernameFromToken);
 
         return ResponseEntity.ok(updatedUser);
+    }
+
+    /**
+     * Cambia la contraseña del usuario autenticado.
+     *
+     * @param authentication Contexto de autenticación para obtener el username.
+     * @param request        Objeto con la contraseña actual y la nueva.
+     * @return Respuesta indicando éxito o error en el cambio de contraseña.
+     */
+    @PutMapping("/cambiar-contrasena")
+    public ResponseEntity<?> changePassword(Authentication authentication,
+                                            @Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        String username = authentication.getName(); // Obtener el username desde el contexto de autenticación
+        return passwordResetService.changePasswordAuthenticated(
+                username,
+                changePasswordRequest.getCurrentPassword(),
+                changePasswordRequest.getNewPassword()
+        );
     }
 
     /**
