@@ -18,11 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +41,7 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final TicketService ticketService;
 
     @Override
+    @Transactional
     public SolicitudResponseDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
         try {
             // Convertir el DTO a entidad
@@ -66,53 +70,102 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
-
     // Aceptar una solicitud (Administrador)
+    @Override
+    @Transactional
     public SolicitudResponseDTO aceptarSolicitud(String solicitudId) {
         try {
+            // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
 
-            if (solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
-                solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
-                Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
-
-                // Convertir a DTO de Respuesta con el converter
-                return solicitudConverter.entityToResponseDto(solicitudAceptada);
-            } else {
-                throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+            // Validar si la solicitud ya está aceptada
+            if (solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
+                logger.warn("Intento de aceptar una solicitud ya aceptada. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud ya está en estado 'Aceptado'");
             }
+            // Validar si la solicitud está en estado PENDIENTE
+            if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
+                logger.warn("Intento de aceptar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'Pendiente'");
+            }
+            // Cambiar el estado a ACEPTADO
+            solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
+            Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
+
+            // Log exitoso
+            logger.info("Solicitud con ID {} aceptada exitosamente.", solicitudId);
+
+            // Convertir la entidad actualizada a un DTO de respuesta y retornarlo
+            return solicitudConverter.entityToResponseDto(solicitudAceptada);
+
+        } catch (SolicitudNotFoundException e) {
+            // Manejo específico para solicitudes no encontradas
+            logger.error("Error: Solicitud no encontrada. ID: {}", solicitudId, e);
+            throw new RuntimeException("Error: La solicitud no existe. ID: " + solicitudId, e);
+
+        } catch (IllegalStateException e) {
+            // Manejo de estados inválidos
+            logger.error("Error: Estado inválido para aceptar la solicitud. ID: {}, Detalle: {}", solicitudId, e.getMessage());
+            throw new RuntimeException("Error: " + e.getMessage(), e);
+
         } catch (Exception e) {
-            logger.error("Error aceptando la solicitud: {}", e.getMessage(), e);
-            throw new RuntimeException("Error aceptando la solicitud", e);
+            // Manejo general de errores inesperados
+            logger.error("Error inesperado al aceptar la solicitud con ID {}: ", solicitudId, e);
+            throw new RuntimeException("Error interno al aceptar la solicitud", e);
         }
     }
 
-
-
-    // Añadir cotización y descripción del trabajo (Administrador)
-    public SolicitudDTO añadirCotizacion(String solicitudId, Double cotizacion, String descripcionTrabajo) {
+    @Override
+    @Transactional
+    public SolicitudDTO anadirCotizacion(String solicitudId, Map<String, Object> requestBody, String username) {
         try {
+            logger.info("Usuario {} inició el proceso para añadir cotización. ID Solicitud: {}", username, solicitudId);
+
+            // Validar y extraer parámetros del requestBody
+            Double cotizacion = Optional.ofNullable(requestBody.get("cotizacion"))
+                    .map(Object::toString)
+                    .map(Double::valueOf)
+                    .orElseThrow(() -> new IllegalArgumentException("El valor de 'cotizacion' es inválido o no está presente."));
+
+            String descripcionTrabajo = Optional.ofNullable(requestBody.get("descripcionTrabajo"))
+                    .map(Object::toString)
+                    .filter(descripcion -> !descripcion.isBlank())
+                    .orElseThrow(() -> new IllegalArgumentException("La 'descripcionTrabajo' es obligatoria."));
+
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
 
-            if (solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
-                solicitud.setCotizacion(cotizacion);
-                solicitud.setDescripcionTrabajo(descripcionTrabajo);
-                Solicitud solicitudConCotizacion = solicitudRepository.save(solicitud);
-                return solicitudConverter.entityToDto(solicitudConCotizacion);
-            } else {
-                throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
+            // Validar estado y cotización existente
+            if (!solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
+                logger.error("La solicitud no está en estado 'Aceptado'. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'Aceptado'");
             }
+            if (solicitud.getCotizacion() != null) {
+                logger.error("La solicitud ya tiene una cotización asignada. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud ya tiene una cotización asignada");
+            }
+            // Actualizar los datos
+            solicitud.setCotizacion(cotizacion);
+            solicitud.setDescripcionTrabajo(descripcionTrabajo);
+            // Guardar la solicitud actualizada
+            Solicitud solicitudConCotizacion = solicitudRepository.save(solicitud);
+            // Log de éxito
+            logger.info("Usuario {} añadió cotización correctamente a la solicitud con ID: {}", username, solicitudId);
+
+            // Convertir a DTO y retornar
+            return solicitudConverter.entityToDto(solicitudConCotizacion);
+
         } catch (Exception e) {
-            logger.error("Error añadiendo la cotización: {}", e.getMessage(), e);
-            throw new RuntimeException("Error añadiendo la cotización", e);
+            logger.error("Error inesperado al añadir cotización. ID: {}, Usuario: {}", solicitudId, username, e);
+            throw e;
         }
     }
 
 
     @Override
+    @Transactional
     public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
         logger.info("Usuario '{}' intentando aceptar cotización para solicitud ID '{}'", username, solicitudId);
 
@@ -131,6 +184,12 @@ public class SolicitudServiceImpl implements SolicitudService {
             if (!SolicitudEstado.ACEPTADO.name().equals(solicitud.getEstado())) {
                 logger.error("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
                 throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
+            }
+
+            // Verificar que la cotización no haya sido ya aceptada
+            if (SolicitudEstado.COTIZACION_ACEPTADA.name().equals(solicitud.getCotizacionAceptada())) {
+                logger.error("Intento de aceptar una cotización ya aceptada. Solicitud ID '{}'", solicitudId);
+                throw new InvalidSolicitudStateException("La cotización ya ha sido aceptada.");
             }
 
             // Cambiar el estado de la cotización a 'COTIZACION_ACEPTADA'
@@ -159,6 +218,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error aceptando la cotización y generando el ticket", e);
         }
     }
+
 
     // Usuario rechaza la cotización
     public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {
@@ -328,21 +388,47 @@ public class SolicitudServiceImpl implements SolicitudService {
     }
 
     // Rechazar una solicitud (Administrador)
+
+    /**
+     * Rechaza una solicitud en estado PENDIENTE.
+     *
+     * Este método busca la solicitud por ID, valida que esté en estado PENDIENTE,
+     * y actualiza su estado a RECHAZADO. Maneja las excepciones para garantizar
+     * que los errores sean informativos y registrados adecuadamente.
+     *
+     * @param solicitudId ID de la solicitud a rechazar.
+     * @return DTO con los datos actualizados de la solicitud.
+     * @throws SolicitudNotFoundException Si la solicitud no existe.
+     * @throws IllegalStateException      Si la solicitud no está en estado PENDIENTE.
+     * @throws RuntimeException           Para errores inesperados.
+     */
     public SolicitudDTO rechazarSolicitud(String solicitudId) {
         try {
+            // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-
-            if (solicitud.getEstado().equals("Pendiente")) {
-                solicitud.setEstado("Rechazado");
-                Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
-                return solicitudConverter.entityToDto(solicitudRechazada);
-            } else {
-                throw new RuntimeException("La solicitud no está en estado 'Pendiente'");
+                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
+            // Validar que la solicitud esté en estado PENDIENTE
+            if (SolicitudEstado.valueOf(solicitud.getEstado()) != SolicitudEstado.PENDIENTE) {
+                logger.warn("Intento de rechazar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'Pendiente'");
             }
+            // Actualizar estado a RECHAZADO
+            solicitud.setEstado(SolicitudEstado.SOLICITUD_RECHAZADA.name());
+            Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
+            // Log de éxito
+            logger.info("Solicitud con ID {} rechazada exitosamente.", solicitudId);
+            // Convertir entidad a DTO y retornar
+            return solicitudConverter.entityToDto(solicitudRechazada);
+        } catch (SolicitudNotFoundException e) {
+            logger.error("Error: Solicitud no encontrada. ID: {}", solicitudId, e);
+            throw e;
+        } catch (IllegalStateException e) {
+            logger.error("Error: Estado inválido para rechazo. ID: {}", solicitudId, e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Error rechazando la solicitud: ", e);
-            throw new RuntimeException("Error rechazando la solicitud");
+            logger.error("Error inesperado al rechazar la solicitud con ID {}: ", solicitudId, e);
+            throw new RuntimeException("Error interno al rechazar la solicitud");
         }
     }
+
 }

@@ -5,6 +5,7 @@ import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface SolicitudService {
     /**
@@ -28,11 +29,12 @@ public interface SolicitudService {
      * Añade una cotización y descripción del trabajo a una solicitud aceptada.
      *
      * @param solicitudId        ID de la solicitud a actualizar.
-     * @param cotizacion         Cotización del trabajo.
-     * @param descripcionTrabajo Descripción del trabajo a realizar.
+     *                           requestBody Map con los datos de la cotización y descripción del trabajo.
+     *                           username Nombre de usuario que añade la cotización.
+     *                           requestBody Map con los datos de la cotización y descripción del trabajo.
      * @return SolicitudDTO con los datos actualizados.
      */
-    SolicitudDTO añadirCotizacion(String solicitudId, Double cotizacion, String descripcionTrabajo);
+    SolicitudDTO anadirCotizacion(String solicitudId, Map<String, Object> requestBody, String username);
 
     /**
      * Acepta una cotización y genera un ticket automáticamente.

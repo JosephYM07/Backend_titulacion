@@ -71,7 +71,7 @@ public class UserController {
      * Cambia la contraseña del usuario autenticado.
      *
      * @param authentication Contexto de autenticación para obtener el username.
-     * @param request        Objeto con la contraseña actual y la nueva.
+     * @param changePasswordRequest Objeto con la contraseña actual y la nueva contraseña.
      * @return Respuesta indicando éxito o error en el cambio de contraseña.
      */
     @PutMapping("/cambiar-contrasena")

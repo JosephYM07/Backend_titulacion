@@ -29,4 +29,7 @@ public class SolicitudDTO {
 
     private Double cotizacion;
     private String cotizacionAceptada;
+
+    private String fechaCreacion;
+    private String horaCreacion;
 }

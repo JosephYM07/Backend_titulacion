@@ -10,6 +10,7 @@ import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
 import com.tesis.tigmotors.service.interfaces.AuthService;
 import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
+import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,11 +39,11 @@ public class AdminController {
     private final AdminVerificationUserServiceImpl userService;
     private final AdminProfileServiceImpl adminProfileServiceImpl;
     private final TicketServiceImpl ticketServiceImpl;
-    private final SolicitudServiceImpl solicitudServiceImpl;
     private final CrudUserImpl crudUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
     private final AdminVerificationUserService adminVerificationUserService;
     private final AuthService authService;
+    private final SolicitudService solicitudService;
 
     /**
      * Endpoint para obtener la lista de usuarios aprobados con el rol USER.
@@ -137,62 +138,69 @@ public class AdminController {
     public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
         String username = authentication.getName();
         logger.info("Usuario {} aceptando la solicitud con ID: {}", username, solicitudId);
-        SolicitudResponseDTO solicitudAceptada = solicitudServiceImpl.aceptarSolicitud(solicitudId);
+        SolicitudResponseDTO solicitudAceptada = solicitudService.aceptarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudAceptada);
     }
 
-    // Endpoint para añadir cotización y descripción del trabajo (solo para administradores)
+    /**
+     * Endpoint para añadir una cotización y descripción del trabajo a una solicitud.
+     *
+     * @param solicitudId ID de la solicitud a actualizar.
+     * @param requestBody Cuerpo de la solicitud que contiene cotización y descripción.
+     * @return ResponseEntity con la solicitud actualizada en formato DTO.
+     */
     @PutMapping("/anadir-cotizacion/{solicitudId}")
     public ResponseEntity<SolicitudDTO> anadirCotizacion(
             @PathVariable String solicitudId,
-            @RequestBody Map<String, String> requestBody,
+            @RequestBody Map<String, Object> requestBody,
+            Authentication authentication) {
+        // Obtener el nombre del usuario autenticado
+        String username = authentication.getName();
+        // Delegar la lógica completa al servicio
+        SolicitudDTO solicitudActualizada = solicitudService.anadirCotizacion(solicitudId, requestBody, username);
+        // Retornar la respuesta con el DTO actualizado
+        return ResponseEntity.ok(solicitudActualizada);
+    }
+    /**
+     * Rechaza una solicitud pendiente. Solo accesible por administradores.
+     *
+     * @param solicitudId ID de la solicitud a rechazar.
+     * @return ResponseEntity con el DTO de la solicitud rechazada.
+     */
+    @PutMapping("/rechazar-solicitud/{solicitudId}")
+    public ResponseEntity<SolicitudDTO> rechazarSolicitud(
+            @PathVariable String solicitudId,
             Authentication authentication) {
         String username = authentication.getName();
-        logger.info("Usuario {} añadiendo cotización a la solicitud con ID: {}", username, solicitudId);
-        Double cotizacion;
-        try {
-            cotizacion = Double.parseDouble(requestBody.get("cotizacion"));
-        } catch (NumberFormatException e) {
-            logger.error("El valor de 'cotizacion' no es un número válido: {}", requestBody.get("cotizacion"));
-            return ResponseEntity.badRequest().body(null);
-        }
-        String descripcionTrabajo = requestBody.get("descripcionTrabajo");
-        SolicitudDTO solicitudConCotizacion = solicitudServiceImpl.añadirCotizacion(solicitudId, cotizacion, descripcionTrabajo);
-        return ResponseEntity.ok(solicitudConCotizacion);
-    }
-
-    // Endpoint para rechazar una solicitud (solo para administradores)
-    @PutMapping("/rechazar/{solicitudId}")
-    public ResponseEntity<SolicitudDTO> rechazarSolicitud(@PathVariable String solicitudId) {
-        SolicitudDTO solicitudRechazada = solicitudServiceImpl.rechazarSolicitud(solicitudId);
+        SolicitudDTO solicitudRechazada = solicitudService.rechazarSolicitud(solicitudId);
         return ResponseEntity.ok(solicitudRechazada);
     }
 
     // Endpoint para obtener todas las solicitudes filtradas por estado (solo para administradores)
     @GetMapping("/estado/{estado}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorEstado(@PathVariable String estado) {
-        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorEstado(estado);
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorEstado(estado);
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para obtener todas las solicitudes filtradas por prioridad (solo para administradores)
     @GetMapping("/prioridad/{prioridad}")
     public ResponseEntity<List<SolicitudDTO>> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad) {
-        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorPrioridad(prioridad);
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerSolicitudesPorPrioridad(prioridad);
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para obtener historial completo de todas las solicitudes (solo para administradores)
     @GetMapping("/historial")
     public ResponseEntity<List<SolicitudDTO>> obtenerHistorialCompletoSolicitudes() {
-        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerHistorialCompletoSolicitudes();
+        List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialCompletoSolicitudes();
         return ResponseEntity.ok(solicitudes);
     }
 
     // Endpoint para eliminar cualquier solicitud (solo para administradores)
     @DeleteMapping("/eliminar/{solicitudId}")
     public ResponseEntity<Void> eliminarSolicitudAdmin(@PathVariable String solicitudId) {
-        solicitudServiceImpl.eliminarSolicitudAdmin(solicitudId);
+        solicitudService.eliminarSolicitudAdmin(solicitudId);
         return ResponseEntity.noContent().build();
     }
 

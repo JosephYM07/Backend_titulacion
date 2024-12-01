@@ -12,11 +12,9 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class SolicitudConverter {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-
     // Convertir de Entidad a DTO
     public SolicitudDTO entityToDto(Solicitud solicitud) {
+
         SolicitudDTO solicitudDTO = new SolicitudDTO();
         solicitudDTO.setIdSolicitud(solicitud.getIdSolicitud());
         solicitudDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
@@ -25,6 +23,15 @@ public class SolicitudConverter {
         solicitudDTO.setPrioridad(solicitud.getPrioridad());
         solicitudDTO.setCotizacion(solicitud.getCotizacion());
         solicitudDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
+
+        // Transferir fecha y hora directamente desde la entidad
+        if (solicitud.getFechaCreacion() != null) {
+            solicitudDTO.setFechaCreacion(solicitud.getFechaCreacion().toString());
+        }
+        if (solicitud.getHoraCreacion() != null) {
+            solicitudDTO.setHoraCreacion(solicitud.getHoraCreacion().toString());
+        }
+
         return solicitudDTO;
     }
 
@@ -38,6 +45,13 @@ public class SolicitudConverter {
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
         solicitud.setCotizacion(solicitudDTO.getCotizacion());
         solicitud.setCotizacionAceptada(solicitudDTO.getCotizacionAceptada());
+        // Formatear fecha y hora antes de asignarlas al DTO
+        if (solicitud.getFechaCreacion() != null) {
+            solicitud.setFechaCreacion(solicitud.getFechaCreacion());
+        }
+        if (solicitud.getHoraCreacion() != null) {
+            solicitud.setHoraCreacion(solicitud.getHoraCreacion().withNano(0));
+        }
         return solicitud;
     }
 
@@ -52,14 +66,12 @@ public class SolicitudConverter {
         responseDTO.setCotizacion(solicitud.getCotizacion());
         responseDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
 
-        // Formatear fecha y hora antes de asignarlas al DTO
         if (solicitud.getFechaCreacion() != null) {
             responseDTO.setFechaCreacion(solicitud.getFechaCreacion());
         }
         if (solicitud.getHoraCreacion() != null) {
-            responseDTO.setHoraCreacion(solicitud.getHoraCreacion().withNano(0)); // Eliminar nanosegundos
+            responseDTO.setHoraCreacion(solicitud.getHoraCreacion().withNano(0));
         }
-
         return responseDTO;
     }
 }

@@ -13,6 +13,22 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        String message = ex.getMessage();
+        int statusCode = 500;
+
+        // Detectar el tipo de error para personalizar la respuesta
+        if (message.contains("Solicitud no encontrada")) {
+            statusCode = 404;
+        } else if (message.contains("Estado inválido")) {
+            statusCode = 400;
+        }
+
+        ErrorResponse errorResponse = new ErrorResponse(statusCode, message);
+        return ResponseEntity.status(statusCode).body(errorResponse);
+    }
+
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<ErrorResponse> handleSecurityException(SecurityException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
@@ -33,6 +49,7 @@ public class GlobalExceptionHandler {
                 new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Ha ocurrido un error inesperado")
         );
     }
+
     // Manejo de UnauthorizedOperationException
     @ExceptionHandler(UnauthorizedOperationException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedOperationException(UnauthorizedOperationException ex) {
