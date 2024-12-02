@@ -5,7 +5,10 @@ public enum SolicitudEstado {
     ACEPTADO, // Cuando el administrador acepta la solicitud
     COTIZACION_ACEPTADA, // Cuando el usuario acepta la cotización
     SOLICITUD_RECHAZADA, // Cuando el administrador rechaza la solicitud
-    RECHAZO_COTIZACION_USUARIO; // Cuando el usuario rechaza la cotización
+    RECHAZO_COTIZACION_USUARIO,// Cuando el usuario rechaza la cotización
+    ALTO, //Prioridad de solicitud
+    MEDIO,//Prioridad de solicitud
+    BAJA; //Prioridad de solicitud
 
     /**
      *

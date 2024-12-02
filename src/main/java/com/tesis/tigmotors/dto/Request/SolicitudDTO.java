@@ -17,9 +17,6 @@ public class SolicitudDTO {
     @Length(max = 500, message = "La descripción del trabajo no puede exceder los 500 caracteres")
     private String descripcionTrabajo;
 
-    @NotBlank(message = "El estado no puede estar vacío")
-    @Length(max = 50, message = "El estado no puede exceder los 50 caracteres")
-    @Pattern(regexp = "^[a-zA-Z0-9 À-ſ]+$", message = "El estado contiene caracteres no permitidos")
     private String estado;
 
     @NotBlank(message = "La prioridad no puede estar vacía")

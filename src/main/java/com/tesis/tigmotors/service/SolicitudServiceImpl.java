@@ -5,6 +5,8 @@ import com.tesis.tigmotors.Exceptions.SolicitudNotFoundException;
 import com.tesis.tigmotors.converters.SolicitudConverter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.ErrorResponse;
+import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
@@ -40,6 +42,12 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final SequenceGeneratorService sequenceGeneratorService;
     private final TicketService ticketService;
 
+    /**
+     * Crea una nueva solicitud en el sistema desde la cuenta usuario.
+     * @param solicitudDTO Datos de la solicitud a crear, proporcionados por el usuario.
+     * @param username Nombre del usuario que está creando la solicitud.
+     * @return Un DTO de respuesta con la información de la solicitud creada.
+     */
     @Override
     @Transactional
     public SolicitudResponseDTO crearSolicitud(SolicitudDTO solicitudDTO, String username) {
@@ -47,6 +55,10 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Convertir el DTO a entidad
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
 
+            if (solicitud.getPrioridad() != null) {
+                solicitud.setPrioridad(solicitud.getPrioridad().toUpperCase());
+                logger.info("Prioridad transformada a mayúsculas: {}", solicitud.getPrioridad());
+            }
             // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
 
@@ -70,7 +82,11 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
-    // Aceptar una solicitud (Administrador)
+    /**
+     * Acepta una solicitud en el sistema cambiando su estado a 'ACEPTADO' desde el perfil Administrador.
+     * @param solicitudId ID de la solicitud a aceptar.
+     * @return Un DTO de respuesta con la información de la solicitud aceptada.
+     */
     @Override
     @Transactional
     public SolicitudResponseDTO aceptarSolicitud(String solicitudId) {
@@ -92,23 +108,17 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Cambiar el estado a ACEPTADO
             solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
             Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
-
-            // Log exitoso
             logger.info("Solicitud con ID {} aceptada exitosamente.", solicitudId);
-
             // Convertir la entidad actualizada a un DTO de respuesta y retornarlo
             return solicitudConverter.entityToResponseDto(solicitudAceptada);
-
         } catch (SolicitudNotFoundException e) {
             // Manejo específico para solicitudes no encontradas
             logger.error("Error: Solicitud no encontrada. ID: {}", solicitudId, e);
             throw new RuntimeException("Error: La solicitud no existe. ID: " + solicitudId, e);
-
         } catch (IllegalStateException e) {
             // Manejo de estados inválidos
             logger.error("Error: Estado inválido para aceptar la solicitud. ID: {}, Detalle: {}", solicitudId, e.getMessage());
             throw new RuntimeException("Error: " + e.getMessage(), e);
-
         } catch (Exception e) {
             // Manejo general de errores inesperados
             logger.error("Error inesperado al aceptar la solicitud con ID {}: ", solicitudId, e);
@@ -116,27 +126,30 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
+    /**
+     * Añade una cotización y descripción del trabajo a una solicitud desde el perfil Administrador.
+     * @param solicitudId ID de la solicitud a la que se añadirá la cotización.
+     * @param requestBody Mapa de datos con los campos 'cotizacion' y 'descripcionTrabajo'.
+     * @param username Nombre del usuario que realiza la operación.
+     * @return Un DTO con la información actualizada de la solicitud.
+     */
     @Override
     @Transactional
     public SolicitudDTO anadirCotizacion(String solicitudId, Map<String, Object> requestBody, String username) {
         try {
             logger.info("Usuario {} inició el proceso para añadir cotización. ID Solicitud: {}", username, solicitudId);
-
             // Validar y extraer parámetros del requestBody
             Double cotizacion = Optional.ofNullable(requestBody.get("cotizacion"))
                     .map(Object::toString)
                     .map(Double::valueOf)
                     .orElseThrow(() -> new IllegalArgumentException("El valor de 'cotizacion' es inválido o no está presente."));
-
             String descripcionTrabajo = Optional.ofNullable(requestBody.get("descripcionTrabajo"))
                     .map(Object::toString)
                     .filter(descripcion -> !descripcion.isBlank())
                     .orElseThrow(() -> new IllegalArgumentException("La 'descripcionTrabajo' es obligatoria."));
-
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-
             // Validar estado y cotización existente
             if (!solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
                 logger.error("La solicitud no está en estado 'Aceptado'. ID: {}", solicitudId);
@@ -151,19 +164,21 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setDescripcionTrabajo(descripcionTrabajo);
             // Guardar la solicitud actualizada
             Solicitud solicitudConCotizacion = solicitudRepository.save(solicitud);
-            // Log de éxito
             logger.info("Usuario {} añadió cotización correctamente a la solicitud con ID: {}", username, solicitudId);
-
             // Convertir a DTO y retornar
             return solicitudConverter.entityToDto(solicitudConCotizacion);
-
         } catch (Exception e) {
             logger.error("Error inesperado al añadir cotización. ID: {}, Usuario: {}", solicitudId, username, e);
             throw e;
         }
     }
 
-
+    /**
+     * Acepta la cotización de una solicitud y genera automáticamente un ticket desde el perfil Usuario.
+     * @param solicitudId ID de la solicitud cuya cotización se acepta.
+     * @param username Nombre del usuario que realiza la operación.
+     * @return Un DTO del ticket generado automáticamente.
+     */
     @Override
     @Transactional
     public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
@@ -219,183 +234,417 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
-
-    // Usuario rechaza la cotización
+    /**
+     * Permite que un usuario rechace la cotización de una solicitud.
+     * @param solicitudId ID de la solicitud cuya cotización se va a rechazar.
+     * @param username Nombre del usuario que realiza la operación.
+     * @return Un DTO con la información actualizada de la solicitud.
+     * @throws SolicitudNotFoundException Si la solicitud no se encuentra.
+     * @throws AccessDeniedException Si el usuario no tiene permisos para rechazar la cotización.
+     * @throws IllegalStateException Si la solicitud no está en estado 'ACEPTADO'.
+     * @throws RuntimeException Para cualquier error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional
     public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {
-        try {
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+        logger.info("Usuario '{}' intentando rechazar la cotización para la solicitud ID '{}'", username, solicitudId);
 
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> {
+                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                    });
+            // Validar permisos del usuario
             if (!solicitud.getUsername().equals(username)) {
+                logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
                 throw new AccessDeniedException("No tiene permisos para rechazar esta cotización.");
             }
-
-            if (solicitud.getEstado().equals("Aceptado")) {
-                solicitud.setCotizacionAceptada(SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name());
-                solicitud.setEstado("Rechazada por Usuario");
-                Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
-                return solicitudConverter.entityToDto(solicitudRechazada);
-            } else {
-                throw new RuntimeException("La solicitud no está en estado 'Aceptado'");
+            // Verificar si la cotización ya fue rechazada
+            if (SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name().equals(solicitud.getCotizacionAceptada())) {
+                logger.warn("Intento de rechazar una cotización ya rechazada. ID Solicitud: '{}'", solicitudId);
+                throw new IllegalStateException("La cotización ya ha sido rechazada anteriormente.");
             }
+            // Validar estado de la solicitud
+            if (!solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
+                logger.warn("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'ACEPTADO'");
+            }
+            // Actualizar el estado de la cotización y de la solicitud
+            solicitud.setCotizacionAceptada(SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name());
+            solicitud.setEstado("Rechazada por Usuario");
+            Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
+            logger.info("Cotización rechazada exitosamente por el usuario '{}' para la solicitud ID '{}'", username, solicitudId);
+            // Convertir a DTO y retornar
+            return solicitudConverter.entityToDto(solicitudRechazada);
+        } catch (SolicitudNotFoundException | AccessDeniedException | IllegalStateException e) {
+            // Manejo específico de excepciones conocidas
+            logger.error("Error procesando el rechazo de cotización. ID Solicitud: '{}', Usuario: '{}'. Detalle: {}", solicitudId, username, e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Error rechazando la cotización: ", e);
-            throw new RuntimeException("Error rechazando la cotización");
+            // Manejo general de errores inesperados
+            logger.error("Error inesperado al rechazar la cotización para la solicitud ID '{}', Usuario: '{}'. Detalle: {}", solicitudId, username, e.getMessage(), e);
+            throw new RuntimeException("Error inesperado al rechazar la cotización", e);
         }
     }
 
-    // Obtener historial de solicitudes por usuario
+    /**
+     * Obtiene el historial de solicitudes asociadas a un usuario específico.
+     * @param username Nombre del usuario cuyas solicitudes se desean obtener.
+     * @return Una lista de solicitudes en formato DTO asociadas al usuario.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerHistorialSolicitudesPorUsuario(String username) {
+        logger.info("Iniciando la consulta del historial de solicitudes para el usuario '{}'", username);
+
         try {
+            // Buscar solicitudes asociadas al usuario
             List<Solicitud> solicitudes = solicitudRepository.findByUsername(username);
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes para el usuario '{}'", username);
+            } else {
+                logger.info("Se encontraron {} solicitudes para el usuario '{}'", solicitudes.size(), username);
+            }
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error obteniendo el historial de solicitudes del usuario: ", e);
-            throw new RuntimeException("Error obteniendo el historial de solicitudes del usuario");
+            logger.error("Error obteniendo el historial de solicitudes para el usuario '{}': {}", username, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo el historial de solicitudes del usuario", e);
         }
     }
 
-    // Obtener solicitudes por estado (administrador)
+    /**
+     * Obtiene todas las solicitudes que coinciden con un estado específico.
+     * @param estado Estado de las solicitudes que se desean obtener.
+     * @return Una lista de solicitudes en formato DTO con el estado especificado.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorEstado(String estado) {
+        logger.info("Iniciando la consulta de solicitudes con estado '{}'", estado);
+
         try {
+            // Buscar solicitudes por estado
             List<Solicitud> solicitudes = solicitudRepository.findByEstado(estado);
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes con el estado '{}'", estado);
+            } else {
+                logger.info("Se encontraron {} solicitudes con el estado '{}'", solicitudes.size(), estado);
+            }
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error obteniendo las solicitudes por estado: ", e);
-            throw new RuntimeException("Error obteniendo las solicitudes por estado");
+            // Manejo de errores inesperados
+            logger.error("Error obteniendo las solicitudes con estado '{}': {}", estado, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo las solicitudes por estado", e);
         }
     }
 
-    // Obtener solicitudes por usuario y estado (usuario autenticado)
+    /**
+     * Obtiene todas las solicitudes asociadas a un usuario específico y con un estado determinado.
+     * @param username Nombre del usuario cuyas solicitudes se desean obtener.
+     * @param estado Estado de las solicitudes que se desean filtrar.
+     * @return Una lista de solicitudes en formato DTO asociadas al usuario y con el estado especificado.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorUsuarioYEstado(String username, String estado) {
+        logger.info("Iniciando la consulta de solicitudes para el usuario '{}' con estado '{}'", username, estado);
+
         try {
+            // Buscar solicitudes por usuario y estado
             List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndEstado(username, estado);
+
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes para el usuario '{}' con estado '{}'", username, estado);
+            } else {
+                logger.info("Se encontraron {} solicitudes para el usuario '{}' con estado '{}'", solicitudes.size(), username, estado);
+            }
+
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
+
         } catch (Exception e) {
-            logger.error("Error obteniendo las solicitudes del usuario por estado: ", e);
-            throw new RuntimeException("Error obteniendo las solicitudes del usuario por estado");
+            // Manejo de errores inesperados
+            logger.error("Error obteniendo las solicitudes para el usuario '{}' con estado '{}': {}", username, estado, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo las solicitudes del usuario por estado", e);
         }
     }
 
-    // Obtener solicitudes por prioridad (administrador)
+    /**
+     * Obtiene todas las solicitudes que tienen una prioridad específica.
+     * @param prioridad Prioridad de las solicitudes que se desean obtener (ALTA, MEDIA, BAJA).
+     * @return Una lista de solicitudes en formato DTO con la prioridad especificada.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorPrioridad(String prioridad) {
+        logger.info("Iniciando la consulta de solicitudes con prioridad '{}'", prioridad);
+
         try {
+            // Buscar solicitudes por prioridad
             List<Solicitud> solicitudes = solicitudRepository.findByPrioridad(prioridad);
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes con la prioridad '{}'", prioridad);
+            } else {
+                logger.info("Se encontraron {} solicitudes con la prioridad '{}'", solicitudes.size(), prioridad);
+            }
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error obteniendo las solicitudes por prioridad: ", e);
-            throw new RuntimeException("Error obteniendo las solicitudes por prioridad");
+            // Manejo de errores inesperados
+            logger.error("Error obteniendo las solicitudes con prioridad '{}': {}", prioridad, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo las solicitudes por prioridad", e);
         }
     }
 
-    // Obtener solicitudes por prioridad y usuario (usuario autenticado)
+    /**
+     * Obtiene todas las solicitudes asociadas a un usuario específico y con una prioridad determinada.
+     * @param prioridad Prioridad de las solicitudes que se desean obtener (ALTA, MEDIA, BAJA).
+     * @param username Nombre del usuario cuyas solicitudes se desean obtener.
+     * @return Una lista de solicitudes en formato DTO asociadas al usuario y con la prioridad especificada.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorPrioridadYUsuario(String prioridad, String username) {
+        logger.info("Iniciando la consulta de solicitudes para el usuario '{}' con prioridad '{}'", username, prioridad);
+
         try {
+            try {
+                SolicitudEstado.valueOf(prioridad.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Prioridad inválida ingresada: '{}'. Las prioridades válidas son: ALTO, MEDIO, BAJA", prioridad);
+                throw new IllegalArgumentException("Prioridad inválida. Las prioridades válidas son: ALTO, MEDIO, BAJA");
+            }
+            // Buscar solicitudes por usuario y prioridad
             List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndPrioridad(username, prioridad);
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes para el usuario '{}' con prioridad '{}'", username, prioridad);
+            } else {
+                logger.info("Se encontraron {} solicitudes para el usuario '{}' con prioridad '{}'", solicitudes.size(), username, prioridad);
+            }
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            // Manejo específico para prioridad inválida
+            logger.error("Error de validación: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Error obteniendo las solicitudes del usuario por prioridad: ", e);
-            throw new RuntimeException("Error obteniendo las solicitudes del usuario por prioridad");
+            logger.error("Error obteniendo las solicitudes para el usuario '{}' con prioridad '{}': {}", username, prioridad, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo las solicitudes del usuario por prioridad", e);
         }
     }
 
-    // Obtener historial completo de solicitudes (administrador)
+
+    /**
+     * Obtiene el historial completo de solicitudes en el sistema (accesible solo para administradores).
+     * @return Una lista de todas las solicitudes en formato DTO.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerHistorialCompletoSolicitudes() {
+        logger.info("Iniciando la consulta del historial completo de solicitudes");
+
         try {
+            // Obtener todas las solicitudes
             List<Solicitud> solicitudes = solicitudRepository.findAll();
+            if (solicitudes.isEmpty()) {
+                logger.warn("No se encontraron solicitudes en el sistema");
+            } else {
+                logger.info("Se encontraron {} solicitudes en el historial", solicitudes.size());
+            }
+            // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error obteniendo el historial completo de solicitudes: ", e);
-            throw new RuntimeException("Error obteniendo el historial completo de solicitudes");
+            // Manejo de errores inesperados
+            logger.error("Error obteniendo el historial completo de solicitudes: {}", e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo el historial completo de solicitudes", e);
         }
     }
 
-    // Modificar una solicitud (usuario autenticado)
+    /**
+     * Modifica una solicitud existente asociada a un usuario autenticado.
+     * @param solicitudId ID de la solicitud a modificar.
+     * @param solicitudDTO DTO con los datos actualizados de la solicitud.
+     * @param username Nombre del usuario que realiza la operación.
+     * @return Un DTO con la información actualizada de la solicitud.
+     * @throws SolicitudNotFoundException Si la solicitud no existe.
+     * @throws AccessDeniedException Si el usuario no tiene permisos para modificar la solicitud o la solicitud no está en estado 'Pendiente'.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional
     public SolicitudDTO modificarSolicitud(String solicitudId, SolicitudDTO solicitudDTO, String username) {
-        try {
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
+        logger.info("Usuario '{}' intentando modificar la solicitud con ID '{}'", username, solicitudId);
 
-            if (!solicitud.getUsername().equals(username) || !solicitud.getEstado().equals("Pendiente")) {
-                throw new AccessDeniedException("No tiene permisos para modificar esta solicitud o la solicitud no está en estado 'Pendiente'");
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> {
+                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                    });
+
+            // Validar permisos del usuario y estado de la solicitud
+            if (!solicitud.getUsername().equals(username)) {
+                logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
+                throw new AccessDeniedException("No tiene permisos para modificar esta solicitud.");
+            }
+            if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
+                logger.warn("La solicitud con ID '{}' no está en estado 'Pendiente'", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'Pendiente' y no puede ser modificada.");
+            }
+            // Actualizar campos solo si están presentes en el DTO
+            if (solicitudDTO.getDescripcionInicial() != null) {
+                solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
+                logger.info("Descripción inicial actualizada para la solicitud ID '{}'", solicitudId);
+            }
+            if (solicitudDTO.getPrioridad() != null) {
+                solicitud.setPrioridad(solicitudDTO.getPrioridad());
+                logger.info("Prioridad actualizada para la solicitud ID '{}'", solicitudId);
             }
 
-            solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
-            solicitud.setPrioridad(solicitudDTO.getPrioridad());
+            // Guardar la solicitud modificada
             Solicitud solicitudModificada = solicitudRepository.save(solicitud);
+
+            logger.info("Solicitud con ID '{}' modificada exitosamente por el usuario '{}'", solicitudId, username);
+
+            // Convertir la solicitud modificada a DTO y retornar
             return solicitudConverter.entityToDto(solicitudModificada);
-        } catch (Exception e) {
-            logger.error("Error modificando la solicitud: ", e);
-            throw new RuntimeException("Error modificando la solicitud");
-        }
-    }
 
-    // Eliminar una solicitud (usuario autenticado)
-    public void eliminarSolicitud(String solicitudId, String username) {
-        try {
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
-
-            if (!solicitud.getUsername().equals(username) || !solicitud.getEstado().equals("Pendiente")) {
-                throw new AccessDeniedException("No tiene permisos para eliminar esta solicitud o la solicitud no está en estado 'Pendiente'");
-            }
-
-            solicitudRepository.delete(solicitud);
-            logger.info("Solicitud eliminada exitosamente: {}", solicitudId);
-        } catch (SolicitudNotFoundException | AccessDeniedException e) {
-            logger.error("Error al eliminar la solicitud: ", e);
+        } catch (SolicitudNotFoundException | AccessDeniedException | IllegalStateException e) {
+            // Manejo específico de excepciones conocidas
+            logger.error("Error procesando la modificación de la solicitud ID '{}': {}", solicitudId, e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            logger.error("Error inesperado al eliminar la solicitud: ", e);
-            throw new RuntimeException("Error inesperado al eliminar la solicitud");
+            // Manejo general de errores inesperados
+            logger.error("Error inesperado al modificar la solicitud con ID '{}', Usuario: '{}'. Detalle: {}", solicitudId, username, e.getMessage(), e);
+            throw new RuntimeException("Error inesperado al modificar la solicitud", e);
         }
     }
 
-    // Eliminar una solicitud (administrador)
-    public void eliminarSolicitudAdmin(String solicitudId) {
-        try {
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
 
-            if (!solicitud.getEstado().equals("Pendiente")) {
-                throw new RuntimeException("La solicitud no puede ser eliminada porque no está en estado 'Pendiente'");
+    /**
+     * Elimina una solicitud existente asociada a un usuario autenticado.
+     * @param solicitudId ID de la solicitud a eliminar.
+     * @param username Nombre del usuario que realiza la operación.
+     * @throws SolicitudNotFoundException Si la solicitud no existe.
+     * @throws AccessDeniedException Si el usuario no tiene permisos para eliminar la solicitud.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional
+    public EliminarSolicitudResponse eliminarSolicitudUsuario(String solicitudId, String username) {
+        logger.info("Usuario '{}' intentando eliminar la solicitud con ID '{}'", username, solicitudId);
+
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> {
+                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                    });
+
+            // Validar permisos del usuario
+            if (!solicitud.getUsername().equals(username)) {
+                logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
+                throw new AccessDeniedException("No tiene permisos para eliminar esta solicitud.");
             }
 
+            // Validar estado de la solicitud
+            if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
+                logger.warn("Estado inválido: la solicitud con ID '{}' no está en estado 'PENDIENTE'", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'PENDIENTE', por lo que no puede ser eliminada.");
+            }
+
+            // Eliminar la solicitud
             solicitudRepository.delete(solicitud);
-            logger.info("Solicitud eliminada por administrador: {}", solicitudId);
+            logger.info("Solicitud con ID '{}' eliminada exitosamente por el usuario '{}'", solicitudId, username);
+
+            // Retornar mensaje de éxito
+            return new EliminarSolicitudResponse(200, "Solicitud con ID " + solicitudId + " eliminada exitosamente");
+
         } catch (SolicitudNotFoundException e) {
-            logger.error("Solicitud no encontrada al intentar eliminar: ", e);
-            throw e;
-        } catch (RuntimeException e) {
-            logger.error("La solicitud no puede ser eliminada: ", e);
-            throw e;
+            logger.error("Error: Solicitud no encontrada. ID: {}", solicitudId, e);
+            return new EliminarSolicitudResponse(404, "Solicitud no encontrada con ID: " + solicitudId);
+        } catch (AccessDeniedException e) {
+            logger.error("Error: Acceso denegado al eliminar la solicitud. ID: {}", solicitudId, e);
+            return new EliminarSolicitudResponse(403, "No tiene permisos para eliminar esta solicitud.");
+        } catch (IllegalStateException e) {
+            logger.error("Error: Estado inválido para eliminar. ID: {}", solicitudId, e);
+            return new EliminarSolicitudResponse(400, e.getMessage());
         } catch (Exception e) {
-            logger.error("Error inesperado al eliminar la solicitud por administrador: ", e);
-            throw new RuntimeException("Error inesperado al eliminar la solicitud por administrador");
+            logger.error("Error inesperado al eliminar la solicitud con ID '{}', Usuario: '{}'. Detalle: {}", solicitudId, username, e.getMessage(), e);
+            return new EliminarSolicitudResponse(500, "Error inesperado al eliminar la solicitud");
         }
     }
 
-    // Rechazar una solicitud (Administrador)
+
+
+    /**
+     * Elimina una solicitud específica del sistema como administrador.
+     * @param solicitudId ID de la solicitud a eliminar.
+     * @throws SolicitudNotFoundException Si la solicitud no existe en la base de datos.
+     * @throws RuntimeException Si la solicitud no está en estado 'Pendiente' o ocurre un error inesperado.
+     */
+    @Override
+    @Transactional
+    public void eliminarSolicitudAdmin(String solicitudId) {
+        logger.info("El administrador está intentando eliminar la solicitud con ID '{}'", solicitudId);
+
+        try {
+            // Buscar la solicitud por ID
+            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                    .orElseThrow(() -> {
+                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                    });
+            // Validar que la solicitud esté en estado 'Pendiente'
+            if (!solicitud.getEstado().equals("Pendiente")) {
+                logger.warn("La solicitud con ID '{}' no puede ser eliminada porque no está en estado 'Pendiente'", solicitudId);
+                throw new IllegalStateException("La solicitud no puede ser eliminada porque no está en estado 'Pendiente'.");
+            }
+            // Eliminar la solicitud
+            solicitudRepository.delete(solicitud);
+            logger.info("Solicitud con ID '{}' eliminada exitosamente por el administrador", solicitudId);
+        } catch (SolicitudNotFoundException e) {
+            // Manejo específico de solicitudes no encontradas
+            logger.error("Error: Solicitud no encontrada al intentar eliminarla. ID: '{}'", solicitudId, e);
+            throw e;
+        } catch (IllegalStateException e) {
+            // Manejo específico de estados no válidos para eliminar
+            logger.error("Error: La solicitud con ID '{}' no puede ser eliminada debido a un estado inválido. Detalle: {}", solicitudId, e.getMessage());
+            throw e;
+
+        } catch (Exception e) {
+            // Manejo general de errores inesperados
+            logger.error("Error inesperado al eliminar la solicitud con ID '{}' por el administrador: {}", solicitudId, e.getMessage(), e);
+            throw new RuntimeException("Error inesperado al eliminar la solicitud por administrador", e);
+        }
+    }
 
     /**
      * Rechaza una solicitud en estado PENDIENTE.
-     *
-     * Este método busca la solicitud por ID, valida que esté en estado PENDIENTE,
-     * y actualiza su estado a RECHAZADO. Maneja las excepciones para garantizar
-     * que los errores sean informativos y registrados adecuadamente.
-     *
      * @param solicitudId ID de la solicitud a rechazar.
      * @return DTO con los datos actualizados de la solicitud.
      * @throws SolicitudNotFoundException Si la solicitud no existe.

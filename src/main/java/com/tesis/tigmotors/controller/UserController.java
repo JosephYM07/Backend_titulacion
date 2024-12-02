@@ -5,6 +5,8 @@ import com.tesis.tigmotors.dto.Request.ChangePasswordRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
+import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
+import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
@@ -92,7 +94,7 @@ public class UserController {
      * @return ResponseEntity con la solicitud creada.
      */
     @PostMapping("/crear-solicitud")
-    public ResponseEntity<?> crearSolicitud(@RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
+    public ResponseEntity<?> crearSolicitud(@RequestBody @Valid SolicitudDTO solicitudDTO, Authentication authentication) {
         String username = authentication.getName(); // Extrae el username del token
         SolicitudResponseDTO response = solicitudService.crearSolicitud(solicitudDTO, username);
         return ResponseEntity.ok(response);
@@ -106,7 +108,28 @@ public class UserController {
         return ResponseEntity.ok(ticketGenerado);
     }
 
-    // Endpoint para obtener historial de solicitudes del usuario autenticado
+    /**
+     * Endpoint para que un usuario rechace la cotización de una solicitud.
+     *
+     * @param solicitudId ID de la solicitud cuya cotización se va a rechazar.
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity con el DTO de la solicitud actualizada.
+     */
+    @PutMapping("/rechazar-cotizacion/{solicitudId}")
+    public ResponseEntity<SolicitudDTO> rechazarCotizacion(
+            @PathVariable String solicitudId,
+            Authentication authentication) {
+        String username = authentication.getName(); // Obtener el nombre del usuario autenticado
+        SolicitudDTO solicitudRechazada = solicitudService.rechazarCotizacion(solicitudId, username);
+        return ResponseEntity.ok(solicitudRechazada);
+    }
+
+
+    /**
+     * Endpoint para obtener el historial de solicitudes del usuario autenticado.
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity con la lista de solicitudes en formato DTO o un mensaje de error en caso de falla.
+     */
     @GetMapping("/historial-solicitud")
     public ResponseEntity<?> obtenerHistorialSolicitudes(Authentication authentication) {
         try {
@@ -119,7 +142,12 @@ public class UserController {
         }
     }
 
-    // Endpoint para obtener solicitudes del usuario autenticado por estado
+    /**
+     * Endpoint para obtener las solicitudes del usuario autenticado filtradas por estado (PENDIENTE Y ACEPTADO).
+     * @param estado Estado de las solicitudes que se desean filtrar.
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity con la lista de solicitudes en formato DTO o un mensaje de error en caso de falla.
+     */
     @GetMapping("/estado-solicitud/{estado}")
     public ResponseEntity<?> obtenerSolicitudesPorEstado(@PathVariable String estado, Authentication authentication) {
         try {
@@ -132,7 +160,13 @@ public class UserController {
         }
     }
 
-    // Endpoint para obtener solicitudes del usuario autenticado por prioridad
+    /**
+     * Endpoint para obtener el historial completo de todas las solicitudes en el sistema.
+     * Este endpoint está diseñado exclusivamente para administradores y realiza las siguientes acciones:
+     * - Llama al servicio para recuperar todas las solicitudes registradas en el sistema.
+     * - Retorna la lista de solicitudes en formato DTO si la operación es exitosa.
+     * @return Un ResponseEntity con la lista de todas las solicitudes en formato DTO.
+     */
     @GetMapping("/prioridad-solicitud/{prioridad}")
     public ResponseEntity<?> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
         try {
@@ -145,7 +179,13 @@ public class UserController {
         }
     }
 
-    // Endpoint para modificar una solicitud del usuario autenticado
+    /**
+     * Endpoint para modificar una solicitud existente del usuario autenticado.
+     * @param solicitudId ID de la solicitud que se desea modificar.
+     * @param solicitudDTO DTO con los datos actualizados de la solicitud (opcionalmente `descripcionInicial` y/o `prioridad`).
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity con el DTO de la solicitud modificada o un mensaje de error en caso de falla.
+     */
     @PutMapping("/modificar-solicitud/{solicitudId}")
     public ResponseEntity<?> modificarSolicitud(@PathVariable String solicitudId, @RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
         try {
@@ -161,24 +201,23 @@ public class UserController {
         }
     }
 
-    // Endpoint para eliminar una solicitud del usuario autenticado
+    /**
+     * Endpoint para eliminar una solicitud existente del usuario autenticado.
+     * @param solicitudId ID de la solicitud que se desea eliminar.
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity sin contenido (HTTP 204) si la operación es exitosa.
+     */
     @DeleteMapping("/eliminar-solicitud/{solicitudId}")
-    public ResponseEntity<?> eliminarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            solicitudServiceImpl.eliminarSolicitud(solicitudId, username);
-            logger.info("Solicitud eliminada exitosamente: {}", solicitudId);
-            return ResponseEntity.noContent().build();
-        } catch (AccessDeniedException e) {
-            logger.error("Acceso denegado al eliminar la solicitud: ", e);
-            return ResponseEntity.status(403).body("Acceso denegado al eliminar la solicitud");
-        } catch (Exception e) {
-            logger.error("Error al eliminar la solicitud: ", e);
-            return ResponseEntity.internalServerError().body("Error al eliminar la solicitud");
-        }
+    public ResponseEntity<EliminarSolicitudResponse> eliminarSolicitud(
+            @PathVariable String solicitudId,
+            Authentication authentication) {
+        String username = authentication.getName(); // Extraer el username del token
+        EliminarSolicitudResponse resultado = solicitudService.eliminarSolicitudUsuario(solicitudId, username);
+        return ResponseEntity.status(resultado.getStatusCode()).body(resultado); // Configura el código de estado HTTP
     }
 
-    // Tickets
+
+// Tickets
     /*@PostMapping("/tickets/crear")
     public ResponseEntity<?> crearTicket(@Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
         try {
