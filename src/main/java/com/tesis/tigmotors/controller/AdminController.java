@@ -133,13 +133,14 @@ public class AdminController {
     }
 
     //Solicitudes
-    // Endpoint para aceptar una solicitud (solo para administradores)
     @PutMapping("/aceptar/{solicitudId}")
-    public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(@PathVariable String solicitudId, Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(
+            @PathVariable String solicitudId,
+            Authentication authentication) {
+        String username = authentication.getName(); // Obtener el nombre del usuario autenticado
         logger.info("Usuario {} aceptando la solicitud con ID: {}", username, solicitudId);
         SolicitudResponseDTO solicitudAceptada = solicitudService.aceptarSolicitud(solicitudId);
-        return ResponseEntity.ok(solicitudAceptada);
+        return ResponseEntity.ok(solicitudAceptada); // Retorna directamente la respuesta del servicio
     }
 
     /**
@@ -191,7 +192,7 @@ public class AdminController {
     }
 
     // Endpoint para obtener historial completo de todas las solicitudes (solo para administradores)
-    @GetMapping("/historial")
+    @GetMapping("/historial-solicitudes")
     public ResponseEntity<List<SolicitudDTO>> obtenerHistorialCompletoSolicitudes() {
         List<SolicitudDTO> solicitudes = solicitudService.obtenerHistorialCompletoSolicitudes();
         return ResponseEntity.ok(solicitudes);

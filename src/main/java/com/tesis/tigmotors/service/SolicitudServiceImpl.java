@@ -90,41 +90,45 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Override
     @Transactional
     public SolicitudResponseDTO aceptarSolicitud(String solicitudId) {
+        logger.info("Iniciando el proceso para aceptar la solicitud con ID '{}'", solicitudId);
+
         try {
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
+                    .orElseThrow(() -> {
+                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                    });
 
-            // Validar si la solicitud ya está aceptada
+            // Validaciones
             if (solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
                 logger.warn("Intento de aceptar una solicitud ya aceptada. ID: {}", solicitudId);
                 throw new IllegalStateException("La solicitud ya está en estado 'Aceptado'");
             }
-            // Validar si la solicitud está en estado PENDIENTE
+
             if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
                 logger.warn("Intento de aceptar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
                 throw new IllegalStateException("La solicitud no está en estado 'Pendiente'");
             }
+
             // Cambiar el estado a ACEPTADO
             solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
             Solicitud solicitudAceptada = solicitudRepository.save(solicitud);
-            logger.info("Solicitud con ID {} aceptada exitosamente.", solicitudId);
-            // Convertir la entidad actualizada a un DTO de respuesta y retornarlo
+
+            logger.info("Solicitud con ID '{}' aceptada exitosamente.", solicitudId);
+
+            // Convertir la entidad a DTO
             return solicitudConverter.entityToResponseDto(solicitudAceptada);
-        } catch (SolicitudNotFoundException e) {
-            // Manejo específico para solicitudes no encontradas
-            logger.error("Error: Solicitud no encontrada. ID: {}", solicitudId, e);
-            throw new RuntimeException("Error: La solicitud no existe. ID: " + solicitudId, e);
-        } catch (IllegalStateException e) {
-            // Manejo de estados inválidos
-            logger.error("Error: Estado inválido para aceptar la solicitud. ID: {}, Detalle: {}", solicitudId, e.getMessage());
-            throw new RuntimeException("Error: " + e.getMessage(), e);
+
+        } catch (SolicitudNotFoundException | IllegalStateException e) {
+            logger.error("Error controlado: {}", e.getMessage());
+            throw e; // Se maneja en el GlobalExceptionHandler
         } catch (Exception e) {
-            // Manejo general de errores inesperados
-            logger.error("Error inesperado al aceptar la solicitud con ID {}: ", solicitudId, e);
+            logger.error("Error inesperado al aceptar la solicitud con ID '{}': {}", solicitudId, e.getMessage(), e);
             throw new RuntimeException("Error interno al aceptar la solicitud", e);
         }
     }
+
 
     /**
      * Añade una cotización y descripción del trabajo a una solicitud desde el perfil Administrador.
@@ -273,7 +277,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             }
             // Actualizar el estado de la cotización y de la solicitud
             solicitud.setCotizacionAceptada(SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name());
-            solicitud.setEstado("Rechazada por Usuario");
             Solicitud solicitudRechazada = solicitudRepository.save(solicitud);
             logger.info("Cotización rechazada exitosamente por el usuario '{}' para la solicitud ID '{}'", username, solicitudId);
             // Convertir a DTO y retornar
@@ -520,18 +523,15 @@ public class SolicitudServiceImpl implements SolicitudService {
                 logger.info("Descripción inicial actualizada para la solicitud ID '{}'", solicitudId);
             }
             if (solicitudDTO.getPrioridad() != null) {
-                solicitud.setPrioridad(solicitudDTO.getPrioridad());
+                String prioridadMayusculas = solicitudDTO.getPrioridad().toUpperCase();
+                solicitud.setPrioridad(prioridadMayusculas);
                 logger.info("Prioridad actualizada para la solicitud ID '{}'", solicitudId);
             }
-
             // Guardar la solicitud modificada
             Solicitud solicitudModificada = solicitudRepository.save(solicitud);
-
             logger.info("Solicitud con ID '{}' modificada exitosamente por el usuario '{}'", solicitudId, username);
-
             // Convertir la solicitud modificada a DTO y retornar
             return solicitudConverter.entityToDto(solicitudModificada);
-
         } catch (SolicitudNotFoundException | AccessDeniedException | IllegalStateException e) {
             // Manejo específico de excepciones conocidas
             logger.error("Error procesando la modificación de la solicitud ID '{}': {}", solicitudId, e.getMessage(), e);
@@ -598,7 +598,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             return new EliminarSolicitudResponse(500, "Error inesperado al eliminar la solicitud");
         }
     }
-
 
 
     /**

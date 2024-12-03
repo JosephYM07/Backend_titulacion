@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.service;
 
+import com.tesis.tigmotors.Exceptions.InvalidRequestException;
 import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
 import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
@@ -10,8 +11,6 @@ import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -30,6 +29,9 @@ public class CrudUserImpl implements UserServiceUpdate {
     public UserBasicInfoResponseDTO getUserProfile(String username) {
         try {
             logger.info("Buscando perfil para el usuario: {}", username);
+            if (username == null || username.isBlank()) {
+                throw new InvalidRequestException("El username es obligatorio y no puede estar vacío.");
+            }
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario con username '" + username + "' no encontrado"));
             logger.info("Rol del usuario encontrado: {}", user.getRole());
@@ -47,13 +49,13 @@ public class CrudUserImpl implements UserServiceUpdate {
             );
         } catch (ResourceNotFoundException ex) {
             logger.error("Usuario no encontrado: {}", username, ex);
-            throw ex;
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (SecurityException ex) {
             logger.error("Acceso denegado para el usuario: {}", username, ex);
-            throw ex;
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
             logger.error("Error inesperado al buscar el perfil del usuario: {}", username, ex);
-            throw new RuntimeException("Error inesperado al buscar el perfil del usuario", ex);
+            throw new RuntimeException("Error inesperado al buscar el perfil del usuario", ex); // Manejado globalmente
         }
     }
 
@@ -70,7 +72,13 @@ public class CrudUserImpl implements UserServiceUpdate {
         try {
             // Validar que el ID del usuario esté presente
             if (updateRequest.getUserId() == null || updateRequest.getUserId() <= 0) {
-                throw new IllegalArgumentException("El ID del usuario es obligatorio y debe ser mayor que 0.");
+                throw new InvalidRequestException("El ID del usuario es obligatorio y debe ser mayor que 0.");
+            }
+            if ((updateRequest.getUsername() == null || updateRequest.getUsername().isBlank()) &&
+                    (updateRequest.getBusiness_name() == null || updateRequest.getBusiness_name().isBlank()) &&
+                    (updateRequest.getEmail() == null || updateRequest.getEmail().isBlank()) &&
+                    (updateRequest.getPhone_number() == null || updateRequest.getPhone_number().isBlank())) {
+                throw new InvalidRequestException("Debe proporcionar al menos un campo para actualizar.");
             }
             User user = userRepository.findById(updateRequest.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID '" + updateRequest.getUserId() + "' no encontrado"));
@@ -100,16 +108,15 @@ public class CrudUserImpl implements UserServiceUpdate {
             );
         } catch (ResourceNotFoundException ex) {
             logger.error("Usuario no encontrado con ID: {}", updateRequest.getUserId(), ex);
-            throw ex;
-        } catch (IllegalArgumentException ex) {
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (InvalidRequestException ex) {
             logger.error("Error de validación: {}", ex.getMessage());
-            throw ex;
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
             logger.error("Error inesperado al actualizar el usuario con ID '{}': {}", updateRequest.getUserId(), ex.getMessage());
-            throw new RuntimeException("Error inesperado al actualizar el perfil del usuario", ex);
+            throw new RuntimeException("Error inesperado al actualizar el perfil del usuario", ex); // Manejado globalmente
         }
     }
-
 
     @Override
     @Transactional
@@ -117,32 +124,42 @@ public class CrudUserImpl implements UserServiceUpdate {
         logger.info("Actualizando información del usuario autenticado: {}", usernameFromToken);
 
         try {
+            // Verificar que al menos un campo esté presente
+            if ((updateRequest.getUsername() == null || updateRequest.getUsername().isBlank()) &&
+                    (updateRequest.getBusinessName() == null || updateRequest.getBusinessName().isBlank()) &&
+                    (updateRequest.getEmail() == null || updateRequest.getEmail().isBlank()) &&
+                    (updateRequest.getPhoneNumber() == null || updateRequest.getPhoneNumber().isBlank())) {
+                throw new InvalidRequestException("Debe proporcionar al menos un campo para actualizar.");
+            }
             // Buscar al usuario por username
             User user = userRepository.findByUsername(usernameFromToken)
                     .orElseThrow(() -> new ResourceNotFoundException("Usuario con username '" + usernameFromToken + "' no encontrado"));
-
             // Validar que el usuario tenga el rol USER
             if (!user.getRole().equals(Role.USER)) {
                 logger.error("Acceso denegado: el usuario no tiene el rol USER");
                 throw new SecurityException("Acceso denegado: solo usuarios con el rol USER pueden acceder a este recurso");
             }
-
+            // Validar que el username proporcionado coincide con el del token
+            if (updateRequest.getUsername() != null &&
+                    !updateRequest.getUsername().equals(usernameFromToken)) {
+                throw new SecurityException("No puede actualizar información de otro usuario.");
+            }
             // Actualizar solo los campos presentes y no vacíos
-            if (updateRequest.getBusiness_name() != null && !updateRequest.getBusiness_name().isBlank()) {
-                user.setBusiness_name(updateRequest.getBusiness_name());
+            if (updateRequest.getUsername() != null && !updateRequest.getUsername().isBlank()) {
+                user.setUsername(updateRequest.getUsername());
+            }
+            if (updateRequest.getBusinessName() != null && !updateRequest.getBusinessName().isBlank()) {
+                user.setBusiness_name(updateRequest.getBusinessName());
             }
             if (updateRequest.getEmail() != null && !updateRequest.getEmail().isBlank()) {
                 user.setEmail(updateRequest.getEmail());
             }
-            if (updateRequest.getPhone_number() != null && !updateRequest.getPhone_number().isBlank()) {
-                user.setPhone_number(updateRequest.getPhone_number());
+            if (updateRequest.getPhoneNumber() != null && !updateRequest.getPhoneNumber().isBlank()) {
+                user.setPhone_number(updateRequest.getPhoneNumber());
             }
-
             // Guardar los cambios en la base de datos
             userRepository.save(user);
-
             logger.info("Perfil actualizado correctamente para el usuario: {}", usernameFromToken);
-
             // Retornar solo los datos necesarios usando UserBasicInfoResponseDTO
             return new UserBasicInfoResponseDTO(
                     user.getId(),
@@ -151,9 +168,10 @@ public class CrudUserImpl implements UserServiceUpdate {
                     user.getEmail(),
                     user.getPhone_number()
             );
-        } catch (Exception ex) {
-            logger.error("Error al actualizar la información del usuario: {}", usernameFromToken, ex);
-            throw new RuntimeException("Error inesperado al actualizar el perfil del usuario", ex);
+        } catch (ResourceNotFoundException | SecurityException | InvalidRequestException ex) {
+            logger.error("Error al actualizar el perfil del usuario: {}", usernameFromToken, ex);
+            throw ex;
         }
     }
+
 }
