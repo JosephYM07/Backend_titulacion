@@ -1,6 +1,8 @@
 package com.tesis.tigmotors.service;
 
 
+import com.tesis.tigmotors.Exceptions.InvalidRequestException;
+import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.dto.Request.PendingUserDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.enums.Role;
@@ -16,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -35,28 +38,40 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final RefreshTokenRepository refreshTokenRepository;
 
+
+    @Override
+    @Transactional
     public ResponseEntity<Object> getUsersStatus() {
         try {
+            // Obtener el conteo de usuarios pendientes y aprobados
             long pendingUsersCount = userRepository.countByPermisoAndRole(false, Role.USER);
             long approvedUsersCount = userRepository.countByPermisoAndRole(true, Role.USER);
 
+            // Validar que las consultas hayan devuelto datos consistentes
+            if (pendingUsersCount < 0 || approvedUsersCount < 0) {
+                throw new InvalidRequestException("Los datos del estado de los usuarios no son consistentes.");
+            }
+
+            // Crear la respuesta
             Map<String, Long> response = Map.of(
                     "Pendiente", pendingUsersCount,
-                    "Por Aprobar", approvedUsersCount
+                    "Aprobado", approvedUsersCount
             );
 
             return ResponseEntity.ok(response);
+
+        } catch (InvalidRequestException ex) {
+            log.error("Error de validación al obtener el estado de los usuarios: {}", ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
-            log.error("Error al obtener el estado de los usuarios: {}", ex.getMessage(), ex);
-            ErrorResponse errorResponse = new ErrorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    "Error al obtener el estado de los usuarios"
-            );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            log.error("Error inesperado al obtener el estado de los usuarios: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al obtener el estado de los usuarios.", ex); // Manejado globalmente
         }
     }
 
+
     @Override
+    @Transactional
     public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
         // Validar que el usuario autenticado tenga el rol ADMIN
         boolean esAdmin = authentication.getAuthorities().stream()
@@ -65,11 +80,12 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
         if (!esAdmin) {
             throw new AccessDeniedException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
         }
-
         try {
             // Obtener usuarios aprobados con rol USER
             List<User> usuariosAprobados = userRepository.findByPermisoAndRole(true, Role.USER);
-
+            if (usuariosAprobados.isEmpty()) {
+                throw new ResourceNotFoundException("No hay usuarios aprobados con rol USER.");
+            }
             // Convertir usuarios aprobados a DTO
             return usuariosAprobados.stream()
                     .map(user -> new PendingUserDTO(
@@ -82,23 +98,23 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                             user.isPermiso()
                     ))
                     .collect(Collectors.toList());
+        } catch (ResourceNotFoundException ex) {
+            log.error("No hay usuarios aprobados con rol USER: {}", ex.getMessage(), ex);
+            throw ex; // Delegado al GlobalExceptionHandler
         } catch (Exception ex) {
-            log.error("Error al obtener usuarios aprobados: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Error al obtener usuarios aprobados.", ex);
+            log.error("Error inesperado al obtener usuarios aprobados: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al obtener usuarios aprobados.", ex); // Delegado globalmente
         }
     }
 
-
-
+    @Override
+    @Transactional
     public ResponseEntity<Object> getPendingUsers() {
         try {
             List<User> pendingUsers = userRepository.findByPermiso(false);
-
             if (pendingUsers.isEmpty()) {
-                ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "No hay usuarios pendientes de aprobación");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+                throw new ResourceNotFoundException("No hay usuarios pendientes de aprobación.");
             }
-
             List<PendingUserDTO> pendingUsersDTOs = pendingUsers.stream()
                     .map(user -> new PendingUserDTO(
                             user.getId(),
@@ -112,31 +128,26 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                     .collect(Collectors.toList());
 
             return ResponseEntity.ok(pendingUsersDTOs);
+        } catch (ResourceNotFoundException ex) {
+            log.error("No hay usuarios pendientes de aprobación.", ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
-            log.error("Error al obtener usuarios pendientes", ex);
-            ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al obtener los usuarios pendientes");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            log.error("Error inesperado al obtener usuarios pendientes", ex);
+            throw new RuntimeException("Error inesperado al obtener usuarios pendientes.", ex); // Manejado globalmente
         }
     }
 
-    // Método para aprobar un usuario
+    @Override
+    @Transactional
     public ResponseEntity<Object> approveUser(Integer userId) {
         try {
             // Buscar el usuario por ID
-            Optional<User> userOptional = userRepository.findById(userId);
-
-            if (userOptional.isEmpty()) {
-                // Usuario no encontrado
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Usuario no encontrado"));
-            }
-
-            User user = userOptional.get();
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID '" + userId + "' no encontrado."));
 
             // Validar si ya está aprobado
             if (user.isPermiso()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "El usuario ya ha sido aprobado previamente"));
+                throw new IllegalStateException("El usuario ya ha sido aprobado previamente.");
             }
 
             // Aprobar al usuario
@@ -144,51 +155,75 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
             userRepository.save(user);
 
             // Enviar notificación por correo electrónico
-            String to = user.getEmail();
-            String subject = "Aprobación de Cuenta - TigMotors";
-            String content = buildAccountApprovalEmailContent(user.getUsername());
-
             try {
+                String to = user.getEmail();
+                String subject = "Aprobación de Cuenta - TigMotors";
+                String content = buildAccountApprovalEmailContent(user.getUsername());
                 emailServiceImpl.sendEmail(to, subject, content);
             } catch (RuntimeException e) {
-                System.err.println("Error al enviar correo de aprobación: " + e.getMessage());
+                log.error("Error al enviar correo de aprobación para el usuario con ID {}: {}", userId, e.getMessage(), e);
             }
 
+            // Retornar respuesta exitosa
             return ResponseEntity.ok(Map.of("message", "Usuario aprobado con éxito"));
 
+        } catch (ResourceNotFoundException ex) {
+            log.error("Usuario no encontrado con ID {}: {}", userId, ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (IllegalStateException ex) {
+            log.error("Error de estado: {}", ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (InvalidRequestException ex) {
+            log.error("Solicitud inválida para aprobar usuario: {}", ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al aprobar el usuario"));
+            log.error("Error inesperado al aprobar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al aprobar el usuario.", ex); // Manejado globalmente
         }
     }
 
+
     // Método para eliminar un usuario por ID
+    @Override
+    @Transactional
     public ResponseEntity<Object> deleteUserById(Integer userId) {
         try {
+            // Validar que el ID del usuario sea válido
+            if (userId == null || userId <= 0) {
+                throw new InvalidRequestException("El ID del usuario es obligatorio y debe ser mayor que 0.");
+            }
+
             // Buscar el usuario por ID
-            Optional<User> userOptional = userRepository.findById(userId);
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario con ID '" + userId + "' no encontrado."));
 
-            if (userOptional.isEmpty()) {
-                // Usuario no encontrado
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Usuario no encontrado"));
-            }
-
-            User user = userOptional.get();
+            // Validar que el usuario tenga el rol USER
             if (!user.getRole().equals(Role.USER)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), "No tienes permiso para eliminar este usuario"));
+                throw new SecurityException("No tienes permiso para eliminar este usuario.");
             }
+
+            // Eliminar tokens asociados al usuario
             passwordResetTokenRepository.deleteByUserId(userId);
             refreshTokenRepository.deleteByUserId(userId);
+
+            // Eliminar al usuario
             userRepository.delete(user);
 
+            // Retornar respuesta exitosa
             return ResponseEntity.ok(Map.of("message", "Usuario eliminado con éxito"));
 
+        } catch (ResourceNotFoundException ex) {
+            log.error("Usuario no encontrado con ID {}: {}", userId, ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (SecurityException ex) {
+            log.error("Acceso denegado para eliminar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (InvalidRequestException ex) {
+            log.error("Solicitud inválida para eliminar usuario: {}", ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
-            log.error("Error al eliminar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al eliminar el usuario"));
+            log.error("Error inesperado al eliminar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al eliminar el usuario.", ex); // Manejado globalmente
         }
     }
 

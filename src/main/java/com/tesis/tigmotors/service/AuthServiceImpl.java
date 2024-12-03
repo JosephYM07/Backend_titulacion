@@ -1,6 +1,8 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.AuthExceptions;
+import com.tesis.tigmotors.Exceptions.InvalidRequestException;
+import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.dto.Response.AuthResponse;
 import com.tesis.tigmotors.dto.Request.LoginRequest;
 import com.tesis.tigmotors.dto.Request.RegisterRequest;
@@ -13,11 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +34,18 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailServiceImpl emailServiceImpl;
 
+    @Override
+    @Transactional
     public ResponseEntity<AuthResponse> login(LoginRequest request) {
         try {
+            // Validar que los datos de entrada no estén vacíos
+            if (request.getUsername() == null || request.getUsername().isBlank()) {
+                throw new InvalidRequestException("El nombre de usuario es obligatorio.");
+            }
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new InvalidRequestException("La contraseña es obligatoria.");
+            }
+
             // Autenticar al usuario con nombre de usuario y contraseña
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
@@ -39,49 +53,60 @@ public class AuthServiceImpl implements AuthService {
 
             // Buscar al usuario en la base de datos
             User user = userRepository.findByUsername(request.getUsername())
-                    .orElseThrow(() -> new AuthExceptions.UserNotFoundException("Usuario no encontrado"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
             // Validar que el usuario esté aprobado
             if (!user.isPermiso()) {
-                log.warn("Usuario no aprobado: " + user.getUsername());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("Su cuenta aún no ha sido aprobada por el administrador")
-                        .build());
+                log.warn("Usuario no aprobado: {}", user.getUsername());
+                throw new AccessDeniedException("Su cuenta aún no ha sido aprobada por el administrador.");
             }
 
             // Generar el token JWT para el usuario autenticado
             String accessToken = jwtServiceImpl.generateAccessToken(user);
+
+            // Respuesta exitosa
             return ResponseEntity.ok(AuthResponse.builder()
                     .status("success")
                     .message("Autenticación exitosa")
                     .token(accessToken)
                     .build());
-        } catch (AuthenticationException e) {
-            // Manejar error de autenticación
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(AuthResponse.builder()
-                    .status("Error")
-                    .message("Nombre de usuario o contraseña no válidos")
-                    .build());
+
+        } catch (AuthenticationException ex) {
+            log.error("Error de autenticación para el usuario: {}", request.getUsername(), ex);
+            throw new InvalidRequestException("Nombre de usuario o contraseña no válidos.");
+        } catch (ResourceNotFoundException | InvalidRequestException | AccessDeniedException ex) {
+            log.error("Error en el proceso de inicio de sesión: {}", ex.getMessage(), ex);
+            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (Exception ex) {
+            log.error("Error inesperado durante el inicio de sesión: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado durante el inicio de sesión.", ex); // Manejado globalmente
         }
     }
 
-    //Registro publico de usuarios
+
+    @Override
+    @Transactional
     public ResponseEntity<AuthResponse> register(RegisterRequest request) {
         try {
-            // Verificar si el nombre de usuario ya está en uso en la base de datos y correo electrónico
+            // Validar que los datos de entrada no estén vacíos
+            if (request.getUsername() == null || request.getUsername().isBlank()) {
+                throw new InvalidRequestException("El nombre de usuario es obligatorio.");
+            }
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                throw new InvalidRequestException("El correo electrónico es obligatorio.");
+            }
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new InvalidRequestException("La contraseña es obligatoria.");
+            }
+            // Verificar si el nombre de usuario ya está en uso
             if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("El nombre de usuario ya está en uso")
-                        .build());
+                throw new InvalidRequestException("El nombre de usuario ya está en uso.");
             }
+            // Verificar si el correo electrónico ya está en uso
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("El correo electrónico ya está en uso")
-                        .build());
+                throw new InvalidRequestException("El correo electrónico ya está en uso.");
             }
+            // Crear el usuario
             User user = User.builder()
                     .username(request.getUsername())
                     .password(passwordEncoder.encode(request.getPassword()))
@@ -89,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
                     .email(request.getEmail())
                     .phone_number(request.getPhone_number())
                     .role(Role.USER)
-                    .permiso(false)
+                    .permiso(false) // No aprobado por defecto
                     .build();
 
             // Guardar el usuario
@@ -100,45 +125,52 @@ public class AuthServiceImpl implements AuthService {
             userRepository.guardarSecuencia(savedUser.getId());
             log.info("Secuencia creada para el usuario con ID: {}", savedUser.getId());
 
+            // Respuesta exitosa
             return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
                     .message("Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión")
                     .build());
-        } catch (Exception e) {
-            log.error("Error al registrar usuario: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(AuthResponse.builder()
-                    .status("Error")
-                    .message("Error al registrar usuario")
-                    .build());
+
+        } catch (InvalidRequestException ex) {
+            log.error("Error de validación al registrar usuario: {}", ex.getMessage(), ex);
+            throw ex; // Manejado por el GlobalExceptionHandler
+        } catch (Exception ex) {
+            log.error("Error inesperado al registrar usuario: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al registrar usuario.", ex); // Manejado globalmente
         }
     }
-    //Registro de usuarios por parte del administrador
+
+
+    @Override
+    @Transactional
     public ResponseEntity<AuthResponse> registerByAdmin(RegisterRequest request, String adminUsername) {
         try {
-            // Verificar si el administrador tiene permisos para crear usuarios
+            // Validar que el administrador tenga permisos para registrar usuarios
             User adminUser = userRepository.findByUsername(adminUsername)
-                    .orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Administrador no encontrado"));
 
             if (!adminUser.getRole().equals(Role.ADMIN)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("No tiene permisos para registrar usuarios")
-                        .build());
+                throw new AccessDeniedException("No tiene permisos para registrar usuarios.");
             }
 
-            // Validar si el nombre de usuario ya está en uso
+            // Validar datos del usuario a registrar
+            if (request.getUsername() == null || request.getUsername().isBlank()) {
+                throw new InvalidRequestException("El nombre de usuario es obligatorio.");
+            }
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                throw new InvalidRequestException("El correo electrónico es obligatorio.");
+            }
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                throw new InvalidRequestException("La contraseña es obligatoria.");
+            }
+
+            // Verificar si el nombre de usuario ya está en uso
             if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("El nombre de usuario ya está en uso")
-                        .build());
+                throw new InvalidRequestException("El nombre de usuario ya está en uso.");
             }
 
-            // Validar si el correo ya está en uso
+            // Verificar si el correo ya está en uso
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(AuthResponse.builder()
-                        .status("Error")
-                        .message("El correo electrónico ya está en uso")
-                        .build());
+                throw new InvalidRequestException("El correo electrónico ya está en uso.");
             }
 
             // Crear el usuario
@@ -149,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
                     .email(request.getEmail())
                     .phone_number(request.getPhone_number())
                     .role(Role.USER)
-                    .permiso(true)
+                    .permiso(true) // Aprobado automáticamente
                     .build();
 
             // Guardar el usuario
@@ -161,29 +193,30 @@ public class AuthServiceImpl implements AuthService {
             log.info("Secuencia creada para el usuario con ID: {}", savedUser.getId());
 
             // Enviar notificación por correo electrónico
-            String to = user.getEmail();
-            String subject = "Tu cuenta ha sido creada - TigMotors";
-            String content = buildAccountCreatedByAdminEmailContent(user.getUsername());
-
             try {
+                String to = user.getEmail();
+                String subject = "Tu cuenta ha sido creada - TigMotors";
+                String content = buildAccountCreatedByAdminEmailContent(user.getUsername());
                 emailServiceImpl.sendEmail(to, subject, content);
                 log.info("Correo de creación de cuenta enviado a: {}", to);
             } catch (RuntimeException e) {
                 log.error("Error al enviar correo de creación de cuenta: {}", e.getMessage());
             }
 
-            // Retornar la respuesta
+            // Retornar respuesta exitosa
             return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
-                    .message("Usuario creado exitosamente por el administrador ya puedes acceder a la plataforma!")
+                    .message("Usuario creado exitosamente por el administrador. ¡Ya puedes acceder a la plataforma!")
                     .build());
-        } catch (Exception e) {
-            log.error("Error al registrar usuario por administrador: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(AuthResponse.builder()
-                    .status("Error")
-                    .message("Error al registrar usuario por administrador")
-                    .build());
+
+        } catch (ResourceNotFoundException | AccessDeniedException | InvalidRequestException ex) {
+            log.error("Error en el proceso de registro por el administrador: {}", ex.getMessage(), ex);
+            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (Exception ex) {
+            log.error("Error inesperado al registrar usuario por administrador: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al registrar usuario por administrador.", ex); // Delegado globalmente
         }
     }
+
 
     private String buildAccountCreatedByAdminEmailContent(String username) {
         return "<html>" +
