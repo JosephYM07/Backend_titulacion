@@ -235,46 +235,4 @@ public class UserController {
         }
     }*/
 
-    @GetMapping("/tickets/historial")
-    public ResponseEntity<?> obtenerHistorialTickets(Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            List<TicketDTO> historialTickets = ticketServiceImpl.obtenerHistorialTickets(username);
-            return ResponseEntity.ok(historialTickets);
-        } catch (Exception e) {
-            logger.error("Error al obtener el historial de tickets: ", e);
-            return ResponseEntity.internalServerError().body("Error al obtener el historial de tickets");
-        }
-    }
-
-    @PutMapping("/tickets/modificar/{ticketId}")
-    public ResponseEntity<?> modificarTicket(@PathVariable String ticketId, @Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            TicketDTO ticketModificado = ticketServiceImpl.modificarTicket(ticketId, ticketDTO, username);
-            return ResponseEntity.ok(ticketModificado);
-        } catch (AccessDeniedException e) {
-            logger.error("Acceso denegado al modificar el ticket: ", e);
-            return ResponseEntity.status(403).body("Acceso denegado al modificar el ticket");
-        } catch (Exception e) {
-            logger.error("Error al modificar el ticket: ", e);
-            return ResponseEntity.internalServerError().body("Error al modificar el ticket");
-        }
-    }
-
-    @DeleteMapping("/tickets/eliminar/{ticketId}")
-    public ResponseEntity<?> eliminarTicket(@PathVariable String ticketId, Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            ticketServiceImpl.eliminarTicket(ticketId, username);
-            logger.info("Ticket eliminado exitosamente: {}", ticketId);
-            return ResponseEntity.noContent().build();
-        } catch (AccessDeniedException e) {
-            logger.error("Acceso denegado al eliminar el ticket: ", e);
-            return ResponseEntity.status(403).body("Acceso denegado al eliminar el ticket");
-        } catch (Exception e) {
-            logger.error("Error al eliminar el ticket: ", e);
-            return ResponseEntity.internalServerError().body("Error al eliminar el ticket");
-        }
-    }
 }

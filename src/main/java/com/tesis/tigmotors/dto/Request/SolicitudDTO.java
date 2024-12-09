@@ -20,7 +20,7 @@ public class SolicitudDTO {
     private String estado;
 
     @NotBlank(message = "La prioridad no puede estar vacía")
-    @Length(max = 20, message = "La prioridad no puede exceder los 20 caracteres")
+    @Length(max = 20, message = "La prioridad debe ser ALTO - MEDIO - BAJO")
     @Pattern(regexp = "^[a-zA-Z0-9 À-ſ]+$", message = "La prioridad contiene caracteres no permitidos")
     private String prioridad;
 

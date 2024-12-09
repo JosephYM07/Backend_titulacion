@@ -54,11 +54,17 @@ public class SolicitudServiceImpl implements SolicitudService {
         try {
             // Convertir el DTO a entidad
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
-
-            if (solicitud.getPrioridad() != null) {
-                solicitud.setPrioridad(solicitud.getPrioridad().toUpperCase());
-                logger.info("Prioridad transformada a mayúsculas: {}", solicitud.getPrioridad());
+            // Validar la prioridad
+            if (solicitud.getPrioridad() == null) {
+                throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTO, MEDIO o BAJO.");
             }
+            // Validar si la prioridad pertenece al enum
+            try {
+                solicitud.setPrioridad(SolicitudEstado.valueOf(solicitud.getPrioridad().toUpperCase()).name());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTO, MEDIO o BAJO.");
+            }
+            logger.info("Prioridad validada y transformada: {}", solicitud.getPrioridad());
             // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
 
@@ -76,9 +82,14 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Convertir la entidad guardada a DTO de respuesta
             return solicitudConverter.entityToResponseDto(solicitudGuardada);
 
+        } catch (IllegalArgumentException e) {
+            // Lanzar excepciones de validación para que sean manejadas globalmente
+            logger.warn("Error de validación al crear la solicitud: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
+            // Manejo de errores inesperados
             logger.error("Error creando la solicitud: {}", e.getMessage(), e);
-            throw new RuntimeException("Error creando la solicitud", e);
+            throw new RuntimeException("Error inesperado al crear la solicitud.", e);
         }
     }
 
@@ -223,7 +234,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setUsername(solicitud.getUsername());
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.PENDIENTE.name()); // Estado inicial del ticket
+            ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
             ticketDTO.setAprobado(true);
 
             // Usar el servicio a través de la interfaz para crear el ticket
