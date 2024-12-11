@@ -78,6 +78,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Asignar datos al modelo
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
+            solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
 
             // Asignar fecha y hora de creación automáticas
             solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
@@ -132,6 +133,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
             solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
+            solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
 
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
@@ -164,8 +166,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error inesperado al registrar la solicitud.", e);
         }
     }
-
-
 
 
     /**

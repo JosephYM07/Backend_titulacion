@@ -24,9 +24,10 @@ public class SolicitudDTO {
     @Pattern(regexp = "^[a-zA-Z0-9 À-ſ]+$", message = "La prioridad contiene caracteres no permitidos")
     private String prioridad;
 
+
     private Double cotizacion;
     private String cotizacionAceptada;
-
+    private String Pago;
     private String fechaCreacion;
     private String horaCreacion;
 }

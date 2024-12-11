@@ -25,6 +25,7 @@ public class SolicitudConverter {
         solicitudDTO.setEstado(solicitud.getEstado());
         solicitudDTO.setPrioridad(solicitud.getPrioridad());
         solicitudDTO.setCotizacion(solicitud.getCotizacion());
+        solicitudDTO.setPago(solicitud.getPago());
         solicitudDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
 
         if (solicitud.getFechaCreacion() != null) {
@@ -45,6 +46,7 @@ public class SolicitudConverter {
         solicitud.setEstado(solicitudDTO.getEstado());
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
         solicitud.setCotizacion(solicitudDTO.getCotizacion());
+        solicitud.setPago(solicitud.getPago());
         solicitud.setCotizacionAceptada(solicitudDTO.getCotizacionAceptada());
 
         if (solicitudDTO.getFechaCreacion() != null) {
@@ -76,8 +78,10 @@ public class SolicitudConverter {
         responseDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
         responseDTO.setEstado(solicitud.getEstado());
         responseDTO.setPrioridad(solicitud.getPrioridad());
+        responseDTO.setPago(solicitud.getPago());
         responseDTO.setCotizacion(solicitud.getCotizacion());
         responseDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
+
 
         if (solicitud.getFechaCreacion() != null) {
             responseDTO.setFechaCreacion(solicitud.getFechaCreacion());

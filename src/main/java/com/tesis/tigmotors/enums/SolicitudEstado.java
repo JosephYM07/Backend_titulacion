@@ -8,7 +8,8 @@ public enum SolicitudEstado {
     RECHAZO_COTIZACION_USUARIO,// Cuando el usuario rechaza la cotización
     ALTA, //Prioridad de solicitud
     MEDIA,//Prioridad de solicitud
-    BAJA; //Prioridad de solicitud
+    BAJA,
+    PAGO_PENDIENTE; //Prioridad de solicitud
 
     /**
      * Normaliza y valida la prioridad.

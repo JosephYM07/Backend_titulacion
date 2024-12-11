@@ -19,7 +19,9 @@ public class Solicitud {
     private String prioridad;
     private Double cotizacion;
     private String cotizacionAceptada;
+    private String Pago;
 
     private LocalDate fechaCreacion; // Fecha de creación
     private LocalTime horaCreacion; // Hora de creación
+
 }
