@@ -1,10 +1,12 @@
 package com.tesis.tigmotors.service.interfaces;
 
+import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +19,8 @@ public interface SolicitudService {
      * @return SolicitudDTO con los datos de la solicitud creada.
      */
     SolicitudResponseDTO crearSolicitud(SolicitudDTO solicitudDTO, String username);
+
+    SolicitudResponseDTO registrarSolicitudPorAdmin(SolicitudAdminRequestDTO solicitudAdminRequestDTO);
 
     /**
      * Acepta una solicitud pendiente. Solo accesible por administradores.
@@ -127,7 +131,7 @@ public interface SolicitudService {
      *
      * @param solicitudId ID de la solicitud a eliminar.
      */
-    void eliminarSolicitudAdmin(String solicitudId);
+    EliminarSolicitudResponse eliminarSolicitudAdmin(String solicitudId);
 
     /**
      * Rechaza una solicitud pendiente. Solo accesible por administradores.

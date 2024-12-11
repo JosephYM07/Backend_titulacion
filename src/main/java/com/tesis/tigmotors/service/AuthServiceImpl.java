@@ -79,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
             throw ex; // Delegado al GlobalExceptionHandler
         } catch (Exception ex) {
             log.error("Error inesperado durante el inicio de sesión: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Error inesperado durante el inicio de sesión.", ex); // Manejado globalmente
+            throw new RuntimeException("Error inesperado durante el inicio de sesión.", ex);
         }
     }
 
@@ -181,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
                     .email(request.getEmail())
                     .phone_number(request.getPhone_number())
                     .role(Role.USER)
-                    .permiso(true) // Aprobado automáticamente
+                    .permiso(true)
                     .build();
 
             // Guardar el usuario

@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.converters;
 
+import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.models.Solicitud;
@@ -12,9 +13,11 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class SolicitudConverter {
 
-    // Convertir de Entidad a DTO
-    public SolicitudDTO entityToDto(Solicitud solicitud) {
+    // Formateador para la hora
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    // Convertir de Entidad a DTO (SolicitudDTO para Request)
+    public SolicitudDTO entityToDto(Solicitud solicitud) {
         SolicitudDTO solicitudDTO = new SolicitudDTO();
         solicitudDTO.setIdSolicitud(solicitud.getIdSolicitud());
         solicitudDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
@@ -24,18 +27,16 @@ public class SolicitudConverter {
         solicitudDTO.setCotizacion(solicitud.getCotizacion());
         solicitudDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
 
-        // Transferir fecha y hora directamente desde la entidad
         if (solicitud.getFechaCreacion() != null) {
             solicitudDTO.setFechaCreacion(solicitud.getFechaCreacion().toString());
         }
         if (solicitud.getHoraCreacion() != null) {
-            solicitudDTO.setHoraCreacion(solicitud.getHoraCreacion().toString());
+            solicitudDTO.setHoraCreacion(solicitud.getHoraCreacion().format(TIME_FORMATTER));
         }
-
         return solicitudDTO;
     }
 
-    // Convertir de DTO a Entidad
+    // Convertir de DTO (SolicitudDTO para Request) a Entidad
     public Solicitud dtoToEntity(SolicitudDTO solicitudDTO) {
         Solicitud solicitud = new Solicitud();
         solicitud.setIdSolicitud(solicitudDTO.getIdSolicitud());
@@ -45,20 +46,32 @@ public class SolicitudConverter {
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
         solicitud.setCotizacion(solicitudDTO.getCotizacion());
         solicitud.setCotizacionAceptada(solicitudDTO.getCotizacionAceptada());
-        // Formatear fecha y hora antes de asignarlas al DTO
-        if (solicitud.getFechaCreacion() != null) {
-            solicitud.setFechaCreacion(solicitud.getFechaCreacion());
+
+        if (solicitudDTO.getFechaCreacion() != null) {
+            solicitud.setFechaCreacion(LocalDate.parse(solicitudDTO.getFechaCreacion()));
         }
-        if (solicitud.getHoraCreacion() != null) {
-            solicitud.setHoraCreacion(solicitud.getHoraCreacion().withNano(0));
+        if (solicitudDTO.getHoraCreacion() != null) {
+            solicitud.setHoraCreacion(LocalTime.parse(solicitudDTO.getHoraCreacion(), TIME_FORMATTER));
         }
         return solicitud;
     }
 
-    // Convertir de Entidad a DTO de Respuesta
+    // Convertir de SolicitudAdminRequestDTO a Entidad (Uso específico para solicitudes de admin)
+    public Solicitud adminRequestToEntity(SolicitudAdminRequestDTO solicitudAdminRequestDTO) {
+        Solicitud solicitud = new Solicitud();
+        solicitud.setUsername(solicitudAdminRequestDTO.getUsername());
+        solicitud.setDescripcionInicial(solicitudAdminRequestDTO.getDescripcionInicial());
+        solicitud.setDescripcionTrabajo(solicitudAdminRequestDTO.getDescripcionTrabajo());
+        solicitud.setPrioridad(solicitudAdminRequestDTO.getPrioridad());
+        solicitud.setCotizacion(solicitudAdminRequestDTO.getCotizacion());
+        return solicitud;
+    }
+
+    // Convertir de Entidad a SolicitudResponseDTO
     public SolicitudResponseDTO entityToResponseDto(Solicitud solicitud) {
         SolicitudResponseDTO responseDTO = new SolicitudResponseDTO();
         responseDTO.setIdSolicitud(solicitud.getIdSolicitud());
+        responseDTO.setUsername(solicitud.getUsername());
         responseDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
         responseDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
         responseDTO.setEstado(solicitud.getEstado());
@@ -74,5 +87,4 @@ public class SolicitudConverter {
         }
         return responseDTO;
     }
-
 }

@@ -2,10 +2,7 @@ package com.tesis.tigmotors.controller;
 
 
 import com.tesis.tigmotors.dto.Request.*;
-import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
-import com.tesis.tigmotors.dto.Response.ErrorResponse;
-import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
-import com.tesis.tigmotors.dto.Response.UserResponseUser;
+import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
 import com.tesis.tigmotors.service.interfaces.AuthService;
@@ -132,6 +129,15 @@ public class AdminController {
         return authService.registerByAdmin(request, adminDetails.getUsername());
     }
 
+    @PostMapping("/crear-solicitud")
+    public ResponseEntity<SolicitudResponseDTO> registrarSolicitudPorAdmin(
+            @RequestBody @Valid SolicitudAdminRequestDTO solicitudDTO) {
+        SolicitudResponseDTO response = solicitudService.registrarSolicitudPorAdmin(solicitudDTO);
+        return ResponseEntity.ok(response);
+    }
+
+
+
     //Solicitudes
     @PutMapping("/aceptar/{solicitudId}")
     public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(
@@ -199,10 +205,10 @@ public class AdminController {
     }
 
     // Endpoint para eliminar cualquier solicitud (solo para administradores)
-    @DeleteMapping("/eliminar/{solicitudId}")
-    public ResponseEntity<Void> eliminarSolicitudAdmin(@PathVariable String solicitudId) {
-        solicitudService.eliminarSolicitudAdmin(solicitudId);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("/eliminar-solicitud/{solicitudId}")
+    public ResponseEntity<EliminarSolicitudResponse> eliminarSolicitudAdmin(@PathVariable String solicitudId) {
+        EliminarSolicitudResponse response = solicitudService.eliminarSolicitudAdmin(solicitudId);
+        return ResponseEntity.ok(response);
     }
 
     //TIckets

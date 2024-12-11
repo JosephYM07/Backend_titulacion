@@ -110,11 +110,11 @@ public class CrudUserImpl implements UserServiceUpdate {
             logger.error("Usuario no encontrado con ID: {}", updateRequest.getUserId(), ex);
             throw ex; // Manejado por el GlobalExceptionHandler
         } catch (InvalidRequestException ex) {
-            logger.error("Error de validación: {}", ex.getMessage());
+            logger.error("Error de validación en actualización de usuario con ID '{}': {}", updateRequest.getUserId(), ex.getMessage());
             throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
             logger.error("Error inesperado al actualizar el usuario con ID '{}': {}", updateRequest.getUserId(), ex.getMessage());
-            throw new RuntimeException("Error inesperado al actualizar el perfil del usuario", ex); // Manejado globalmente
+            throw new RuntimeException("Error inesperado al actualizar el perfil del usuario", ex);
         }
     }
 

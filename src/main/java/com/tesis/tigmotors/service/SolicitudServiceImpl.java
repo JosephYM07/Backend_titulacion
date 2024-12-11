@@ -1,17 +1,22 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.InvalidSolicitudStateException;
+import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.Exceptions.SolicitudNotFoundException;
 import com.tesis.tigmotors.converters.SolicitudConverter;
+import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
+import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.SolicitudRepository;
+import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +46,8 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final SolicitudConverter solicitudConverter;
     private final SequenceGeneratorService sequenceGeneratorService;
     private final TicketService ticketService;
+    private final UserRepository userRepository;
+
 
     /**
      * Crea una nueva solicitud en el sistema desde la cuenta usuario.
@@ -56,13 +63,13 @@ public class SolicitudServiceImpl implements SolicitudService {
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
             // Validar la prioridad
             if (solicitud.getPrioridad() == null) {
-                throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTO, MEDIO o BAJO.");
+                throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTA, MEDIA o BAJA.");
             }
             // Validar si la prioridad pertenece al enum
             try {
                 solicitud.setPrioridad(SolicitudEstado.valueOf(solicitud.getPrioridad().toUpperCase()).name());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTO, MEDIO o BAJO.");
+                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIA o BAJA.");
             }
             logger.info("Prioridad validada y transformada: {}", solicitud.getPrioridad());
             // Generar ID único para la solicitud
@@ -92,6 +99,74 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error inesperado al crear la solicitud.", e);
         }
     }
+
+    @Override
+    @Transactional
+    public SolicitudResponseDTO registrarSolicitudPorAdmin(SolicitudAdminRequestDTO solicitudAdminRequestDTO) {
+        try {
+            // Validar si el usuario especificado existe
+            User user = userRepository.findByUsername(solicitudAdminRequestDTO.getUsername().trim())
+                    .orElseThrow(() -> {
+                        logger.error("Usuario no encontrado: '{}'", solicitudAdminRequestDTO.getUsername());
+                        return new IllegalArgumentException("Usuario no encontrado: El usuario especificado no existe.");
+                    });
+
+            // Convertir el DTO a entidad
+            Solicitud solicitud = solicitudConverter.adminRequestToEntity(solicitudAdminRequestDTO);
+
+            // Validar y asignar prioridad
+            try {
+                SolicitudEstado prioridad = SolicitudEstado.fromString(solicitud.getPrioridad());
+                solicitud.setPrioridad(prioridad.name());
+            } catch (IllegalArgumentException e) {
+                logger.warn("Prioridad inválida proporcionada: {}", solicitud.getPrioridad());
+                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIO o BAJA.");
+            }
+
+            // Generar ID único para la solicitud
+            solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
+
+            // Asignar datos al modelo
+            solicitud.setUsername(user.getUsername());
+            solicitud.setEstado(SolicitudEstado.ACEPTADO.name()); // Aceptada por defecto
+            solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
+            solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
+            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
+
+            // Guardar la solicitud en la base de datos
+            Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
+            logger.info("Solicitud creada exitosamente con ID '{}'", solicitudGuardada.getIdSolicitud());
+
+            // Crear un ticket asociado a la solicitud
+            TicketDTO ticketDTO = new TicketDTO();
+            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
+            ticketDTO.setSolicitudId(solicitudGuardada.getIdSolicitud());
+            ticketDTO.setUsername(user.getUsername()); // Asociar al mismo usuario que la solicitud
+            ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
+            ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
+            ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
+            ticketDTO.setAprobado(true);
+
+            // Crear el ticket usando el servicio correspondiente
+            ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
+            logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudGuardada.getIdSolicitud());
+
+            // Convertir la solicitud guardada a DTO de respuesta
+            return solicitudConverter.entityToResponseDto(solicitudGuardada);
+
+        } catch (IllegalArgumentException e) {
+            // Lanzar excepciones de validación para que sean manejadas globalmente
+            logger.warn("Error de validación al registrar la solicitud: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            // Manejo de errores inesperados
+            logger.error("Error registrando la solicitud: {}", e.getMessage(), e);
+            throw new RuntimeException("Error inesperado al registrar la solicitud.", e);
+        }
+    }
+
+
+
 
     /**
      * Acepta una solicitud en el sistema cambiando su estado a 'ACEPTADO' desde el perfil Administrador.
@@ -478,17 +553,22 @@ public class SolicitudServiceImpl implements SolicitudService {
         logger.info("Iniciando la consulta del historial completo de solicitudes");
 
         try {
+
             // Obtener todas las solicitudes
             List<Solicitud> solicitudes = solicitudRepository.findAll();
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes en el sistema");
-            } else {
-                logger.info("Se encontraron {} solicitudes en el historial", solicitudes.size());
+                // Lanza una excepción específica cuando no hay solicitudes
+                throw new ResourceNotFoundException("No se encontraron solicitudes en el historial");
             }
             // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
+        } catch (ResourceNotFoundException ex) {
+            // Registra y lanza la excepción específica
+            logger.error("Error: {}", ex.getMessage(), ex);
+            throw ex;
         } catch (Exception e) {
             // Manejo de errores inesperados
             logger.error("Error obteniendo el historial completo de solicitudes: {}", e.getMessage(), e);
@@ -581,7 +661,6 @@ public class SolicitudServiceImpl implements SolicitudService {
                 logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
                 throw new AccessDeniedException("No tiene permisos para eliminar esta solicitud.");
             }
-
             // Validar estado de la solicitud
             if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
                 logger.warn("Estado inválido: la solicitud con ID '{}' no está en estado 'PENDIENTE'", solicitudId);
@@ -619,7 +698,7 @@ public class SolicitudServiceImpl implements SolicitudService {
      */
     @Override
     @Transactional
-    public void eliminarSolicitudAdmin(String solicitudId) {
+    public EliminarSolicitudResponse eliminarSolicitudAdmin(String solicitudId) {
         logger.info("El administrador está intentando eliminar la solicitud con ID '{}'", solicitudId);
 
         try {
@@ -629,14 +708,10 @@ public class SolicitudServiceImpl implements SolicitudService {
                         logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
                     });
-            // Validar que la solicitud esté en estado 'Pendiente'
-            if (!solicitud.getEstado().equals("Pendiente")) {
-                logger.warn("La solicitud con ID '{}' no puede ser eliminada porque no está en estado 'Pendiente'", solicitudId);
-                throw new IllegalStateException("La solicitud no puede ser eliminada porque no está en estado 'Pendiente'.");
-            }
             // Eliminar la solicitud
             solicitudRepository.delete(solicitud);
             logger.info("Solicitud con ID '{}' eliminada exitosamente por el administrador", solicitudId);
+            return new EliminarSolicitudResponse(200, "Solicitud con ID " + solicitudId + " eliminada exitosamente");
         } catch (SolicitudNotFoundException e) {
             // Manejo específico de solicitudes no encontradas
             logger.error("Error: Solicitud no encontrada al intentar eliminarla. ID: '{}'", solicitudId, e);

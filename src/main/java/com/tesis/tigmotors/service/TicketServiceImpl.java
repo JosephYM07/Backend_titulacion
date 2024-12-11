@@ -36,6 +36,7 @@ public class TicketServiceImpl implements TicketService {
         return ticketConverter.entityToDto(ticketGuardado);
     }
 
+
     public List<TicketDTO> obtenerHistorialTickets(String username) {
         try {
             var tickets = ticketRepository.findByUsername(username);

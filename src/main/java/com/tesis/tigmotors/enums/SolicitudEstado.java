@@ -6,42 +6,24 @@ public enum SolicitudEstado {
     COTIZACION_ACEPTADA, // Cuando el usuario acepta la cotización
     SOLICITUD_RECHAZADA, // Cuando el administrador rechaza la solicitud
     RECHAZO_COTIZACION_USUARIO,// Cuando el usuario rechaza la cotización
-    ALTO, //Prioridad de solicitud
-    MEDIO,//Prioridad de solicitud
+    ALTA, //Prioridad de solicitud
+    MEDIA,//Prioridad de solicitud
     BAJA; //Prioridad de solicitud
 
     /**
+     * Normaliza y valida la prioridad.
      *
-     * @param estado Estado a validar.
-     * @return true si el estado es válido, de lo contrario false.
+     * @param estado Estado ingresado.
+     * @return El valor del enum correspondiente.
+     * @throws IllegalArgumentException Si el estado no es válido.
      */
-    public static boolean isValid(String estado) {
-        for (SolicitudEstado e : values()) {
+    public static SolicitudEstado fromString(String estado) {
+        for (SolicitudEstado e : SolicitudEstado.values()) {
             if (e.name().equalsIgnoreCase(estado)) {
-                return true;
+                return e;
             }
         }
-        return false;
+        throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIO o BAJA.");
     }
-    /**
-     * Verifica si la transición de un estado a otro es válida.
-     *
-     * @param currentState Estado actual.
-     * @param nextState Estado al que se desea transitar.
-     * @return true si la transición es válida, de lo contrario false.
-     */
-    public static boolean isValidTransition(SolicitudEstado currentState, SolicitudEstado nextState) {
-        if (currentState == PENDIENTE) {
-            return nextState == ACEPTADO || nextState == SOLICITUD_RECHAZADA;
-        } else if (currentState == ACEPTADO) {
-            return nextState == COTIZACION_ACEPTADA || nextState == SOLICITUD_RECHAZADA;
-        } else if (currentState == COTIZACION_ACEPTADA) {
-            return nextState == RECHAZO_COTIZACION_USUARIO;
-        } else if (currentState == RECHAZO_COTIZACION_USUARIO) {
-            return false; // No se puede volver a modificar una cotización rechazada por el usuario
-        } else if (currentState == SOLICITUD_RECHAZADA) {
-            return false; // No se puede modificar una solicitud rechazada
-        }
-        return false; // Para otros estados, no es válida la transición
-    }
+
 }
