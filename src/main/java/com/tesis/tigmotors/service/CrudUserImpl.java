@@ -49,10 +49,10 @@ public class CrudUserImpl implements UserServiceUpdate {
             );
         } catch (ResourceNotFoundException ex) {
             logger.error("Usuario no encontrado: {}", username, ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (SecurityException ex) {
             logger.error("Acceso denegado para el usuario: {}", username, ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (Exception ex) {
             logger.error("Error inesperado al buscar el perfil del usuario: {}", username, ex);
             throw new RuntimeException("Error inesperado al buscar el perfil del usuario", ex); // Manejado globalmente
@@ -77,7 +77,7 @@ public class CrudUserImpl implements UserServiceUpdate {
             if ((updateRequest.getUsername() == null || updateRequest.getUsername().isBlank()) &&
                     (updateRequest.getBusiness_name() == null || updateRequest.getBusiness_name().isBlank()) &&
                     (updateRequest.getEmail() == null || updateRequest.getEmail().isBlank()) &&
-                    (updateRequest.getPhone_number() == null || updateRequest.getPhone_number().isBlank())) {
+                    (updateRequest.getPhone_Number() == null || updateRequest.getPhone_Number().isBlank())) {
                 throw new InvalidRequestException("Debe proporcionar al menos un campo para actualizar.");
             }
             User user = userRepository.findById(updateRequest.getUserId())
@@ -92,8 +92,8 @@ public class CrudUserImpl implements UserServiceUpdate {
             if (updateRequest.getEmail() != null && !updateRequest.getEmail().isBlank()) {
                 user.setEmail(updateRequest.getEmail());
             }
-            if (updateRequest.getPhone_number() != null && !updateRequest.getPhone_number().isBlank()) {
-                user.setPhone_number(updateRequest.getPhone_number());
+            if (updateRequest.getPhone_Number() != null && !updateRequest.getPhone_Number().isBlank()) {
+                user.setPhone_number(updateRequest.getPhone_Number());
             }
             userRepository.save(user);
             logger.info("Información del usuario con ID '{}' actualizada correctamente por el administrador '{}'", user.getId(), adminUsername);

@@ -11,6 +11,6 @@ public class UserResponseUser {
     private String role;
     private String business_name;
     private String email;
-    private String phoneNumber;
+    private String phone_Number;
     private Boolean permiso;
 }

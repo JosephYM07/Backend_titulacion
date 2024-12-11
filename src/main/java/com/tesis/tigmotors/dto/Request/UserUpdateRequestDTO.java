@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.dto.Request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -25,9 +26,10 @@ public class UserUpdateRequestDTO {
     )
     private String email;
 
+
     @Pattern(
             regexp = "^\\+593\\d{9}$",
             message = "El número de teléfono debe comenzar con +593 y contener exactamente 9 dígitos sin espacios ni caracteres adicionales."
     )
-    private String phone_number;
+    private String phone_Number;
 }
