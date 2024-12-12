@@ -10,6 +10,9 @@ import java.util.List;
 
 public interface AdminVerificationUserService {
 
+
+    List<String> obtenerUsernamesAprobados(Authentication authentication);
+
     /**
      * Obtiene el estado de los usuarios (pendientes y aprobados).
      *

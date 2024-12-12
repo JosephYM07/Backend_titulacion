@@ -48,4 +48,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @return Lista de usuarios que coinciden con los criterios.
      */
     List<User> findByPermisoAndRole(boolean permiso, Role role);
+
 }

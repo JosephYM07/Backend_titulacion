@@ -60,6 +60,12 @@ public class AdminController {
         return userService.getUsersStatus();
     }
 
+    @GetMapping("/lista-nombres-usuarios")
+    public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
+        List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
+        return ResponseEntity.ok(usernames);
+    }
+
     // Endpoint para obtener todos los usuarios pendientes de aprobación (solo para administradores)
     @GetMapping("/users/pending")
     public ResponseEntity<Object> getPendingUsers() {

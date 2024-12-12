@@ -38,8 +38,11 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final RefreshTokenRepository refreshTokenRepository;
 
-    //ENLISTAR USUARIO POR NOMBRE DE USUARIO
-
+    /**
+     * Obtiene el estado de los usuarios (pendientes y aprobados).
+     *
+     * @return ResponseEntity con el conteo de usuarios pendientes y aprobados.
+     */
     @Override
     @Transactional
     public ResponseEntity<Object> getUsersStatus() {
@@ -70,11 +73,51 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
         }
     }
 
+    /**
+     * Obtiene una lista de usernames de usuarios aprobados.
+     *
+     * @param authentication el objeto de autenticación del usuario.
+     * @return Lista de usernames de usuarios aprobados.
+     */
+    @Override
+    @Transactional
+    public List<String> obtenerUsernamesAprobados(Authentication authentication) {
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
 
+        if (!esAdmin) {
+            throw new SecurityException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
+        }
+        try {
+            List<User> usuariosAprobados = userRepository.findByPermisoAndRole(true, Role.USER);
+            if (usuariosAprobados.isEmpty()) {
+                throw new ResourceNotFoundException("No hay usuarios aprobados con rol USER.");
+            }
+            return usuariosAprobados.stream()
+                    .map(User::getUsername)
+                    .collect(Collectors.toList());
+        } catch (ResourceNotFoundException ex) {
+            log.error("No hay usuarios aprobados con rol USER: {}", ex.getMessage());
+            throw ex;
+        } catch (SecurityException ex) {
+            log.error("Acceso denegado: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Error inesperado al obtener usernames aprobados: {}", ex.getMessage());
+            throw new RuntimeException("Error inesperado al obtener usernames aprobados.", ex);
+        }
+    }
+
+    /**
+     * Obtiene una lista de usuarios aprobados con el rol USER.
+     *
+     * @param authentication el objeto de autenticación del usuario.
+     * @return Lista de PendingUserDTO que representan a los usuarios aprobados.
+     */
     @Override
     @Transactional
     public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
-        // Validar que el usuario autenticado tenga el rol ADMIN
+
         boolean esAdmin = authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
 
@@ -108,6 +151,11 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
         }
     }
 
+    /**
+     * Obtiene una lista de usuarios pendientes de aprobación.
+     *
+     * @return ResponseEntity con la lista de usuarios pendientes o un error.
+     */
     @Override
     @Transactional
     public ResponseEntity<Object> getPendingUsers() {
@@ -138,6 +186,12 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
         }
     }
 
+    /**
+     * Aprueba un usuario dado su ID.
+     *
+     * @param userId ID del usuario a aprobar.
+     * @return ResponseEntity con el resultado de la operación.
+     */
     @Override
     @Transactional
     public ResponseEntity<Object> approveUser(Integer userId) {
@@ -170,13 +224,13 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
         } catch (ResourceNotFoundException ex) {
             log.error("Usuario no encontrado con ID {}: {}", userId, ex.getMessage(), ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (IllegalStateException ex) {
             log.error("Error de estado: {}", ex.getMessage(), ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (InvalidRequestException ex) {
             log.error("Solicitud inválida para aprobar usuario: {}", ex.getMessage(), ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (Exception ex) {
             log.error("Error inesperado al aprobar el usuario con ID {}: {}", userId, ex.getMessage(), ex);
             throw new RuntimeException("Error inesperado al aprobar el usuario.", ex); // Manejado globalmente
@@ -184,7 +238,12 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     }
 
 
-    // Método para eliminar un usuario por ID
+    /**
+     * Elimina un usuario dado su ID.
+     *
+     * @param userId ID del usuario a eliminar.
+     * @return ResponseEntity con el resultado de la operación.
+     */
     @Override
     @Transactional
     public ResponseEntity<Object> deleteUserById(Integer userId) {
@@ -228,7 +287,12 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
         }
     }
 
-
+    /**
+     * Construye el contenido del correo electrónico de aprobación de cuenta.
+     *
+     * @param username el nombre de usuario del destinatario.
+     * @return el contenido del correo electrónico.
+     */
     private String buildAccountApprovalEmailContent(String username) {
         return "<html>" +
                 "<meta charset='UTF-8'>" +
