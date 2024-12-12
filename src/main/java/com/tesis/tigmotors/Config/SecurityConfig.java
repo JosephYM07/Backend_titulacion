@@ -48,7 +48,7 @@ public class SecurityConfig {
 /*
         config.setAllowedOrigins(Arrays.asList("http://localhost:5173/"));
 */
-        config.setAllowedOrigins(Arrays.asList("https://abundant-rejoicing-production.up.railway.app"));
+        config.setAllowedOrigins(Arrays.asList("https://tigmotors-uio.up.railway.app"));
         // Permitir los métodos HTTP necesarios
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // Permitir los encabezados necesarios
