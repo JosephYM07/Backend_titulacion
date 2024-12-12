@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.models;
 
-import com.tesis.tigmotors.roles.Role;
+import com.tesis.tigmotors.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +20,7 @@ import java.util.List;
 @Entity
 @Table(name = "user", uniqueConstraints = {@UniqueConstraint(columnNames = {"username"})})
 public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -27,7 +28,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(name = "business_name")
+    @Column(name = "business_name",nullable = false, unique = true)
     private String business_name;
 
     @Column(nullable = false)
@@ -39,6 +40,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(name = "permiso", nullable = false)

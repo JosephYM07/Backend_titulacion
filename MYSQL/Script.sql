@@ -1,45 +1,58 @@
--- auto-generated definition
-create table user
+-- Crear tabla 'user'
+CREATE TABLE user
 (
-    id            int auto_increment
-        primary key,
-    username      varchar(255)                                           not null,
-    business_name varchar(255)                                           null,
-    password      varchar(255)                                           not null,
-    email         varchar(255)                                           null,
-    phone_number  varchar(255)                                           null,
-    role          enum ('ADMIN', 'PERSONAL_CENTRO_DE_SERVICIOS', 'USER') null,
-    permiso       bit                                                    not null,
-    constraint UK_sb8bbouer5wak8vyiiy4pf2bx
-        unique (username)
+    id            INT AUTO_INCREMENT PRIMARY KEY,
+    username      VARCHAR(255)                                           NOT NULL UNIQUE,
+    business_name VARCHAR(255)                                           NULL,
+    password      VARCHAR(255)                                           NOT NULL,
+    email         VARCHAR(255)                                           NULL,
+    phone_number  VARCHAR(255)                                           NULL,
+    role          ENUM ('ADMIN', 'PERSONAL_CENTRO_DE_SERVICIOS', 'USER') NULL,
+    permiso       BIT                                                    NOT NULL
+);
+-- Crear tabla 'password_reset_tokens' con ON DELETE CASCADE
+CREATE TABLE password_reset_tokens
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token       VARCHAR(255) NOT NULL UNIQUE,
+    expiry_date DATETIME(6)  NOT NULL,
+    user_id     INT          NOT NULL,
+    CONSTRAINT FK_password_reset_tokens_user FOREIGN KEY (user_id)
+        REFERENCES user (id)
+        ON DELETE CASCADE
 );
 
-create table password_reset_tokens
+-- Crear tabla 'refresh_tokens' con ON DELETE CASCADE
+CREATE TABLE refresh_tokens
 (
-    id          bigint auto_increment
-        primary key,
-    token       varchar(255) not null,
-    expiry_date datetime(6)  not null,
-    user_id     int          not null,
-    constraint UK_71lqwbwtklmljk3qlsugr1mig
-        unique (token),
-    constraint FK20xweju6fxkxcx3taa9elhtew
-        foreign key (user_id) references user (id)
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token       VARCHAR(255) NOT NULL UNIQUE,
+    expiry_date DATETIME(6)  NOT NULL,
+    user_id     INT          NOT NULL,
+    CONSTRAINT FK_refresh_tokens_user FOREIGN KEY (user_id)
+        REFERENCES user (id)
+        ON DELETE CASCADE
 );
 
-create table refresh_tokens
-(
-    id          bigint auto_increment
-        primary key,
-    token varchar(255) not null,
-    expiry_date datetime(6)  not null,
-    user_id     int          not null,
-    constraint UK_ghpmfn23vmxfu3spu3lfg4r2d
-        unique (token),
-    constraint FKjwc9veyjcjfkej6rnnbsijfvh
-        foreign key (user_id) references user (id)
-);
+CREATE TABLE user_sequence (
+                               sequence_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               user_id     INT NOT NULL,
+                               created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                               CONSTRAINT FK_user_sequence_user FOREIGN KEY (user_id)
+                                   REFERENCES user (id)
+                                   ON DELETE CASCADE
+) AUTO_INCREMENT=3;
 
-UPDATE user
-SET permiso = b'1'
-WHERE username = 'ChevroletUIO';
+DELIMITER //
+
+CREATE TRIGGER before_insert_user_sequence
+    BEFORE INSERT ON user_sequence
+    FOR EACH ROW
+BEGIN
+    IF NEW.created_at IS NULL THEN
+        SET NEW.created_at = NOW();
+    END IF;
+END;
+
+//
+DELIMITER ;

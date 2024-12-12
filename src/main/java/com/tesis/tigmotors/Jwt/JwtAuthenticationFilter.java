@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.Jwt;
 
-import com.tesis.tigmotors.service.JwtService;
+import com.tesis.tigmotors.service.JwtServiceImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,6 +17,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -24,7 +26,9 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+    private final JwtServiceImpl jwtServiceImpl;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -35,24 +39,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-                String usernameFromToken = jwtService.getUsernameFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(usernameFromToken);
+                String usernameFromToken = jwtServiceImpl.getUsernameFromToken(token);
+                logger.info("Extrayendo nombre de usuario del token: {}", usernameFromToken);
 
-                //Validación para asegurarnos de que el token pertenece al usuario autenticado
+                UserDetails userDetails = userDetailsService.loadUserByUsername(usernameFromToken);
+                logger.info("Cargando UserDetails para el usuario: {}", usernameFromToken);
+
+                // Validación para asegurarnos de que el token pertenece al usuario autenticado
                 Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
-                if (jwtService.isTokenValid(token, userDetails) && currentAuth == null) {
+                if (jwtServiceImpl.isTokenValid(token, userDetails) && currentAuth == null) {
+                    logger.info("Token válido para el usuario: {}, asignando contexto de seguridad.", usernameFromToken);
+
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
+
+                    // Log para verificar las autoridades que se están asignando
+                    userDetails.getAuthorities().forEach(authority ->
+                            logger.info("Rol asignado al usuario {}: {}", usernameFromToken, authority.getAuthority()));
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else if (currentAuth != null && !currentAuth.getName().equals(usernameFromToken)) {
                     // Si el usuario autenticado actual no coincide con el token, devuelve error
+                    logger.warn("Usuario autenticado actual ({}) no coincide con el usuario del token ({}).", currentAuth.getName(), usernameFromToken);
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token no autorizado para el usuario actual.\"}");
                     return;
                 }
             } catch (Exception e) {
+                logger.error("Error procesando el token JWT: ", e);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token Invalido o Caducado\"}");
@@ -60,9 +76,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // Continuar con el siguiente filtro si todo está bien
         filterChain.doFilter(request, response);
     }
-
 
     private String getTokenFromRequest(HttpServletRequest request) {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
