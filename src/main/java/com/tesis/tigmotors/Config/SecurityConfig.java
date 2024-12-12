@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authRequest -> authRequest
                         .requestMatchers("/api/v1/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api-user/**","/crear-solicitud").hasAuthority("USER")
+                        .requestMatchers("/api-user/**", "/crear-solicitud").hasAuthority("USER")
                         .requestMatchers("/service-staff/**").hasAuthority("PERSONAL_CENTRO_DE_SERVICIOS")
                         .anyRequest().authenticated())
                 .sessionManagement(sessionManager -> sessionManager
@@ -48,7 +48,7 @@ public class SecurityConfig {
 /*
         config.setAllowedOrigins(Arrays.asList("http://localhost:5173/"));
 */
-        config.setAllowedOrigins(Arrays.asList("*"));
+        config.setAllowedOrigins(Arrays.asList("abundant-rejoicing-production.up.railway.app"));
         // Permitir los métodos HTTP necesarios
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // Permitir los encabezados necesarios
