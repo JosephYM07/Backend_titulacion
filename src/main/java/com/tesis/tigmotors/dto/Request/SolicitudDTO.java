@@ -9,6 +9,7 @@ import org.hibernate.validator.constraints.Length;
 public class SolicitudDTO {
 
     private String idSolicitud;
+    private String username;
     @NotBlank(message = "La descripción inicial no puede estar vacía")
     @Length(max = 500, message = "La descripción inicial no puede exceder los 500 caracteres")
     @Pattern(regexp = "^[a-zA-Z0-9 À-ſ]+$", message = "La descripción inicial contiene caracteres no permitidos")

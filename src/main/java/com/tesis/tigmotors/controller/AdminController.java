@@ -137,7 +137,6 @@ public class AdminController {
     }
 
 
-
     //Solicitudes
     @PutMapping("/aceptar/{solicitudId}")
     public ResponseEntity<SolicitudResponseDTO> aceptarSolicitud(
@@ -168,6 +167,7 @@ public class AdminController {
         // Retornar la respuesta con el DTO actualizado
         return ResponseEntity.ok(solicitudActualizada);
     }
+
     /**
      * Rechaza una solicitud pendiente. Solo accesible por administradores.
      *
@@ -211,22 +211,4 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    //TIckets
-    @PutMapping("/aprobar/{ticketId}")
-    public ResponseEntity<Map<String, Object>> aprobarTicket(@PathVariable String ticketId) {
-        TicketDTO ticketAprobado = ticketServiceImpl.aprobarTicket(ticketId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("mensaje", "Ticket aprobado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketAprobado.getUsername());
-        response.put("ticket", ticketAprobado);
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/rechazar/{ticketId}")
-    public ResponseEntity<Map<String, Object>> rechazarTicket(@PathVariable String ticketId) {
-        TicketDTO ticketRechazado = ticketServiceImpl.rechazarTicket(ticketId);
-        Map<String, Object> response = new HashMap<>();
-        response.put("mensaje", "Ticket rechazado exitosamente" + "para el ticket con id: " + ticketId + "Usuario: " + ticketRechazado.getUsername());
-        response.put("ticket", ticketRechazado);
-        return ResponseEntity.ok(response);
-    }
 }

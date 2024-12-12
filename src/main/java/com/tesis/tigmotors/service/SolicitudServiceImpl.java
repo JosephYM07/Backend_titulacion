@@ -65,7 +65,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             if (solicitud.getPrioridad() == null) {
                 throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTA, MEDIA o BAJA.");
             }
-            // Validar si la prioridad pertenece al enum
             try {
                 solicitud.setPrioridad(SolicitudEstado.valueOf(solicitud.getPrioridad().toUpperCase()).name());
             } catch (IllegalArgumentException e) {
@@ -81,8 +80,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
 
             // Asignar fecha y hora de creación automáticas
-            solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
-            solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
+            asignarFechaYHoraCreacion(solicitud);
 
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
@@ -129,12 +127,13 @@ public class SolicitudServiceImpl implements SolicitudService {
 
             // Asignar datos al modelo
             solicitud.setUsername(user.getUsername());
-            solicitud.setEstado(SolicitudEstado.ACEPTADO.name()); // Aceptada por defecto
+            solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
             solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
             solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
             solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
-
+            // Asignar fecha y hora de creación automáticas
+            asignarFechaYHoraCreacion(solicitud);
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
             logger.info("Solicitud creada exitosamente con ID '{}'", solicitudGuardada.getIdSolicitud());
@@ -147,7 +146,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
             ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
-            ticketDTO.setAprobado(true);
 
             // Crear el ticket usando el servicio correspondiente
             ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
@@ -310,7 +308,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
             ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
-            ticketDTO.setAprobado(true);
 
             // Usar el servicio a través de la interfaz para crear el ticket
             return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
@@ -763,6 +760,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             logger.error("Error inesperado al rechazar la solicitud con ID {}: ", solicitudId, e);
             throw new RuntimeException("Error interno al rechazar la solicitud");
         }
+    }
+
+    private void asignarFechaYHoraCreacion(Solicitud solicitud) {
+        solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
+        solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
     }
 
 }
