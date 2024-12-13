@@ -1,8 +1,9 @@
 package com.tesis.tigmotors.enums;
 
 public enum TicketEstado {
-    PENDIENTE,
-    APROBADO,
+    TRABAJO_PENDIENTE,
+    TRABAJO_EN_PROGRESO,
+    TRABAJO_TERMINADO,
     RECHAZADO,
     VALOR_PAGADO,
     PENDIENTE_PAGO;

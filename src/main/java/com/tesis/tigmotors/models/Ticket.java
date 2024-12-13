@@ -20,6 +20,6 @@ public class Ticket {
     // Nuevos campos añadidos
     private String descripcionInicial; // Descripción inicial del problema
     private String descripcionTrabajo;
-    private LocalDate fechaCreacion;
-    private LocalTime horaCreacion;
+    private String fechaCreacion;
+    private String horaCreacion;
 }

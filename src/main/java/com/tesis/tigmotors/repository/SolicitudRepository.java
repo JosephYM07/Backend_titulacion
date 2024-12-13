@@ -24,4 +24,5 @@ public interface SolicitudRepository extends MongoRepository<Solicitud, String> 
     // Método para buscar solicitudes por estado y usuario
     List<Solicitud> findByUsernameAndEstado(String username, String estado);
 
+
 }
