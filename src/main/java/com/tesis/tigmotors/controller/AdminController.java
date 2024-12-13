@@ -3,6 +3,7 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.*;
+import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
 import com.tesis.tigmotors.service.interfaces.AuthService;
@@ -217,4 +218,27 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    /*Tickets*/
+
+    /**
+     * Endpint para enlistar todos los tickets segun su estado TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_FINALIZADO
+     * @param estado
+     * @return
+     */
+    @GetMapping("/estado-ticket/{estado}")
+    public ResponseEntity<List<TicketDTO>> listarTicketsPorEstado(@PathVariable String estado) {
+        // Llama al servicio para listar tickets por estado
+        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(TicketEstado.valueOf(estado.toUpperCase()));
+        return ResponseEntity.ok(tickets);
+    }
+    /**
+     * Endpoint para listar todos los tickets sin aplicar ningún filtro.
+     *
+     * @return Lista de todos los tickets en la base de datos.
+     */
+    @GetMapping("/historial-tickets")
+    public ResponseEntity<List<TicketDTO>> listarTodosLosTickets() {
+        List<TicketDTO> tickets = ticketServiceImpl.listarTodosLosTickets();
+        return ResponseEntity.ok(tickets);
+    }
 }

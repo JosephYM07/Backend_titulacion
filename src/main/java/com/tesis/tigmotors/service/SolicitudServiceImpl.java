@@ -78,9 +78,10 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
             solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
+            // Asignar fecha y hora actuales utilizando el convertidor
+            solicitudConverter.asignarFechaYHoraActual(solicitud);
 
-            // Asignar fecha y hora de creación automáticas
-            asignarFechaYHoraCreacion(solicitud);
+            solicitudConverter.asignarFechaYHoraActual(solicitud);
 
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
@@ -124,16 +125,13 @@ public class SolicitudServiceImpl implements SolicitudService {
 
             // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
-
-            // Asignar datos al modelo
             solicitud.setUsername(user.getUsername());
             solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
-            solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
-            solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
             solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
-            // Asignar fecha y hora de creación automáticas
-            asignarFechaYHoraCreacion(solicitud);
+            // Asignar fecha y hora actuales utilizando el convertidor
+            solicitudConverter.asignarFechaYHoraActual(solicitud);
+
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
             logger.info("Solicitud creada exitosamente con ID '{}'", solicitudGuardada.getIdSolicitud());
@@ -145,9 +143,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setUsername(user.getUsername()); // Asociar al mismo usuario que la solicitud
             ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
+            ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
 
-            // Crear el ticket usando el servicio correspondiente
             ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
             logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudGuardada.getIdSolicitud());
 
@@ -269,7 +266,7 @@ public class SolicitudServiceImpl implements SolicitudService {
      */
     @Override
     @Transactional
-    public TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
+    public SolicitudResponseDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
         logger.info("Usuario '{}' intentando aceptar cotización para solicitud ID '{}'", username, solicitudId);
 
         try {
@@ -307,10 +304,14 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setUsername(solicitud.getUsername());
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.PENDIENTE.name());
+            ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
 
-            // Usar el servicio a través de la interfaz para crear el ticket
-            return ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
+            // Crear el ticket pero no retornarlo
+            ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
+            logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudId);
+
+            // Retornar la solicitud actualizada como DTO de respuesta
+            return solicitudConverter.entityToResponseDto(solicitud);
 
         } catch (SolicitudNotFoundException | AccessDeniedException | InvalidSolicitudStateException e) {
             logger.error("Error procesando la solicitud ID '{}': {}", solicitudId, e.getMessage(), e);
@@ -320,6 +321,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error aceptando la cotización y generando el ticket", e);
         }
     }
+
 
     /**
      * Permite que un usuario rechace la cotización de una solicitud.
@@ -760,11 +762,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             logger.error("Error inesperado al rechazar la solicitud con ID {}: ", solicitudId, e);
             throw new RuntimeException("Error interno al rechazar la solicitud");
         }
-    }
-
-    private void asignarFechaYHoraCreacion(Solicitud solicitud) {
-        solicitud.setFechaCreacion(LocalDate.now(ZoneId.of("America/Guayaquil")));
-        solicitud.setHoraCreacion(LocalTime.now(ZoneId.of("America/Guayaquil")));
     }
 
 }

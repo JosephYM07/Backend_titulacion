@@ -21,7 +21,7 @@ public class Solicitud {
     private String cotizacionAceptada;
     private String Pago;
 
-    private LocalDate fechaCreacion; // Fecha de creación
-    private LocalTime horaCreacion; // Hora de creación
+    private String fechaCreacion; // Fecha de creación
+    private String horaCreacion; // Hora de creación
 
 }

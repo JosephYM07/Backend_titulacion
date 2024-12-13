@@ -102,12 +102,11 @@ public class UserController {
 
     // Endpoint para aceptar la cotización y generar un ticket automáticamente (solo para usuarios)
     @PutMapping("/aceptar-cotizacion/{idSolicitud}")
-    public ResponseEntity<TicketDTO> aceptarCotizacion(@PathVariable String idSolicitud, Authentication authentication) {
+    public ResponseEntity<SolicitudResponseDTO> aceptarCotizacion(@PathVariable String idSolicitud, Authentication authentication) {
         String username = authentication.getName();
-        TicketDTO ticketGenerado = solicitudServiceImpl.aceptarCotizacionGenerarTicket(idSolicitud, username);
-        return ResponseEntity.ok(ticketGenerado);
+        SolicitudResponseDTO solicitudResponse = solicitudServiceImpl.aceptarCotizacionGenerarTicket(idSolicitud, username);
+        return ResponseEntity.ok(solicitudResponse);
     }
-
     /**
      * Endpoint para que un usuario rechace la cotización de una solicitud.
      *

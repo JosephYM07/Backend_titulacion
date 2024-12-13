@@ -48,7 +48,7 @@ public interface SolicitudService {
      * @param username    Nombre de usuario que acepta la cotización.
      * @return TicketDTO con los datos del ticket generado.
      */
-    TicketDTO aceptarCotizacionGenerarTicket(String solicitudId, String username);
+    SolicitudResponseDTO aceptarCotizacionGenerarTicket(String solicitudId, String username);
 
     /**
      * Rechaza una cotización asociada a una solicitud.
