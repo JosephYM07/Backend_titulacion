@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -107,6 +108,7 @@ public class UserController {
         SolicitudResponseDTO solicitudResponse = solicitudServiceImpl.aceptarCotizacionGenerarTicket(idSolicitud, username);
         return ResponseEntity.ok(solicitudResponse);
     }
+
     /**
      * Endpoint para que un usuario rechace la cotización de una solicitud.
      *
@@ -214,24 +216,51 @@ public class UserController {
         EliminarSolicitudResponse resultado = solicitudService.eliminarSolicitudUsuario(solicitudId, username);
         return ResponseEntity.status(resultado.getStatusCode()).body(resultado); // Configura el código de estado HTTP
     }
+    /*TICKETS*/
 
-
-// Tickets
-    /*@PostMapping("/tickets/crear")
-    public ResponseEntity<?> crearTicket(@Valid @RequestBody TicketDTO ticketDTO, Authentication authentication) {
+    /**
+     * Endpoint para obtener el historial de tickets del usuario autenticado.
+     * @param authentication Información del usuario autenticado.
+     * @return Un ResponseEntity con la lista de tickets en formato DTO o un mensaje de error en caso de falla.
+     */
+    @GetMapping("/historial-tickets")
+    public ResponseEntity<List<TicketDTO>> obtenerHistorialTickets(Authentication authentication) {
         try {
             String username = authentication.getName();
-            ticketDTO.setEstado("Pendiente"); // Establece el estado como "Pendiente" por defecto
-            TicketDTO ticketCreado = ticketService.crearTicket(ticketDTO, username);
-            Map<String, Object> response = new HashMap<>();
-            response.put("mensaje", "Ticket creado exitosamente");
-            response.put("ticket", ticketCreado);
-            logger.info("Ticket creado exitosamente: {}", ticketCreado.getId());
-            return ResponseEntity.ok(response);
+            List<TicketDTO> tickets = ticketServiceImpl.obtenerHistorialTicketsPorUsuario(username);
+            return ResponseEntity.ok(tickets);
         } catch (Exception e) {
-            logger.error("Error al crear el ticket: ", e);
-            return ResponseEntity.internalServerError().body("Error al crear el ticket");
+            logger.error("Error al obtener el historial de tickets: ", e);
+            return ResponseEntity.internalServerError().build();
         }
-    }*/
+    }
+
+    /**
+     * Endpoint para obtener tickets filtrados por prioridad para el usuario autenticado.
+     *
+     * @param prioridad La prioridad del ticket (ALTA, MEDIO, BAJA).
+     * @param authentication Información de autenticación del usuario actual.
+     * @return Una lista de TicketDTO con los tickets del usuario autenticado.
+     */
+    @GetMapping("/prioridad-ticket/{prioridad}")
+    public ResponseEntity<List<TicketDTO>> obtenerTicketsPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
+        List<TicketDTO> tickets = ticketServiceImpl.obtenerTicketsPorPrioridadYUsuario(prioridad, authentication.getName());
+        return ResponseEntity.ok(tickets);
+    }
+
+    /**
+     * Endpoint para obtener tickets filtrados por estado para el usuario autenticado.
+     *
+     * @param estado El estado del ticket (TRABAJO_PENDIENTE, TRABAJO_EN_PROCESO, TRABAJO_FINALIZADO).
+     * @param authentication Información de autenticación del usuario actual.
+     * @return Una lista de TicketDTO con los tickets del usuario autenticado.
+     */
+    @GetMapping("/estado-ticket/{estado}")
+    public ResponseEntity<List<TicketDTO>> obtenerTicketsPorUsuarioYEstado(@PathVariable String estado, Authentication authentication) {
+        String username = authentication.getName();
+        List<TicketDTO> tickets = ticketServiceImpl.obtenerTicketsPorUsuarioYEstado(username, estado);
+        return ResponseEntity.ok(tickets);
+    }
+
 
 }

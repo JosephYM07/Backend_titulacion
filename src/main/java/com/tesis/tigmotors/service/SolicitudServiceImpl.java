@@ -77,7 +77,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Asignar datos al modelo
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
-            solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
             // Asignar fecha y hora actuales utilizando el convertidor
             solicitudConverter.asignarFechaYHoraActual(solicitud);
 
@@ -128,7 +127,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setUsername(user.getUsername());
             solicitud.setEstado(SolicitudEstado.ACEPTADO.name());
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
-            solicitud.setPago(SolicitudEstado.PAGO_PENDIENTE.name());
             // Asignar fecha y hora actuales utilizando el convertidor
             solicitudConverter.asignarFechaYHoraActual(solicitud);
 
@@ -140,9 +138,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             TicketDTO ticketDTO = new TicketDTO();
             ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
             ticketDTO.setSolicitudId(solicitudGuardada.getIdSolicitud());
-            ticketDTO.setUsername(user.getUsername()); // Asociar al mismo usuario que la solicitud
+            ticketDTO.setPrioridad(solicitud.getPrioridad());
+            ticketDTO.setUsername(user.getUsername());
             ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
+            ticketDTO.setPago(TicketEstado.PENDIENTE_PAGO.name());
             ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
 
             ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
@@ -292,6 +292,12 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new InvalidSolicitudStateException("La cotización ya ha sido aceptada.");
             }
 
+            //Verificar si la solicitud se encuentra rechazada
+            if (SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name().equals(solicitud.getCotizacionAceptada())) {
+                logger.error("Intento de aceptar una cotización ya rechazada. Solicitud ID '{}'", solicitudId);
+                throw new InvalidSolicitudStateException("La cotización ya ha sido rechazada.");
+            }
+
             // Cambiar el estado de la cotización a 'COTIZACION_ACEPTADA'
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
             solicitudRepository.save(solicitud);
@@ -301,9 +307,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             TicketDTO ticketDTO = new TicketDTO();
             ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
             ticketDTO.setSolicitudId(solicitud.getIdSolicitud());
+            ticketDTO.setPrioridad(solicitud.getPrioridad());
             ticketDTO.setUsername(solicitud.getUsername());
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
+            ticketDTO.setPago(TicketEstado.PENDIENTE_PAGO.name());
             ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
 
             // Crear el ticket pero no retornarlo
@@ -743,7 +751,11 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Validar que la solicitud esté en estado PENDIENTE
             if (SolicitudEstado.valueOf(solicitud.getEstado()) != SolicitudEstado.PENDIENTE) {
                 logger.warn("Intento de rechazar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
-                throw new IllegalStateException("La solicitud no está en estado 'Pendiente'");
+                throw new IllegalStateException("La solicitud no está en estado 'Pendiente, Aceptado o Rechazado'");
+            }
+            if (SolicitudEstado.valueOf(solicitud.getEstado()) == SolicitudEstado.ACEPTADO) {
+                logger.warn("Intento de rechazar una solicitud ya aceptada. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud ya fue aceptada y no puede ser rechazada.");
             }
             // Actualizar estado a RECHAZADO
             solicitud.setEstado(SolicitudEstado.SOLICITUD_RECHAZADA.name());

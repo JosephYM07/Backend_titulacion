@@ -9,15 +9,14 @@ import java.time.LocalTime;
 @Data
 public class TicketDTO {
     private String id;
-
     private String username;
     private String solicitudId;
-
+    private String prioridad;
     private String estado;
-
-    // Nuevos campos añadidos
-    private String descripcionInicial; // Descripción inicial del problema
+    private String descripcionInicial;
     private String descripcionTrabajo;
+    private String pago;
     private String fechaCreacion;
     private String horaCreacion;
+
 }

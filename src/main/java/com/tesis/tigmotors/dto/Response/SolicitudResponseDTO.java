@@ -15,7 +15,6 @@ public class SolicitudResponseDTO {
     private String prioridad;
     private Double cotizacion;
     private String cotizacionAceptada;
-    private String Pago;
-    private String fechaCreacion; // Cambiado a String
+    private String fechaCreacion;
     private String horaCreacion;
 }
