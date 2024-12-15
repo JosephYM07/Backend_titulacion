@@ -1,13 +1,19 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
+import com.tesis.tigmotors.Exceptions.TicketNotFoundException;
+import com.tesis.tigmotors.converters.FacturaConverter;
 import com.tesis.tigmotors.converters.TicketConverter;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Request.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
+import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.models.Ticket;
+import com.tesis.tigmotors.repository.FacturaRepository;
+import com.tesis.tigmotors.repository.SolicitudRepository;
 import com.tesis.tigmotors.repository.TicketRepository;
+import com.tesis.tigmotors.service.interfaces.FacturaService;
 import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +34,13 @@ public class TicketServiceImpl implements TicketService {
     private static final Logger logger = LoggerFactory.getLogger(TicketServiceImpl.class);
 
     private final TicketRepository ticketRepository;
+    private final FacturaRepository facturaRepository;
+    private final SolicitudRepository solicitudRepository;
 
+    private final FacturaService facturaService;
     private final TicketConverter ticketConverter;
+    private final FacturaConverter facturaConverter;
 
-
-    private final SequenceGeneratorService sequenceGeneratorService;
 
     /**
      * Crea un ticket automáticamente asociado a una solicitud.
@@ -221,6 +229,77 @@ public class TicketServiceImpl implements TicketService {
         return tickets.stream()
                 .map(ticketConverter::entityToDto)
                 .collect(Collectors.toList());
+    }
+
+
+    @Override
+    @Transactional
+    public TicketDTO actualizarEstadoTicket(String ticketId, TicketEstado nuevoEstado) {
+        try {
+            // Buscar el ticket por ID
+            Ticket ticket = ticketRepository.findById(ticketId)
+                    .orElseThrow(() -> new TicketNotFoundException("Ticket no encontrado con ID: " + ticketId));
+
+            // Validar que el nuevo estado sea válido
+            if (nuevoEstado == null ||
+                    (!nuevoEstado.equals(TicketEstado.TRABAJO_EN_PROGRESO) &&
+                            !nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO))) {
+                throw new IllegalStateException("El nuevo estado no es válido. Debe ser TRABAJO_EN_PROGRESO o TRABAJO_TERMINADO.");
+            }
+
+            // Validaciones de transición de estados
+            if (nuevoEstado.equals(TicketEstado.TRABAJO_EN_PROGRESO) &&
+                    !ticket.getEstado().equals(TicketEstado.TRABAJO_PENDIENTE.name())) {
+                throw new IllegalStateException("El ticket debe estar en estado TRABAJO_PENDIENTE para avanzar a TRABAJO_EN_PROGRESO.");
+            }
+
+            if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO) &&
+                    !ticket.getEstado().equals(TicketEstado.TRABAJO_EN_PROGRESO.name())) {
+                throw new IllegalStateException("El ticket debe estar en estado TRABAJO_EN_PROGRESO para avanzar a TRABAJO_TERMINADO.");
+            }
+
+            // Actualizar el estado del ticket
+            ticket.setEstado(nuevoEstado.name());
+            Ticket ticketActualizado = ticketRepository.save(ticket);
+
+            // Si el estado es TRABAJO_TERMINADO, generar y guardar factura usando el servicio
+            if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO)) {
+                double cotizacion = obtenerCotizacion(ticket.getSolicitudId());
+                Factura factura = facturaService.generarFacturaDesdeTicket(ticketId, cotizacion);
+                logger.info("Factura generada con ID {} para el ticket {}", factura.getFacturaId(), ticketId);
+            }
+
+            // Retornar DTO del ticket actualizado
+            return ticketConverter.entityToDto(ticketActualizado);
+        } catch (TicketNotFoundException e) {
+            logger.error("Error: Ticket no encontrado. ID: {}", ticketId, e);
+            throw e;
+        } catch (IllegalStateException e) {
+            logger.error("Error: Transición de estado inválida. ID: {}", ticketId, e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error inesperado al actualizar el estado del ticket con ID {}: ", ticketId, e);
+            throw new RuntimeException("Error interno al actualizar el estado del ticket");
+        }
+    }
+
+    /**
+     * Obtiene la cotización de una solicitud por su ID.
+     * @param solicitudId ID de la solicitud asociada al ticket.
+     * @return Monto de la cotización.
+     * @throws ResourceNotFoundException Si no se encuentra la solicitud o no tiene cotización.
+     */
+    private double obtenerCotizacion(String solicitudId) {
+        // Lógica para buscar la cotización real en la base de datos (simulada)
+        Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
+
+        // Validar que la cotización exista
+        if (solicitud.getCotizacion() == null || solicitud.getCotizacion() <= 0) {
+            throw new IllegalStateException("La solicitud con ID " + solicitudId + " no tiene una cotización válida.");
+        }
+
+        return solicitud.getCotizacion();
     }
 
 

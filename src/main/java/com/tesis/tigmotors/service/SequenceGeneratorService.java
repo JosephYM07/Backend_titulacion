@@ -23,6 +23,8 @@ public class SequenceGeneratorService {
 
     public static final String SOLICITUD_SEQUENCE = "solicitud_sequence";
     public static final String TICKET_SEQUENCE = "ticket_sequence";
+    public static final String FACTURA_SEQUENCE = "factura_sequence";
+
 
     public long generateSequence(String seqName) {
         DatabaseSequence counter = mongoOperations.findAndModify(
