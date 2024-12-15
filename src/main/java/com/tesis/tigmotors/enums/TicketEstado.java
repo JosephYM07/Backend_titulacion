@@ -10,9 +10,9 @@ public enum TicketEstado {
     RECHAZADO,
     VALOR_PAGADO,
     PENDIENTE_PAGO,
-    ALTA, // Prioridad de solicitud
-    MEDIA, // Prioridad de solicitud
-    BAJA;  // Prioridad de solicitud
+    ALTA,
+    MEDIA,
+    BAJA;
 
     /**
      * Valida si el estado pertenece a los estados de trabajo.
