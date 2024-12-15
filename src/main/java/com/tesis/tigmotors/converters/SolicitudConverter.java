@@ -34,7 +34,6 @@ public class SolicitudConverter {
         solicitudDTO.setPrioridad(solicitud.getPrioridad());
         solicitudDTO.setCotizacion(solicitud.getCotizacion());
         solicitudDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
-        solicitudDTO.setPago(solicitud.getPago());
 
         // Formatear y asignar fechas y horas
         solicitudDTO.setFechaCreacion(solicitud.getFechaCreacion());
@@ -54,7 +53,6 @@ public class SolicitudConverter {
         solicitud.setPrioridad(solicitudDTO.getPrioridad());
         solicitud.setCotizacion(solicitudDTO.getCotizacion());
         solicitud.setCotizacionAceptada(solicitudDTO.getCotizacionAceptada());
-        solicitud.setPago(solicitudDTO.getPago());
 
         // Validar y asignar fechas y horas
         solicitud.setFechaCreacion(solicitudDTO.getFechaCreacion());
@@ -89,7 +87,6 @@ public class SolicitudConverter {
         responseDTO.setPrioridad(solicitud.getPrioridad());
         responseDTO.setCotizacion(solicitud.getCotizacion());
         responseDTO.setCotizacionAceptada(solicitud.getCotizacionAceptada());
-        responseDTO.setPago(solicitud.getPago());
 
         // Formatear y asignar fechas y horas
         responseDTO.setFechaCreacion(solicitud.getFechaCreacion());

@@ -50,6 +50,8 @@ public interface SolicitudService {
      */
     SolicitudResponseDTO aceptarCotizacionGenerarTicket(String solicitudId, String username);
 
+
+
     /**
      * Rechaza una cotización asociada a una solicitud.
      *

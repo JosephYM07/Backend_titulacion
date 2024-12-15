@@ -27,7 +27,9 @@ public class TicketConverter {
         ticket.setId(ticketDTO.getId());
         ticket.setUsername(ticketDTO.getUsername());
         ticket.setSolicitudId(ticketDTO.getSolicitudId());
+        ticket.setPrioridad(ticketDTO.getPrioridad());
         ticket.setEstado(ticketDTO.getEstado());
+        ticket.setPago(ticketDTO.getPago());
         ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial());
         ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo());
 
@@ -47,7 +49,9 @@ public class TicketConverter {
         ticketDTO.setId(ticket.getId());
         ticketDTO.setUsername(ticket.getUsername());
         ticketDTO.setSolicitudId(ticket.getSolicitudId());
+        ticket.setPrioridad(ticketDTO.getPrioridad());
         ticketDTO.setEstado(ticket.getEstado());
+        ticketDTO.setPago(ticket.getPago());
         ticketDTO.setDescripcionInicial(ticket.getDescripcionInicial());
         ticketDTO.setDescripcionTrabajo(ticket.getDescripcionTrabajo());
 

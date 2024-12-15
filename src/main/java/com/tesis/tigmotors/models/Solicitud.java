@@ -19,9 +19,7 @@ public class Solicitud {
     private String prioridad;
     private Double cotizacion;
     private String cotizacionAceptada;
-    private String Pago;
-
-    private String fechaCreacion; // Fecha de creación
-    private String horaCreacion; // Hora de creación
+    private String fechaCreacion;
+    private String horaCreacion;
 
 }

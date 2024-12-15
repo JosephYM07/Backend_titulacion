@@ -16,10 +16,10 @@ public class Ticket {
     private String username;
     private String descripcion;
     private String estado;
-
-    // Nuevos campos añadidos
-    private String descripcionInicial; // Descripción inicial del problema
+    private String prioridad;
+    private String descripcionInicial;
     private String descripcionTrabajo;
+    private String pago;
     private String fechaCreacion;
     private String horaCreacion;
 }
