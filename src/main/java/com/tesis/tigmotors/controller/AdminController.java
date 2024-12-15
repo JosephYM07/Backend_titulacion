@@ -231,6 +231,7 @@ public class AdminController {
         List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(TicketEstado.valueOf(estado.toUpperCase()));
         return ResponseEntity.ok(tickets);
     }
+
     /**
      * Endpoint para listar todos los tickets sin aplicar ningún filtro.
      *
@@ -240,5 +241,17 @@ public class AdminController {
     public ResponseEntity<List<TicketDTO>> listarTodosLosTickets() {
         List<TicketDTO> tickets = ticketServiceImpl.listarTodosLosTickets();
         return ResponseEntity.ok(tickets);
+    }
+
+    /**
+     * Endpoint para actualizar el estado de un ticket.
+     * @param ticketId ID del ticket a actualizar.
+     * @param nuevoEstado Nuevo estado del ticket (TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO, RECHAZADO).
+     * @return TicketDTO con los datos del ticket actualizado.
+     */
+    @PutMapping("/{ticketId}/estado-ticket")
+    public ResponseEntity<TicketDTO> actualizarEstadoTicket(@PathVariable String ticketId, @RequestParam TicketEstado nuevoEstado) {
+        TicketDTO ticketActualizado = ticketServiceImpl.actualizarEstadoTicket(ticketId, nuevoEstado);
+        return ResponseEntity.ok(ticketActualizado);
     }
 }

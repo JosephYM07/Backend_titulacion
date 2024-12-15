@@ -56,4 +56,13 @@ public interface TicketService {
      * @return Una lista de TicketDTO que representan los tickets del usuario con el estado especificado.
      */
     List<TicketDTO> obtenerTicketsPorUsuarioYEstado(String username, String estado);
+
+    /**
+     * Actualiza el estado de un ticket.
+     *
+     * @param ticketId ID del ticket a actualizar.
+     * @param nuevoEstado Nuevo estado del ticket.
+     * @return DTO con los datos actualizados del ticket.
+     */
+    TicketDTO actualizarEstadoTicket(String ticketId, TicketEstado nuevoEstado);
 }

@@ -49,7 +49,7 @@ public class TicketConverter {
         ticketDTO.setId(ticket.getId());
         ticketDTO.setUsername(ticket.getUsername());
         ticketDTO.setSolicitudId(ticket.getSolicitudId());
-        ticket.setPrioridad(ticketDTO.getPrioridad());
+        ticketDTO.setPrioridad(ticket.getPrioridad());
         ticketDTO.setEstado(ticket.getEstado());
         ticketDTO.setPago(ticket.getPago());
         ticketDTO.setDescripcionInicial(ticket.getDescripcionInicial());
