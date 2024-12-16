@@ -280,10 +280,10 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new AccessDeniedException("No tiene permisos para aceptar esta cotización.");
             }
 
-            // Verificar que el estado de la solicitud sea 'ACEPTADO'
-            if (!SolicitudEstado.ACEPTADO.name().equals(solicitud.getEstado())) {
-                logger.error("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
-                throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
+            // Verificar que la cotización no haya sido rechazada previamente
+            if (SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name().equals(solicitud.getCotizacionAceptada())) {
+                logger.error("Intento de aceptar una cotización ya rechazada. Solicitud ID '{}'", solicitudId);
+                throw new InvalidSolicitudStateException("No es posible aceptar una cotización que ya ha sido rechazada.");
             }
 
             // Verificar que la cotización no haya sido ya aceptada
@@ -292,16 +292,11 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new InvalidSolicitudStateException("La cotización ya ha sido aceptada.");
             }
 
-            //Verificar si la solicitud se encuentra rechazada
-            if (SolicitudEstado.RECHAZO_COTIZACION_USUARIO.name().equals(solicitud.getCotizacionAceptada())) {
-                logger.error("Intento de aceptar una cotización ya rechazada. Solicitud ID '{}'", solicitudId);
-                throw new InvalidSolicitudStateException("La cotización ya ha sido rechazada.");
+            // Verificar que el estado de la solicitud sea 'ACEPTADO'
+            if (!SolicitudEstado.ACEPTADO.name().equals(solicitud.getEstado())) {
+                logger.error("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
+                throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
             }
-
-            // Cambiar el estado de la cotización a 'COTIZACION_ACEPTADA'
-            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
-            solicitudRepository.save(solicitud);
-            logger.info("Cotización aceptada para solicitud ID '{}'", solicitudId);
 
             // Crear el ticket utilizando la interfaz del servicio
             TicketDTO ticketDTO = new TicketDTO();
@@ -353,6 +348,11 @@ public class SolicitudServiceImpl implements SolicitudService {
                         logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
                     });
+            // Verificar si la cotización ya fue aceptada
+            if (SolicitudEstado.COTIZACION_ACEPTADA.name().equals(solicitud.getCotizacionAceptada())) {
+                logger.warn("Intento de rechazar una cotización ya aceptada. ID Solicitud: '{}'", solicitudId);
+                throw new IllegalStateException("No es posible rechazar una cotización que ya ha sido aceptada.");
+            }
             // Validar permisos del usuario
             if (!solicitud.getUsername().equals(username)) {
                 logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
