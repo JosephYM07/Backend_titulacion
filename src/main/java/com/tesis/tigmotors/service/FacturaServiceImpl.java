@@ -48,6 +48,7 @@ public class FacturaServiceImpl implements FacturaService {
     public List<FacturaResponseDTO> listarTodasLasFacturas() {
         log.info("Iniciando proceso para listar todas las facturas...");
         try {
+
             List<Factura> facturas = facturaRepository.findAll();
 
             if (facturas.isEmpty()) {
