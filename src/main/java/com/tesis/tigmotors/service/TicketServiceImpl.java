@@ -13,6 +13,8 @@ import com.tesis.tigmotors.models.Ticket;
 import com.tesis.tigmotors.repository.FacturaRepository;
 import com.tesis.tigmotors.repository.SolicitudRepository;
 import com.tesis.tigmotors.repository.TicketRepository;
+import com.tesis.tigmotors.repository.UserRepository;
+import com.tesis.tigmotors.service.interfaces.EmailService;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import com.tesis.tigmotors.service.interfaces.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,9 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final FacturaRepository facturaRepository;
     private final SolicitudRepository solicitudRepository;
+    private final UserRepository userRepository;
+
+    private final EmailService emailService;
 
     private final FacturaService facturaService;
     private final TicketConverter ticketConverter;
@@ -262,11 +267,26 @@ public class TicketServiceImpl implements TicketService {
             ticket.setEstado(nuevoEstado.name());
             Ticket ticketActualizado = ticketRepository.save(ticket);
 
-            // Si el estado es TRABAJO_TERMINADO, generar y guardar factura usando el servicio
+            /// Si el estado es TRABAJO_TERMINADO
             if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO)) {
+                // Generar y guardar factura usando el servicio
                 double cotizacion = obtenerCotizacion(ticket.getSolicitudId());
                 Factura factura = facturaService.generarFacturaDesdeTicket(ticketId, cotizacion);
                 logger.info("Factura generada con ID {} para el ticket {}", factura.getFacturaId(), ticketId);
+
+                // Enviar correo al usuario
+                String username = ticket.getUsername();
+
+                // Obtener el correo del usuario desde MySQL
+                String email = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado con username: " + username))
+                        .getEmail();
+
+                // Crear y enviar la notificación por correo
+                String asunto = "Tu trabajo ha sido completado";
+                String contenido = construirCorreoTrabajoFinalizado(username, ticket, cotizacion);
+                emailService.sendEmail(email, asunto, contenido);
+
             }
 
             // Retornar DTO del ticket actualizado
@@ -290,7 +310,6 @@ public class TicketServiceImpl implements TicketService {
      * @throws ResourceNotFoundException Si no se encuentra la solicitud o no tiene cotización.
      */
     private double obtenerCotizacion(String solicitudId) {
-        // Lógica para buscar la cotización real en la base de datos (simulada)
         Solicitud solicitud = solicitudRepository.findById(solicitudId)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
 
@@ -301,6 +320,25 @@ public class TicketServiceImpl implements TicketService {
 
         return solicitud.getCotizacion();
     }
+
+    private String construirCorreoTrabajoFinalizado(String username, Ticket ticket, double cotizacion) {
+        return "<html>" +
+                "<meta charset='UTF-8'>" +
+                "<body style='font-family: Arial, sans-serif;'>" +
+                "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
+                "<h2 style='color: #333;'>¡Tu trabajo ha sido completado!</h2>" +
+                "<p>Hola " + username + ",</p>" +
+                "<p>Nos complace informarte que el trabajo asociado a tu solicitud <strong>" + ticket.getSolicitudId() + "</strong> ha sido finalizado.</p>" +
+                "<p>El costo total de la reparación es: <strong>$" + String.format("%.2f", cotizacion) + "</strong>.</p>" +
+                "<p>Por favor, acércate a nuestro taller para completar el proceso de pago y recoger tu vehículo.</p>" +
+                "<p>Si tienes alguna pregunta, no dudes en contactarnos.</p>" +
+                "<br>" +
+                "<p>Gracias por confiar en TigMotors.</p>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
+
 
 
 }
