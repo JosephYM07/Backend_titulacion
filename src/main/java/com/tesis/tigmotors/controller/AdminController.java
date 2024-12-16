@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -42,6 +44,7 @@ public class AdminController {
     private final AdminVerificationUserService adminVerificationUserService;
     private final AuthService authService;
     private final SolicitudService solicitudService;
+    private final ReporteFacturaServiceImpl reporteFacturaServiceImpl;
 
     /**
      * Endpoint para obtener la lista de usuarios aprobados con el rol USER.
@@ -254,4 +257,52 @@ public class AdminController {
         TicketDTO ticketActualizado = ticketServiceImpl.actualizarEstadoTicket(ticketId, nuevoEstado);
         return ResponseEntity.ok(ticketActualizado);
     }
+
+    /**
+     * Endpoint para generar un reporte de facturas pendientes de un usuario específico.
+     *
+     * @param username El nombre del usuario.
+     * @return Un archivo PDF como respuesta.
+     */
+    @GetMapping("/facturas-pendientes")
+    public ResponseEntity<byte[]> generarReporteFacturasPendientes(@RequestParam String username) {
+        byte[] pdfBytes = reporteFacturaServiceImpl.generarReporteFacturasPendientes(username).toByteArray();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=facturas_pendientes_" + username + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    /**
+     * Endpoint para generar un reporte general de todas las facturas pendientes (administrador).
+     *
+     * @return Un archivo PDF como respuesta.
+     */
+    @GetMapping("/facturas-pendientes/general")
+    public ResponseEntity<byte[]> generarReporteGeneralFacturasPendientes() {
+        byte[] pdfBytes = reporteFacturaServiceImpl.generarReporteGeneralFacturasPendientes().toByteArray();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=reporte_general_facturas_pendientes.pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    /**
+     * Endpoint para generar un PDF de una factura específica.
+     *
+     * @param facturaId El ID de la factura.
+     * @return Un archivo PDF como respuesta.
+     */
+    @GetMapping("/factura")
+    public ResponseEntity<byte[]> imprimirFactura(@RequestParam String facturaId) {
+        byte[] pdfBytes = reporteFacturaServiceImpl.imprimirFactura(facturaId).toByteArray();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=factura_" + facturaId + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
 }
