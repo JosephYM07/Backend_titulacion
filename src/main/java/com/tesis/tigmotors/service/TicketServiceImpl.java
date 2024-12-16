@@ -4,8 +4,7 @@ import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.Exceptions.TicketNotFoundException;
 import com.tesis.tigmotors.converters.FacturaConverter;
 import com.tesis.tigmotors.converters.TicketConverter;
-import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Solicitud;
@@ -23,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.tesis.tigmotors.enums.TicketEstado;
 
 import java.util.List;
 import java.util.stream.Collectors;

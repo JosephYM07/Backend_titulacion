@@ -2,8 +2,6 @@ package com.tesis.tigmotors.service.interfaces;
 
 import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Request.TicketDTO;
-import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
 

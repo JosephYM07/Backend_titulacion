@@ -1,13 +1,12 @@
 package com.tesis.tigmotors.converters;
 
-import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.models.Ticket;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 @Component
 public class TicketConverter {
@@ -29,7 +28,6 @@ public class TicketConverter {
         ticket.setSolicitudId(ticketDTO.getSolicitudId());
         ticket.setPrioridad(ticketDTO.getPrioridad());
         ticket.setEstado(ticketDTO.getEstado());
-        ticket.setPago(ticketDTO.getPago());
         ticket.setDescripcionInicial(ticketDTO.getDescripcionInicial());
         ticket.setDescripcionTrabajo(ticketDTO.getDescripcionTrabajo());
 
@@ -51,7 +49,6 @@ public class TicketConverter {
         ticketDTO.setSolicitudId(ticket.getSolicitudId());
         ticketDTO.setPrioridad(ticket.getPrioridad());
         ticketDTO.setEstado(ticket.getEstado());
-        ticketDTO.setPago(ticket.getPago());
         ticketDTO.setDescripcionInicial(ticket.getDescripcionInicial());
         ticketDTO.setDescripcionTrabajo(ticket.getDescripcionTrabajo());
 

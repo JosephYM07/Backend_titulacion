@@ -1,10 +1,7 @@
-package com.tesis.tigmotors.dto.Request;
+package com.tesis.tigmotors.dto.Response;
 
 
 import lombok.Data;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
 
 @Data
 public class TicketDTO {
@@ -15,7 +12,6 @@ public class TicketDTO {
     private String estado;
     private String descripcionInicial;
     private String descripcionTrabajo;
-    private String pago;
     private String fechaCreacion;
     private String horaCreacion;
 

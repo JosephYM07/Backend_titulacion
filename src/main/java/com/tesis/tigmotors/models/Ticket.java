@@ -19,7 +19,6 @@ public class Ticket {
     private String prioridad;
     private String descripcionInicial;
     private String descripcionTrabajo;
-    private String pago;
     private String fechaCreacion;
     private String horaCreacion;
 }
