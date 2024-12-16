@@ -1,5 +1,7 @@
 package com.tesis.tigmotors.converters;
 
+import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
+import com.tesis.tigmotors.enums.EstadoPago;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Ticket;
 import org.springframework.stereotype.Component;
@@ -24,10 +26,26 @@ public class FacturaConverter {
                 .prioridad(ticket.getPrioridad())
                 .descripcionInicial(ticket.getDescripcionInicial())
                 .descripcionTrabajo(ticket.getDescripcionTrabajo())
-                .pago(ticket.getPago())
+                .pago(EstadoPago.PENDIENTE_PAGO.name())
                 .cotizacion(cotizacion)
                 .fechaCreacion(LocalDate.now().format(DATE_FORMATTER))
                 .horaCreacion(LocalTime.now().format(TIME_FORMATTER))
                 .build();
+    }
+    public FacturaResponseDTO entityToDto(Factura factura) {
+        FacturaResponseDTO responseDTO = new FacturaResponseDTO();
+        responseDTO.setFacturaId(factura.getFacturaId());
+        responseDTO.setTicketId(factura.getTicketId());
+        responseDTO.setSolicitudId(factura.getSolicitudId());
+        responseDTO.setUsername(factura.getUsername());
+        responseDTO.setEstadoTicket(factura.getEstadoTicket());
+        responseDTO.setPrioridad(factura.getPrioridad());
+        responseDTO.setDescripcionInicial(factura.getDescripcionInicial());
+        responseDTO.setDescripcionTrabajo(factura.getDescripcionTrabajo());
+        responseDTO.setCotizacion(factura.getCotizacion());
+        responseDTO.setFechaCreacion(factura.getFechaCreacion());
+        responseDTO.setHoraCreacion(factura.getHoraCreacion());
+        responseDTO.setEstadoPago(factura.getPago()); // Estado del pago
+        return responseDTO;
     }
 }

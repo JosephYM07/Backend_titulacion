@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.service.interfaces;
 
-import com.tesis.tigmotors.dto.Request.TicketDTO;
+import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
 
 import java.util.List;

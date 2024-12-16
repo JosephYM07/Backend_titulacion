@@ -6,11 +6,9 @@ import com.tesis.tigmotors.Exceptions.SolicitudNotFoundException;
 import com.tesis.tigmotors.converters.SolicitudConverter;
 import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Request.TicketDTO;
-import com.tesis.tigmotors.dto.Response.ErrorResponse;
+import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
-import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
@@ -27,9 +25,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -142,9 +137,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setUsername(user.getUsername());
             ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
-            ticketDTO.setPago(TicketEstado.PENDIENTE_PAGO.name());
             ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
-
             ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
             logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudGuardada.getIdSolicitud());
 
@@ -306,7 +299,6 @@ public class SolicitudServiceImpl implements SolicitudService {
             ticketDTO.setUsername(solicitud.getUsername());
             ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
             ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-            ticketDTO.setPago(TicketEstado.PENDIENTE_PAGO.name());
             ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
 
             // Crear el ticket pero no retornarlo
