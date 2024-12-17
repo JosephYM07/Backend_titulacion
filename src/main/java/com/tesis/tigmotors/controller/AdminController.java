@@ -225,7 +225,7 @@ public class AdminController {
     @GetMapping("/estado-ticket/{estado}")
     public ResponseEntity<List<TicketDTO>> listarTicketsPorEstado(@PathVariable String estado) {
         // Llama al servicio para listar tickets por estado
-        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(TicketEstado.valueOf(estado.toUpperCase()));
+        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(String.valueOf(estado.toUpperCase()));
         return ResponseEntity.ok(tickets);
     }
 

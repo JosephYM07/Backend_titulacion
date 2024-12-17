@@ -69,23 +69,36 @@ public class TicketServiceImpl implements TicketService {
      * @return Lista de tickets con el estado especificado.
      */
     @Override
-    @Transactional
-    public List<TicketDTO> listarTicketsPorEstado(TicketEstado estado) {
+    @Transactional(readOnly = true)
+    public List<TicketDTO> listarTicketsPorEstado(String estado) {
         logger.info("Iniciando la consulta de tickets con estado '{}'", estado);
 
         try {
+            // Validar y convertir el estado usando la interfaz TicketEstado
+            TicketEstado estadoEnum;
+
+            if (estado.startsWith("TRABAJO_")) {
+                estadoEnum = TicketEstado.fromTrabajoString(estado);
+            } else {
+                estadoEnum = TicketEstado.fromPrioridadString(estado);
+            }
+
             // Buscar tickets por estado
-            List<Ticket> tickets = ticketRepository.findByEstado(estado);
+            List<Ticket> tickets = ticketRepository.findByEstado(estadoEnum);
 
             if (tickets.isEmpty()) {
-                logger.warn("No se encontraron tickets con estado '{}'", estado);
-                throw new ResourceNotFoundException("No se encontraron tickets con estado '" + estado + "'");
+                logger.warn("No se encontraron tickets con estado '{}'", estadoEnum);
+                throw new ResourceNotFoundException("No se encontraron tickets con estado '" + estadoEnum + "'");
             }
 
             // Convertir las entidades a DTOs
             return tickets.stream()
                     .map(ticketConverter::entityToDto)
                     .collect(Collectors.toList());
+
+        } catch (IllegalArgumentException e) {
+            logger.error("El estado proporcionado '{}' no es válido: {}", estado, e.getMessage());
+            throw new IllegalArgumentException("El estado '" + estado + "' no es válido. " + e.getMessage());
         } catch (ResourceNotFoundException e) {
             logger.error("Error de negocio: {}", e.getMessage());
             throw e;
@@ -94,6 +107,7 @@ public class TicketServiceImpl implements TicketService {
             throw new RuntimeException("Error inesperado al listar tickets.", e);
         }
     }
+
 
     /**
      * Lista todos los tickets sin aplicar ningún filtro.
@@ -170,34 +184,39 @@ public class TicketServiceImpl implements TicketService {
     public List<TicketDTO> obtenerTicketsPorUsuarioYEstado(String username, String estado) {
         logger.info("Iniciando la consulta de tickets para el usuario '{}' con estado '{}'", username, estado);
 
-        // Validar si el estado pertenece a trabajos, pagos o prioridades
-        if (!TicketEstado.isTrabajoEstado(estado) && !TicketEstado.isPagoEstado(estado) && !TicketEstado.isPrioridadEstado(estado)) {
+        try {
+            TicketEstado estadoEnum;
+
+            // Validar y convertir el estado usando los métodos de TicketEstado
             if (estado.startsWith("TRABAJO_")) {
-                logger.warn("Estado inválido ingresado: '{}'. Estados válidos de trabajo: {}", estado, TicketEstado.getEstadosValidosTrabajo());
-                throw new IllegalArgumentException("Estado inválido. Estados válidos de trabajo: " + TicketEstado.getEstadosValidosTrabajo());
-            } else if (TicketEstado.isPagoEstado(estado)) {
-                logger.warn("Estado inválido ingresado: '{}'. Estados válidos de pago: {}", estado, TicketEstado.getEstadosValidosPago());
-                throw new IllegalArgumentException("Estado inválido. Estados válidos de pago: " + TicketEstado.getEstadosValidosPago());
+                estadoEnum = TicketEstado.fromTrabajoString(estado);
             } else {
-                logger.warn("Estado inválido ingresado: '{}'. Estados válidos de prioridad: {}", estado, TicketEstado.getEstadosValidosPrioridad());
-                throw new IllegalArgumentException("Estado inválido. Estados válidos de prioridad: " + TicketEstado.getEstadosValidosPrioridad());
+                estadoEnum = TicketEstado.fromPrioridadString(estado);
             }
+
+            // Buscar tickets por usuario y estado
+            List<Ticket> tickets = ticketRepository.findByUsernameAndEstado(username, estadoEnum.name());
+
+            if (tickets.isEmpty()) {
+                logger.warn("No se encontraron tickets para el usuario '{}' con estado '{}'", username, estadoEnum);
+            } else {
+                logger.info("Se encontraron {} tickets para el usuario '{}' con estado '{}'", tickets.size(), username, estadoEnum);
+            }
+
+            // Convertir los tickets a DTO y retornar
+            return tickets.stream()
+                    .map(ticketConverter::entityToDto)
+                    .collect(Collectors.toList());
+
+        } catch (IllegalArgumentException ex) {
+            logger.error("Error al validar el estado '{}': {}", estado, ex.getMessage());
+            throw ex; // El GlobalExceptionHandler maneja la excepción y devuelve una respuesta HTTP 400
+        } catch (Exception ex) {
+            logger.error("Error inesperado al consultar tickets para el usuario '{}'", username, ex);
+            throw new RuntimeException("Error inesperado al procesar la solicitud.");
         }
-
-        // Buscar tickets por usuario y estado
-        List<Ticket> tickets = ticketRepository.findByUsernameAndEstado(username, estado);
-
-        if (tickets.isEmpty()) {
-            logger.warn("No se encontraron tickets para el usuario '{}' con estado '{}'", username, estado);
-        } else {
-            logger.info("Se encontraron {} tickets para el usuario '{}' con estado '{}'", tickets.size(), username, estado);
-        }
-
-        // Convertir los tickets a DTO y retornar
-        return tickets.stream()
-                .map(ticketConverter::entityToDto)
-                .collect(Collectors.toList());
     }
+
 
     /**
      * Obtiene una lista de tickets asociados a un usuario específico y filtrados por prioridad.
@@ -213,25 +232,31 @@ public class TicketServiceImpl implements TicketService {
     public List<TicketDTO> obtenerTicketsPorPrioridadYUsuario(String prioridad, String username) {
         logger.info("Iniciando la consulta de tickets para el usuario '{}' con prioridad '{}'", username, prioridad);
 
-        // Validar si la prioridad ingresada es válida
-        if (!TicketEstado.isPrioridadEstado(prioridad)) {
-            logger.warn("Prioridad inválida ingresada: '{}'. Estados válidos de prioridad: {}", prioridad, TicketEstado.getEstadosValidosPrioridad());
-            throw new IllegalArgumentException("Prioridad inválida. Estados válidos de prioridad: " + TicketEstado.getEstadosValidosPrioridad());
+        try {
+            // Validar y convertir la prioridad usando el enum
+            TicketEstado prioridadEnum = TicketEstado.fromPrioridadString(prioridad);
+
+            // Buscar tickets por usuario y prioridad
+            List<Ticket> tickets = ticketRepository.findByUsernameAndPrioridad(username, prioridadEnum.name());
+
+            if (tickets.isEmpty()) {
+                logger.warn("No se encontraron tickets para el usuario '{}' con prioridad '{}'", username, prioridadEnum);
+            } else {
+                logger.info("Se encontraron {} tickets para el usuario '{}' con prioridad '{}'", tickets.size(), username, prioridadEnum);
+            }
+
+            // Convertir los tickets a DTO y retornar
+            return tickets.stream()
+                    .map(ticketConverter::entityToDto)
+                    .collect(Collectors.toList());
+
+        } catch (IllegalArgumentException ex) {
+            logger.error("Error al obtener tickets: {}", ex.getMessage());
+            throw ex; // Relanzamos la excepción para que sea manejada por el GlobalExceptionHandler
+        } catch (Exception ex) {
+            logger.error("Error inesperado al obtener tickets", ex);
+            throw new RuntimeException("Error inesperado al procesar la solicitud.");
         }
-
-        // Buscar tickets por usuario y prioridad
-        List<Ticket> tickets = ticketRepository.findByUsernameAndPrioridad(username, prioridad.toUpperCase());
-
-        if (tickets.isEmpty()) {
-            logger.warn("No se encontraron tickets para el usuario '{}' con prioridad '{}'", username, prioridad);
-        } else {
-            logger.info("Se encontraron {} tickets para el usuario '{}' con prioridad '{}'", tickets.size(), username, prioridad);
-        }
-
-        // Convertir los tickets a DTO y retornar
-        return tickets.stream()
-                .map(ticketConverter::entityToDto)
-                .collect(Collectors.toList());
     }
 
 
@@ -336,7 +361,6 @@ public class TicketServiceImpl implements TicketService {
                 "</body>" +
                 "</html>";
     }
-
 
 
 }

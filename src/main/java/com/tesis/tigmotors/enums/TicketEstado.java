@@ -1,5 +1,8 @@
 package com.tesis.tigmotors.enums;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Enum que representa los posibles estados de un ticket y las prioridades asociadas.
  */
@@ -14,77 +17,54 @@ public enum TicketEstado {
     MEDIA,
     BAJA;
 
+    private static final Set<TicketEstado> ESTADOS_TRABAJO = EnumSet.of(TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO);
+    private static final Set<TicketEstado> ESTADOS_PAGO = EnumSet.of(PENDIENTE_PAGO, VALOR_PAGADO);
+    private static final Set<TicketEstado> PRIORIDADES = EnumSet.of(ALTA, MEDIA, BAJA);
+
     /**
-     * Valida si el estado pertenece a los estados de trabajo.
+     * Método centralizado para validar y convertir cadenas a TicketEstado.
      *
-     * @param estado El estado a validar.
-     * @return true si el estado pertenece a los estados de trabajo, false de lo contrario.
+     * @param estado  Estado ingresado.
+     * @param validSet Conjunto de estados válidos.
+     * @param errorMsg Mensaje de error si el estado no es válido.
+     * @return El valor del enum si es válido.
      */
-    public static boolean isTrabajoEstado(String estado) {
-        try {
-            TicketEstado ticketEstado = TicketEstado.valueOf(estado.toUpperCase());
-            return ticketEstado == TRABAJO_PENDIENTE ||
-                    ticketEstado == TRABAJO_EN_PROGRESO ||
-                    ticketEstado == TRABAJO_TERMINADO;
-        } catch (IllegalArgumentException e) {
-            return false;
+    private static TicketEstado fromString(String estado, Set<TicketEstado> validSet, String errorMsg) {
+        for (TicketEstado e : validSet) {
+            if (e.name().equalsIgnoreCase(estado)) {
+                return e;
+            }
         }
+        throw new IllegalArgumentException(errorMsg);
     }
 
     /**
-     * Valida si el estado pertenece a los estados de pago.
+     * Convierte y valida un estado para trabajos.
      *
-     * @param estado El estado a validar.
-     * @return true si el estado pertenece a los estados de pago, false de lo contrario.
+     * @param estado Estado ingresado.
+     * @return El valor del enum si es válido.
      */
-    public static boolean isPagoEstado(String estado) {
-        try {
-            TicketEstado ticketEstado = TicketEstado.valueOf(estado.toUpperCase());
-            return ticketEstado == PENDIENTE_PAGO || ticketEstado == VALOR_PAGADO;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+    public static TicketEstado fromTrabajoString(String estado) {
+        return fromString(estado, ESTADOS_TRABAJO, "El estado proporcionado no es válido. Estados válidos: TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO.");
     }
 
     /**
-     * Valida si el estado pertenece a las prioridades de solicitud.
+     * Convierte y valida un estado para pagos.
      *
-     * @param estado La prioridad a validar.
-     * @return true si el estado pertenece a las prioridades de solicitud, false de lo contrario.
+     * @param estado Estado ingresado.
+     * @return El valor del enum si es válido.
      */
-    public static boolean isPrioridadEstado(String estado) {
-        try {
-            TicketEstado ticketEstado = TicketEstado.valueOf(estado.toUpperCase());
-            return ticketEstado == ALTA || ticketEstado == MEDIA || ticketEstado == BAJA;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+    public static TicketEstado fromPagoString(String estado) {
+        return fromString(estado, ESTADOS_PAGO, "El estado proporcionado no es válido. Estados válidos: PENDIENTE_PAGO, VALOR_PAGADO.");
     }
 
     /**
-     * Retorna los estados válidos para trabajos.
+     * Convierte y valida un estado para prioridades.
      *
-     * @return Lista de estados válidos para trabajos.
+     * @param estado Estado ingresado.
+     * @return El valor del enum si es válido.
      */
-    public static String getEstadosValidosTrabajo() {
-        return "TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO";
-    }
-
-    /**
-     * Retorna los estados válidos para pagos.
-     *
-     * @return Lista de estados válidos para pagos.
-     */
-    public static String getEstadosValidosPago() {
-        return "PENDIENTE_PAGO, VALOR_PAGADO";
-    }
-
-    /**
-     * Retorna las prioridades válidas de solicitud.
-     *
-     * @return Lista de prioridades válidas.
-     */
-    public static String getEstadosValidosPrioridad() {
-        return "ALTA, MEDIA, BAJA";
+    public static TicketEstado fromPrioridadString(String estado) {
+        return fromString(estado, PRIORIDADES, "La prioridad proporcionada no es válida. Estados válidos: ALTA, MEDIA, BAJA.");
     }
 }
