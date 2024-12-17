@@ -120,11 +120,8 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     @Transactional
     public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
 
-        boolean esAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
-
-        if (!esAdmin) {
-            throw new AccessDeniedException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
         }
         try {
             // Obtener usuarios aprobados con rol USER
@@ -266,7 +263,6 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
             // Eliminar tokens asociados al usuario
             passwordResetTokenRepository.deleteByUserId(userId);
-            refreshTokenRepository.deleteByUserId(userId);
 
             // Eliminar al usuario
             userRepository.delete(user);

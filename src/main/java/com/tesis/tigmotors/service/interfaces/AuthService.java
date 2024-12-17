@@ -5,6 +5,8 @@ import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.dto.Response.AuthResponse;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Map;
+
 public interface AuthService {
 
     /**
@@ -19,7 +21,7 @@ public interface AuthService {
      * @param request Objeto que contiene la información de registro del usuario.
      * @return ResponseEntity con un mensaje de éxito o de error.
      */
-    ResponseEntity<AuthResponse> register(RegisterRequest request);
+    ResponseEntity<Map<String, String>> register(RegisterRequest request);
 
     /**
      * Método para restablecer la contraseña de un usuario.
@@ -27,5 +29,5 @@ public interface AuthService {
      * @return ResponseEntity con un mensaje de éxito o de error.
      */
     // Firma del método para registrar un usuario por parte del administrador
-    ResponseEntity<AuthResponse> registerByAdmin(RegisterRequest request, String adminUsername);
+    ResponseEntity<Map<String, String>> registerByAdmin(RegisterRequest request, String adminUsername);
 }

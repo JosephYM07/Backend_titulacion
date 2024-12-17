@@ -78,34 +78,10 @@ public class FacturaServiceImpl implements FacturaService {
         log.info("Iniciando proceso para listar facturas con filtros: {}", requestDTO);
 
         try {
-            // Validar fechas obligatorias
-            if (requestDTO.getFechaInicio() == null || requestDTO.getFechaFin() == null) {
-                log.warn("Las fechas de inicio y fin son obligatorias.");
-                throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias.");
-            }
+            // Validar fechas
+            validarFechas(requestDTO);
 
-            List<Factura> facturas;
-
-            // Determinar la consulta a realizar según los parámetros presentes
-            if (requestDTO.getUsername() != null && requestDTO.getEstadoPago() != null) {
-                facturas = facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
-                        requestDTO.getFechaInicio(),
-                        requestDTO.getFechaFin(),
-                        requestDTO.getUsername(),
-                        requestDTO.getEstadoPago()
-                );
-            } else if (requestDTO.getUsername() != null) {
-                facturas = facturaRepository.findByFechaCreacionAndUsername(
-                        requestDTO.getFechaInicio(),
-                        requestDTO.getFechaFin(),
-                        requestDTO.getUsername()
-                );
-            } else {
-                facturas = facturaRepository.findByFechaCreacionBetween(
-                        requestDTO.getFechaInicio(),
-                        requestDTO.getFechaFin()
-                );
-            }
+            List<Factura> facturas = obtenerFacturasPorFiltros(requestDTO);
 
             // Validar si no hay resultados
             if (facturas.isEmpty()) {
@@ -127,6 +103,36 @@ public class FacturaServiceImpl implements FacturaService {
         } catch (Exception e) {
             log.error("Error inesperado al listar facturas con filtros: {}", e.getMessage(), e);
             throw new RuntimeException("Ocurrió un error inesperado al listar las facturas con filtros.", e);
+        }
+    }
+
+    //Metodos
+    private void validarFechas(FacturaRequestDTO requestDTO) {
+        if (requestDTO.getFechaInicio() == null || requestDTO.getFechaFin() == null) {
+            log.warn("Las fechas de inicio y fin son obligatorias.");
+            throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias.");
+        }
+    }
+
+    private List<Factura> obtenerFacturasPorFiltros(FacturaRequestDTO requestDTO) {
+        if (requestDTO.getUsername() != null && requestDTO.getEstadoPago() != null) {
+            return facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
+                    requestDTO.getFechaInicio(),
+                    requestDTO.getFechaFin(),
+                    requestDTO.getUsername(),
+                    requestDTO.getEstadoPago()
+            );
+        } else if (requestDTO.getUsername() != null) {
+            return facturaRepository.findByFechaCreacionAndUsername(
+                    requestDTO.getFechaInicio(),
+                    requestDTO.getFechaFin(),
+                    requestDTO.getUsername()
+            );
+        } else {
+            return facturaRepository.findByFechaCreacionBetween(
+                    requestDTO.getFechaInicio(),
+                    requestDTO.getFechaFin()
+            );
         }
     }
 

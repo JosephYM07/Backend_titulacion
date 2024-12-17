@@ -9,7 +9,4 @@ public class SolicitudNotFoundException extends RuntimeException {
         super(message);
     }
 
-    public SolicitudNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
