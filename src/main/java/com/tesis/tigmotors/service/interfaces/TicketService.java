@@ -22,7 +22,7 @@ public interface TicketService {
      * @param estado Estado del ticket.
      * @return Lista de tickets con el estado especificado.
      */
-    List<TicketDTO> listarTicketsPorEstado(TicketEstado estado);
+    List<TicketDTO> listarTicketsPorEstado(String estado);
 
     /**
      * Lista todos los tickets sin aplicar ningún filtro.
