@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.converters.UserConverter;
-import com.tesis.tigmotors.dto.Response.AdminProfileResponse;
+import com.tesis.tigmotors.dto.Response.StaffProfileResponse;
 import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.AdminProfileService;
@@ -18,7 +18,7 @@ public class AdminProfileServiceImpl implements AdminProfileService {
     private final UserRepository userRepository;
     private final UserConverter userConverter;
 
-    public AdminProfileResponse getProfile(String username) {
+    public StaffProfileResponse getProfile(String username) {
         try {
             log.info("Buscando perfil para el usuario: {}", username);
             User user = userRepository.findByUsername(username)

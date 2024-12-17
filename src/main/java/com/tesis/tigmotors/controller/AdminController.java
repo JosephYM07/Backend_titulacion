@@ -14,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -55,7 +53,7 @@ public class AdminController {
 
 
     // Endpoint para obtener el estado de los usuarios (solo para administradores)
-    @GetMapping("/users/status")
+    @GetMapping("/estadisticas-usuarios")
     public ResponseEntity<Object> getUsersStatus() {
         return userService.getUsersStatus();
     }
@@ -67,20 +65,20 @@ public class AdminController {
     }
 
     // Endpoint para obtener todos los usuarios pendientes de aprobación (solo para administradores)
-    @GetMapping("/users/pending")
+    @GetMapping("/usuarios-pendientes")
     public ResponseEntity<Object> getPendingUsers() {
         return userService.getPendingUsers();
     }
 
     // Endpoint para aprobar un usuario (solo para administradores)
-    @PutMapping("/users/approve/{userId}")
+    @PutMapping("/usuarios/aprobar/{userId}")
     public ResponseEntity<Object> approveUser(@PathVariable Integer userId) {
         return userService.approveUser(userId);
     }
 
     //Informacion Propia Adminsitrador
-    @GetMapping("/me")
-    public ResponseEntity<AdminProfileResponse> getProfile(Authentication authentication) {
+    @GetMapping("/informacion-perfil")
+    public ResponseEntity<StaffProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
         log.info("Obteniendo perfil para el administrador: {}", username);
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
@@ -111,7 +109,7 @@ public class AdminController {
     }
 
     // Endpoint para eliminar un usuario (solo para administradores)
-    @PostMapping("/users/delete")
+    @PostMapping("/eliminar-usuarios")
     public ResponseEntity<Object> deleteUser(@RequestBody Map<String, Integer> requestBody) {
         Integer userId = requestBody.get("userId");
 

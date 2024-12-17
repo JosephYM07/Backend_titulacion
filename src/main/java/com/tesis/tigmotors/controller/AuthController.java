@@ -88,11 +88,4 @@ public class AuthController {
         }
     }
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", ex.getReason());
-        log.error("Excepción manejada: {}", ex.getReason());
-        return ResponseEntity.status(ex.getStatusCode()).body(errorResponse);
-    }
 }

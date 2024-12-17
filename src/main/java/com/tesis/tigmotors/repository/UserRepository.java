@@ -49,10 +49,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      */
     List<User> findByPermisoAndRole(boolean permiso, Role role);
 
-    @Query("SELECT new com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO(u.username, u.email, u.role) " +
-            "FROM User u WHERE u.id = :id")
-    Optional<UserBasicInfoResponseDTO> findBasicInfoById(@Param("id") int id);
-
-
 
 }
