@@ -1,4 +1,4 @@
-package com.tesis.tigmotors.dto.Response;
+package com.tesis.tigmotors.models;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

@@ -1,9 +1,8 @@
 package com.tesis.tigmotors.service;
 
-import com.tesis.tigmotors.dto.Response.DatabaseSequence;
+import com.tesis.tigmotors.models.DatabaseSequence;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;

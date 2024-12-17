@@ -1,6 +1,7 @@
 package com.tesis.tigmotors.service.interfaces;
 
 import com.tesis.tigmotors.dto.Request.FacturaRequestDTO;
+import com.tesis.tigmotors.dto.Response.FacturaDetalleResponseDTO;
 import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
 import com.tesis.tigmotors.models.Factura;
 
@@ -29,13 +30,13 @@ public interface FacturaService {
      * @param requestDTO DTO con los filtros opcionales.
      * @return Lista de facturas que coincidan con los filtros.
      */
-    List<FacturaResponseDTO> listarFacturasConFiltros(FacturaRequestDTO requestDTO);
+    FacturaResponseDTO listarFacturasConFiltros(FacturaRequestDTO requestDTO);;
 
     /**
      * Lista todas las facturas registradas en la base de datos.
      *
      * @return Lista de todas las facturas.
      */
-    List<FacturaResponseDTO> listarTodasLasFacturas();
+    List<FacturaDetalleResponseDTO> listarTodasLasFacturas();
 
 }

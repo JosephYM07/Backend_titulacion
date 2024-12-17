@@ -1,6 +1,6 @@
 package com.tesis.tigmotors.converters;
 
-import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
+import com.tesis.tigmotors.dto.Response.FacturaDetalleResponseDTO;
 import com.tesis.tigmotors.enums.EstadoPago;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Ticket;
@@ -32,8 +32,8 @@ public class FacturaConverter {
                 .horaCreacion(LocalTime.now().format(TIME_FORMATTER))
                 .build();
     }
-    public FacturaResponseDTO entityToDto(Factura factura) {
-        FacturaResponseDTO responseDTO = new FacturaResponseDTO();
+    public FacturaDetalleResponseDTO entityToDto(Factura factura) {
+        FacturaDetalleResponseDTO responseDTO = new FacturaDetalleResponseDTO();
         responseDTO.setFacturaId(factura.getFacturaId());
         responseDTO.setTicketId(factura.getTicketId());
         responseDTO.setSolicitudId(factura.getSolicitudId());

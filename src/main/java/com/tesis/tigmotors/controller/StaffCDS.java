@@ -43,20 +43,20 @@ public class StaffCDS {
      * @return Listado de todas las facturas registradas.
      */
     @GetMapping("/listado-facturas")
-    public ResponseEntity<List<FacturaResponseDTO>> listarTodasLasFacturas() {
+    public ResponseEntity<List<FacturaDetalleResponseDTO>> listarTodasLasFacturas() {
         log.info("Solicitud recibida para listar todas las facturas.");
-        List<FacturaResponseDTO> facturas = facturaService.listarTodasLasFacturas();
+        List<FacturaDetalleResponseDTO> facturas = facturaService.listarTodasLasFacturas();
         log.info("Se envían {} facturas en la respuesta.", facturas.size());
         return ResponseEntity.ok(facturas);
     }
 
     @PostMapping("/listado-con-filtros")
-    public ResponseEntity<List<FacturaResponseDTO>> listarFacturasConFiltros(@RequestBody FacturaRequestDTO requestDTO) {
+    public ResponseEntity<FacturaResponseDTO> listarFacturasConFiltros(@RequestBody FacturaRequestDTO requestDTO) {
         log.info("Solicitud recibida para listar facturas con filtros dinámicos: {}", requestDTO);
-        List<FacturaResponseDTO> facturas = facturaService.listarFacturasConFiltros(requestDTO);
-        log.info("Se enviarán {} facturas en la respuesta.", facturas.size());
-        return ResponseEntity.ok(facturas);
+        FacturaResponseDTO response = facturaService.listarFacturasConFiltros(requestDTO);
+        log.info("Se enviarán {} facturas en la respuesta. Total de cotización: {}",
+                response.getNumeroFacturas(), response.getTotalCotizacion());
+        return ResponseEntity.ok(response);
     }
-
 
 }
