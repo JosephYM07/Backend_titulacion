@@ -37,7 +37,6 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    private final RefreshTokenRepository refreshTokenRepository;
     private final RoleValidator roleValidator;
 
     /**

@@ -19,6 +19,7 @@ import java.util.List;
 @RequestMapping("/api/staff-cds")
 public class StaffCDS {
     private final FacturaServiceImpl facturaService;
+    private final TicketServiceImpl ticketServiceImpl;
     private final AdminProfileServiceImpl adminProfileServiceImpl;
     private final AdminVerificationUserService adminVerificationUserService;
 
@@ -35,6 +36,19 @@ public class StaffCDS {
     public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
         List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
         return ResponseEntity.ok(usuariosAprobados);
+    }
+
+    /**
+     * Endpoint para listar tickets por su estado.
+     *
+     * @param estado El estado de los tickets a listar.
+     * @return ResponseEntity con una lista de objetos TicketDTO que coinciden con el estado dado.
+     */
+    @GetMapping("/estado-ticket/{estado}")
+    public ResponseEntity<List<TicketDTO>> listarTicketsPorEstado(@PathVariable String estado) {
+        // Llama al servicio para listar tickets por estado
+        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(String.valueOf(estado.toUpperCase()));
+        return ResponseEntity.ok(tickets);
     }
 
     /**

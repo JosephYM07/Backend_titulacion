@@ -5,6 +5,7 @@ import com.tesis.tigmotors.Exceptions.TicketNotFoundException;
 import com.tesis.tigmotors.converters.FacturaConverter;
 import com.tesis.tigmotors.converters.TicketConverter;
 import com.tesis.tigmotors.dto.Response.TicketDTO;
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Solicitud;
@@ -16,10 +17,13 @@ import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.EmailService;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import com.tesis.tigmotors.service.interfaces.TicketService;
+import com.tesis.tigmotors.utils.RoleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,8 @@ public class TicketServiceImpl implements TicketService {
     private final FacturaRepository facturaRepository;
     private final SolicitudRepository solicitudRepository;
     private final UserRepository userRepository;
+    private final RoleValidator roleValidator;
+
 
     private final EmailService emailService;
 
@@ -73,8 +79,15 @@ public class TicketServiceImpl implements TicketService {
     public List<TicketDTO> listarTicketsPorEstado(String estado) {
         logger.info("Iniciando la consulta de tickets con estado '{}'", estado);
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Validar si el usuario tiene el rol adecuado
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            logger.error("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        }
+
         try {
-            // Validar y convertir el estado usando la interfaz TicketEstado
+            // Validar y convertir el estado usando TicketEstado
             TicketEstado estadoEnum;
 
             if (estado.startsWith("TRABAJO_")) {
@@ -117,7 +130,13 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public List<TicketDTO> listarTodosLosTickets() {
+
         logger.info("Iniciando la consulta de todos los tickets");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            logger.error("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        }
 
         try {
             // Usa findAll para obtener todos los tickets

@@ -101,7 +101,6 @@ public class AdminController {
         // Obtener el username del administrador autenticado
         String adminUsername = authentication.getName();
         if (updateRequest.getUserId() < 0) {
-            logger.error("El ID del usuario es inválido o no proporcionado.");
             throw new IllegalArgumentException("El ID del usuario es obligatorio y debe ser mayor que 0.");
         }
         UserResponseUser updatedUser = crudUserService.updateUser(updateRequest, adminUsername);
