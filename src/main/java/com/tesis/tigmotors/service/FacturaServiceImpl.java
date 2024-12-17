@@ -3,7 +3,9 @@ package com.tesis.tigmotors.service;
 import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.converters.FacturaConverter;
 import com.tesis.tigmotors.dto.Request.FacturaRequestDTO;
+import com.tesis.tigmotors.dto.Response.FacturaDetalleResponseDTO;
 import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
+import com.tesis.tigmotors.enums.EstadoPago;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Ticket;
 import com.tesis.tigmotors.repository.FacturaRepository;
@@ -12,7 +14,7 @@ import com.tesis.tigmotors.service.interfaces.FacturaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List; // Para manejar listas
+import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +50,7 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     @Override
-    public List<FacturaResponseDTO> listarTodasLasFacturas() {
+    public List<FacturaDetalleResponseDTO> listarTodasLasFacturas() {
         log.info("Iniciando proceso para listar todas las facturas...");
         try {
 
@@ -74,39 +76,65 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     @Override
-    public List<FacturaResponseDTO> listarFacturasConFiltros(FacturaRequestDTO requestDTO) {
+    public FacturaResponseDTO listarFacturasConFiltros(FacturaRequestDTO requestDTO) {
         log.info("Iniciando proceso para listar facturas con filtros: {}", requestDTO);
 
         try {
             // Validar fechas
             validarFechas(requestDTO);
 
+            // Obtener las facturas filtradas
             List<Factura> facturas = obtenerFacturasPorFiltros(requestDTO);
 
-            // Validar si no hay resultados
-            if (facturas.isEmpty()) {
-                log.warn("No se encontraron facturas con los filtros proporcionados.");
-                throw new ResourceNotFoundException("No se encontraron facturas con los filtros proporcionados.");
+            // Determinar si el filtro estadoPago está presente
+            boolean filtroEstadoPagoAplicado = requestDTO.getEstadoPago() != null;
+
+            // Si estadoPago está presente, filtra por estado
+            List<Factura> facturasFiltradas = facturas;
+            if (filtroEstadoPagoAplicado) {
+                String estadoPago = requestDTO.getEstadoPago();
+
+                // Validar estado de pago
+                if (!EstadoPago.isPagoEstado(estadoPago)) {
+                    log.warn("El estado de pago '{}' no es válido.", estadoPago);
+                    throw new IllegalArgumentException("El estado de pago no es válido.");
+                }
+
+                facturasFiltradas = facturas.stream()
+                        .filter(f -> estadoPago.equalsIgnoreCase(f.getPago()))
+                        .collect(Collectors.toList());
             }
 
-            log.info("Se encontraron {} facturas con los filtros aplicados.", facturas.size());
-            return facturas.stream()
+            // Convertir facturas a DTO
+            List<FacturaDetalleResponseDTO> facturasDTO = facturasFiltradas.stream()
                     .map(facturaConverter::entityToDto)
                     .collect(Collectors.toList());
 
-        } catch (IllegalArgumentException e) {
-            log.error("Error de validación: {}", e.getMessage());
-            throw e;
-        } catch (ResourceNotFoundException e) {
-            log.error("Error: {}", e.getMessage());
-            throw e;
+            // Construir respuesta condicional
+            FacturaResponseDTO.FacturaResponseDTOBuilder responseBuilder = FacturaResponseDTO.builder()
+                    .facturas(facturasDTO);
+
+            // Solo incluir estos campos si hay filtro de estadoPago
+            if (filtroEstadoPagoAplicado) {
+                double totalCotizacion = facturasFiltradas.stream()
+                        .mapToDouble(Factura::getCotizacion)
+                        .sum();
+
+                responseBuilder
+                        .numeroFacturas(facturasFiltradas.size())
+                        .totalCotizacion(totalCotizacion);
+            }
+
+            return responseBuilder.build();
+
         } catch (Exception e) {
             log.error("Error inesperado al listar facturas con filtros: {}", e.getMessage(), e);
             throw new RuntimeException("Ocurrió un error inesperado al listar las facturas con filtros.", e);
         }
     }
 
-    //Metodos
+
+    // Métodos auxiliares
     private void validarFechas(FacturaRequestDTO requestDTO) {
         if (requestDTO.getFechaInicio() == null || requestDTO.getFechaFin() == null) {
             log.warn("Las fechas de inicio y fin son obligatorias.");
@@ -128,6 +156,12 @@ public class FacturaServiceImpl implements FacturaService {
                     requestDTO.getFechaFin(),
                     requestDTO.getUsername()
             );
+        } else if (requestDTO.getEstadoPago() != null) {
+            return facturaRepository.findByFechaCreacionAndEstadoPago(
+                    requestDTO.getFechaInicio(),
+                    requestDTO.getFechaFin(),
+                    requestDTO.getEstadoPago()
+            );
         } else {
             return facturaRepository.findByFechaCreacionBetween(
                     requestDTO.getFechaInicio(),
@@ -135,5 +169,6 @@ public class FacturaServiceImpl implements FacturaService {
             );
         }
     }
+
 
 }

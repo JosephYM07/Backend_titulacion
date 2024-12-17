@@ -47,4 +47,14 @@ public interface FacturaRepository extends MongoRepository<Factura, String> {
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'username': ?2, 'pago': ?3 }")
     List<Factura> findByFechaCreacionAndUsernameAndEstadoPago(String fechaInicio, String fechaFin, String username, String estadoPago);
 
+    /**
+     * 3. Filtrar facturas por rango de fechas y estado de pago.
+     *
+     * @param fechaInicio Fecha de inicio (inclusive).
+     * @param fechaFin    Fecha de fin (inclusive).
+     * @param estadoPago  Estado del pago (PENDIENTE_PAGO, VALOR_PAGADO).
+     * @return Lista de facturas que coincidan con los filtros.
+     */
+    @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'pago': ?2 }")
+    List<Factura> findByFechaCreacionAndEstadoPago(String fechaInicio, String fechaFin, String estadoPago);
 }
