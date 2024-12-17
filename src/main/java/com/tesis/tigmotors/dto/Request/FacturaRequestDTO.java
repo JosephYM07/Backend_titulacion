@@ -7,8 +7,8 @@ import lombok.Data;
  */
 @Data
 public class FacturaRequestDTO {
-    private String fechaInicio; // Formato: yyyy/MM/dd
+    private String fechaInicio;
     private String fechaFin;
-    private String usuario;     // Username del usuario
-    private String estadoPago;// Formato: yyyy/MM/dd
+    private String username;
+    private String estadoPago;
 }

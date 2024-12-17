@@ -1,7 +1,7 @@
 package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
-import com.tesis.tigmotors.dto.Request.ChangePasswordRequest;
+import com.tesis.tigmotors.dto.Request.CambioContraseniaRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
@@ -72,17 +72,17 @@ public class UserController {
      * Cambia la contraseña del usuario autenticado.
      *
      * @param authentication Contexto de autenticación para obtener el username.
-     * @param changePasswordRequest Objeto con la contraseña actual y la nueva contraseña.
+     * @param cambioContraseniaRequest Objeto con la contraseña actual y la nueva contraseña.
      * @return Respuesta indicando éxito o error en el cambio de contraseña.
      */
     @PutMapping("/cambiar-contrasena")
     public ResponseEntity<?> changePassword(Authentication authentication,
-                                            @Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+                                            @Valid @RequestBody CambioContraseniaRequest cambioContraseniaRequest) {
         String username = authentication.getName(); // Obtener el username desde el contexto de autenticación
         return passwordResetService.changePasswordAuthenticated(
                 username,
-                changePasswordRequest.getCurrentPassword(),
-                changePasswordRequest.getNewPassword()
+                cambioContraseniaRequest.getCurrentPassword(),
+                cambioContraseniaRequest.getNewPassword()
         );
     }
 

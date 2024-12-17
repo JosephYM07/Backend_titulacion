@@ -10,17 +10,12 @@ import com.tesis.tigmotors.repository.FacturaRepository;
 import com.tesis.tigmotors.repository.TicketRepository;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.core.MongoTemplate; // Para realizar consultas dinámicas
-import org.springframework.data.mongodb.core.query.Criteria; // Para construir los filtros
-import org.springframework.data.mongodb.core.query.Query; // Para representar la consulta
-import org.springframework.stereotype.Service; // Para marcar tu clase como un servicio de Spring
+import org.springframework.stereotype.Service;
+
 import java.util.List; // Para manejar listas
 
 import lombok.extern.slf4j.Slf4j;
-import java.util.List; // Para manejar listas
 
-
-import java.util.List;
 import java.util.stream.Collectors;
 
 
@@ -92,18 +87,18 @@ public class FacturaServiceImpl implements FacturaService {
             List<Factura> facturas;
 
             // Determinar la consulta a realizar según los parámetros presentes
-            if (requestDTO.getUsuario() != null && requestDTO.getEstadoPago() != null) {
+            if (requestDTO.getUsername() != null && requestDTO.getEstadoPago() != null) {
                 facturas = facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
                         requestDTO.getFechaInicio(),
                         requestDTO.getFechaFin(),
-                        requestDTO.getUsuario(),
+                        requestDTO.getUsername(),
                         requestDTO.getEstadoPago()
                 );
-            } else if (requestDTO.getUsuario() != null) {
+            } else if (requestDTO.getUsername() != null) {
                 facturas = facturaRepository.findByFechaCreacionAndUsername(
                         requestDTO.getFechaInicio(),
                         requestDTO.getFechaFin(),
-                        requestDTO.getUsuario()
+                        requestDTO.getUsername()
                 );
             } else {
                 facturas = facturaRepository.findByFechaCreacionBetween(
