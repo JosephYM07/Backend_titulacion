@@ -2,30 +2,15 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.*;
-import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
-import com.tesis.tigmotors.service.interfaces.AuthService;
-import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
-import com.tesis.tigmotors.service.interfaces.SolicitudService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @Slf4j
@@ -34,6 +19,23 @@ import java.util.Map;
 @RequestMapping("/api/staff-cds")
 public class StaffCDS {
     private final FacturaServiceImpl facturaService;
+    private final AdminProfileServiceImpl adminProfileServiceImpl;
+    private final AdminVerificationUserService adminVerificationUserService;
+
+
+    //Informacion Propia
+    @GetMapping("/informacion-perfil")
+    public ResponseEntity<StaffProfileResponse> getProfile(Authentication authentication) {
+        String username = authentication.getName();
+        log.info("Obteniendo perfil para el administrador: {}", username);
+        return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
+    }
+
+    @GetMapping("/lista-nombres-usuarios")
+    public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
+        List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
+        return ResponseEntity.ok(usernames);
+    }
 
     /**
      * Endpoint para listar todas las facturas.

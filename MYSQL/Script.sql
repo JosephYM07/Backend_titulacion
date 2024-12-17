@@ -22,18 +22,6 @@ CREATE TABLE password_reset_tokens
         ON DELETE CASCADE
 );
 
--- Crear tabla 'refresh_tokens' con ON DELETE CASCADE
-CREATE TABLE refresh_tokens
-(
-    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
-    token       VARCHAR(255) NOT NULL UNIQUE,
-    expiry_date DATETIME(6)  NOT NULL,
-    user_id     INT          NOT NULL,
-    CONSTRAINT FK_refresh_tokens_user FOREIGN KEY (user_id)
-        REFERENCES user (id)
-        ON DELETE CASCADE
-);
-
 CREATE TABLE user_sequence (
                                sequence_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                user_id     INT NOT NULL,
@@ -56,3 +44,8 @@ END;
 
 //
 DELIMITER ;
+
+UPDATE user
+SET business_name = 'Mi Empresa S.A.',
+    phone_number = '123456789'
+WHERE username = 'usuario_demo';

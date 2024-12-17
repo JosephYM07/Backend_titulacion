@@ -21,15 +21,24 @@ public class AdminUserInitializer {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    //Admin
     @Value("${admin.username}")
     private String adminUsername;
+
+    @Value("${admin.business_name}")
+    private String adminBusinessName;
 
     @Value("${admin.password}")
     private String adminPassword;
 
     @Value("${admin.email}")
     private String adminEmail;
+
+    @Value("${admin.phoneNumber}")
+    private String adminPhoneNumber;
+
+    @Value("${admin.permiso}")
+    private boolean adminPermiso;
 
     //Centro de servicios
     @Value("${serviceStaff.username}")
@@ -41,6 +50,15 @@ public class AdminUserInitializer {
     @Value("${serviceStaff.email}")
     private String serviceStaffEmail;
 
+    @Value("${serviceStaff.business_name}")
+    private String serviceStaffBusinessName;
+
+    @Value("${serviceStaff.phoneNumber}")
+    private String serviceStaffPhoneNumber;
+
+    @Value("${serviceStaff.permiso}")
+    private boolean serviceStaffPermiso;
+
     @Bean
     CommandLineRunner createAdminUser() {
         return args -> {
@@ -50,10 +68,12 @@ public class AdminUserInitializer {
                     // Crear un usuario administrador
                     User adminUser = User.builder()
                             .username(adminUsername)
+                            .business_name(adminBusinessName)
                             .password(passwordEncoder.encode(adminPassword))
                             .email(adminEmail)
+                            .phone_number(adminPhoneNumber)
                             .role(Role.ADMIN)
-                            .permiso(true)
+                            .permiso(adminPermiso)
                             .build();
 
                     userRepository.save(adminUser);
@@ -65,10 +85,12 @@ public class AdminUserInitializer {
                     // Crear un usuario Staff Centro de servivios
                     User serviceStaff = User.builder()
                             .username(serviceStaffUsername)
+                            .business_name(serviceStaffBusinessName)
                             .password(passwordEncoder.encode(serviceStaffPassword))
                             .email(serviceStaffEmail)
+                            .phone_number(serviceStaffPhoneNumber)
                             .role(Role.PERSONAL_CENTRO_DE_SERVICIOS)
-                            .permiso(true)
+                            .permiso(serviceStaffPermiso)
                             .build();
                     userRepository.save(serviceStaff);
                     log.info("Usuario Personal Centro de Servicios creado con éxito");
