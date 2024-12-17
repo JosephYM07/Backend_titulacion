@@ -31,10 +31,10 @@ public class StaffCDS {
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
 
-    @GetMapping("/lista-nombres-usuarios")
-    public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
-        List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
-        return ResponseEntity.ok(usernames);
+    @GetMapping("/lista-usuarios")
+    public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
+        List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
+        return ResponseEntity.ok(usuariosAprobados);
     }
 
     /**

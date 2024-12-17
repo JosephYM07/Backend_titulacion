@@ -23,6 +23,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -86,9 +89,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public ResponseEntity<AuthResponse> register(RegisterRequest request) {
+    public ResponseEntity<Map<String, String>> register(RegisterRequest request) {
         try {
-            // Validar que los datos de entrada no estén vacíos
+            // Validar datos de entrada
             if (request.getUsername() == null || request.getUsername().isBlank()) {
                 throw new InvalidRequestException("El nombre de usuario es obligatorio.");
             }
@@ -98,15 +101,16 @@ public class AuthServiceImpl implements AuthService {
             if (request.getPassword() == null || request.getPassword().isBlank()) {
                 throw new InvalidRequestException("La contraseña es obligatoria.");
             }
-            // Verificar si el nombre de usuario ya está en uso
+
+            // Verificar si el nombre de usuario o correo ya existen
             if (userRepository.findByUsername(request.getUsername()).isPresent()) {
                 throw new InvalidRequestException("El nombre de usuario ya está en uso.");
             }
-            // Verificar si el correo electrónico ya está en uso
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new InvalidRequestException("El correo electrónico ya está en uso.");
             }
-            // Crear el usuario
+
+            // Crear y guardar el usuario
             User user = User.builder()
                     .username(request.getUsername())
                     .password(passwordEncoder.encode(request.getPassword()))
@@ -114,35 +118,31 @@ public class AuthServiceImpl implements AuthService {
                     .email(request.getEmail())
                     .phone_number(request.getPhone_number())
                     .role(Role.USER)
-                    .permiso(false) // No aprobado por defecto
+                    .permiso(false)
                     .build();
 
-            // Guardar el usuario
-            User savedUser = userRepository.save(user);
-            log.info("Usuario guardado con ID: {}", savedUser.getId());
+            userRepository.save(user);
+            log.info("Usuario registrado con éxito: {}", user.getUsername());
 
-            // Crear la secuencia asociada al usuario
-            userRepository.guardarSecuencia(savedUser.getId());
-            log.info("Secuencia creada para el usuario con ID: {}", savedUser.getId());
+            // Retornar solo el mensaje
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión.");
 
-            // Respuesta exitosa
-            return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
-                    .message("Registro exitoso, espere a que el administrador apruebe su cuenta para poder iniciar sesión")
-                    .build());
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (InvalidRequestException ex) {
             log.error("Error de validación al registrar usuario: {}", ex.getMessage(), ex);
-            throw ex; // Manejado por el GlobalExceptionHandler
+            throw ex;
         } catch (Exception ex) {
             log.error("Error inesperado al registrar usuario: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Error inesperado al registrar usuario.", ex); // Manejado globalmente
+            throw new RuntimeException("Error inesperado al registrar usuario.", ex);
         }
     }
 
 
     @Override
     @Transactional
-    public ResponseEntity<AuthResponse> registerByAdmin(RegisterRequest request, String adminUsername) {
+    public ResponseEntity<Map<String, String>> registerByAdmin(RegisterRequest request, String adminUsername) {
         try {
             // Validar que el administrador tenga permisos para registrar usuarios
             User adminUser = userRepository.findByUsername(adminUsername)
@@ -203,10 +203,11 @@ public class AuthServiceImpl implements AuthService {
                 log.error("Error al enviar correo de creación de cuenta: {}", e.getMessage());
             }
 
-            // Retornar respuesta exitosa
-            return ResponseEntity.status(HttpStatus.CREATED).body(AuthResponse.builder()
-                    .message("Usuario creado exitosamente por el administrador. ¡Ya puedes acceder a la plataforma!")
-                    .build());
+            // Crear y devolver la respuesta
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Usuario creado exitosamente por el administrador. ¡Ya puedes acceder a la plataforma!");
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (ResourceNotFoundException | AccessDeniedException | InvalidRequestException ex) {
             log.error("Error en el proceso de registro por el administrador: {}", ex.getMessage(), ex);

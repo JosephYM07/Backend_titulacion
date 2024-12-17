@@ -42,18 +42,8 @@ public class AuthController {
     }
 
     @PostMapping("/register-user")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        try {
-            if (request.getUsername() == null || request.getUsername().isEmpty() ||
-                    request.getPassword() == null || request.getPassword().isEmpty() ||
-                    request.getEmail() == null || request.getEmail().isEmpty()) {
-                throw new IllegalArgumentException("Se deben proporcionar tanto el nombre de usuario, la contraseña y el correo electrónico.");
-            }
-        } catch (IllegalArgumentException e) {
-            log.error("Error al intentar registrar al usuario: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
-        }
-        log.info("Solicitud de registro recibida para el usuario: " + request.getUsername());
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("Solicitud de registro recibida para el usuario: {}", request.getUsername());
         return authService.register(request);
     }
 
