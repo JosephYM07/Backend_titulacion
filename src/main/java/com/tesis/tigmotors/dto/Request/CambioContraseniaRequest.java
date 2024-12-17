@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
  * DTO para manejar los datos de la solicitud de cambio de contraseña.
  */
 @Data
-public class ChangePasswordRequest {
+public class CambioContraseniaRequest {
 
     @NotBlank(message = "La contraseña actual no puede estar vacía ni contener solo espacios.")
     @Size(min = 8, max = 20, message = "La contraseña actual debe tener entre 8 y 20 caracteres.")
