@@ -13,6 +13,10 @@ import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.models.User;
+import org.springframework.data.mongodb.core.MongoTemplate; // Para realizar consultas dinámicas
+import org.springframework.data.mongodb.core.query.Criteria; // Para construir los filtros
+import org.springframework.data.mongodb.core.query.Query; // Para representar la consulta
+import org.springframework.stereotype.Service;
 import com.tesis.tigmotors.repository.SolicitudRepository;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.SolicitudService;
