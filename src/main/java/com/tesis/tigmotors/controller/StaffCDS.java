@@ -48,15 +48,13 @@ public class StaffCDS {
         return ResponseEntity.ok(facturas);
     }
 
-    @PostMapping("/listado-por-fechas")
-    public ResponseEntity<List<FacturaResponseDTO>> listarFacturasPorFechas(
-            @RequestBody FacturaRequestDTO requestDTO) {
-        log.info("Solicitud recibida para listar facturas por rango de fechas: {} - {}",
-                requestDTO.getFechaInicio(), requestDTO.getFechaFin());
-        List<FacturaResponseDTO> facturas = facturaService.listarFacturasPorFechas(
-                requestDTO.getFechaInicio(), requestDTO.getFechaFin());
-        log.info("Se envían {} facturas en la respuesta.", facturas.size());
+    @PostMapping("/listado-con-filtros")
+    public ResponseEntity<List<FacturaResponseDTO>> listarFacturasConFiltros(@RequestBody FacturaRequestDTO requestDTO) {
+        log.info("Solicitud recibida para listar facturas con filtros dinámicos: {}", requestDTO);
+        List<FacturaResponseDTO> facturas = facturaService.listarFacturasConFiltros(requestDTO);
+        log.info("Se enviarán {} facturas en la respuesta.", facturas.size());
         return ResponseEntity.ok(facturas);
     }
+
 
 }

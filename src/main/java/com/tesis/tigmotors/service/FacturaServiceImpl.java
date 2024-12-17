@@ -2,6 +2,7 @@ package com.tesis.tigmotors.service;
 
 import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.converters.FacturaConverter;
+import com.tesis.tigmotors.dto.Request.FacturaRequestDTO;
 import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
 import com.tesis.tigmotors.models.Factura;
 import com.tesis.tigmotors.models.Ticket;
@@ -9,8 +10,15 @@ import com.tesis.tigmotors.repository.FacturaRepository;
 import com.tesis.tigmotors.repository.TicketRepository;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.MongoTemplate; // Para realizar consultas dinámicas
+import org.springframework.data.mongodb.core.query.Criteria; // Para construir los filtros
+import org.springframework.data.mongodb.core.query.Query; // Para representar la consulta
+import org.springframework.stereotype.Service; // Para marcar tu clase como un servicio de Spring
+import java.util.List; // Para manejar listas
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.util.List; // Para manejar listas
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,26 +77,48 @@ public class FacturaServiceImpl implements FacturaService {
             throw new RuntimeException("Ocurrió un error inesperado al listar las facturas.", e);
         }
     }
+
     @Override
-    public List<FacturaResponseDTO> listarFacturasPorFechas(String fechaInicio, String fechaFin) {
-        log.info("Iniciando proceso para listar facturas por rango de fechas: {} - {}", fechaInicio, fechaFin);
+    public List<FacturaResponseDTO> listarFacturasConFiltros(FacturaRequestDTO requestDTO) {
+        log.info("Iniciando proceso para listar facturas con filtros: {}", requestDTO);
+
         try {
-            // Validar que las fechas no sean nulas
-            if (fechaInicio == null || fechaFin == null) {
+            // Validar fechas obligatorias
+            if (requestDTO.getFechaInicio() == null || requestDTO.getFechaFin() == null) {
                 log.warn("Las fechas de inicio y fin son obligatorias.");
                 throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias.");
             }
 
-            // Consultar el repositorio con las fechas
-            List<Factura> facturas = facturaRepository.findByFechaCreacionBetween(fechaInicio, fechaFin);
+            List<Factura> facturas;
 
-            // Validar si no hay facturas en el rango
-            if (facturas.isEmpty()) {
-                log.warn("No se encontraron facturas en el rango de fechas.");
-                throw new ResourceNotFoundException("No se encontraron facturas en el rango de fechas.");
+            // Determinar la consulta a realizar según los parámetros presentes
+            if (requestDTO.getUsuario() != null && requestDTO.getEstadoPago() != null) {
+                facturas = facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin(),
+                        requestDTO.getUsuario(),
+                        requestDTO.getEstadoPago()
+                );
+            } else if (requestDTO.getUsuario() != null) {
+                facturas = facturaRepository.findByFechaCreacionAndUsername(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin(),
+                        requestDTO.getUsuario()
+                );
+            } else {
+                facturas = facturaRepository.findByFechaCreacionBetween(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin()
+                );
             }
 
-            log.info("Se encontraron {} facturas en el rango de fechas.", facturas.size());
+            // Validar si no hay resultados
+            if (facturas.isEmpty()) {
+                log.warn("No se encontraron facturas con los filtros proporcionados.");
+                throw new ResourceNotFoundException("No se encontraron facturas con los filtros proporcionados.");
+            }
+
+            log.info("Se encontraron {} facturas con los filtros aplicados.", facturas.size());
             return facturas.stream()
                     .map(facturaConverter::entityToDto)
                     .collect(Collectors.toList());
@@ -100,10 +130,9 @@ public class FacturaServiceImpl implements FacturaService {
             log.error("Error: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Error inesperado al listar facturas por fechas: {}", e.getMessage());
-            throw new RuntimeException("Ocurrió un error inesperado al listar las facturas por fechas.", e);
+            log.error("Error inesperado al listar facturas con filtros: {}", e.getMessage(), e);
+            throw new RuntimeException("Ocurrió un error inesperado al listar las facturas con filtros.", e);
         }
     }
-
 
 }
