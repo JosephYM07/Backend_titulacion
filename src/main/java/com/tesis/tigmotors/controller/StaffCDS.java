@@ -22,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/staff-cds")
 public class StaffCDS {
+    // Servicios
     private final FacturaServiceImpl facturaService;
     private final TicketServiceImpl ticketServiceImpl;
     private final AdminProfileServiceImpl adminProfileServiceImpl;
@@ -30,7 +31,17 @@ public class StaffCDS {
     private final BusquedaUsuarioService busquedaUsuarioService;
 
 
-    //Informacion Propia
+    /**
+     * Endpoint exclusivo para el centro de servicios: Obtener información del perfil del usuario autenticado.
+     * @param authentication Información de autenticación proporcionada por el contexto de seguridad.
+     * @return Respuesta HTTP con los detalles del perfil del usuario autenticado.
+     * Proceso:
+     * - Obtiene el nombre de usuario del contexto de autenticación.
+     * - Llama al servicio para recuperar los detalles del perfil del usuario.
+     * Manejo de errores:
+     * - 401 UNAUTHORIZED: Si el usuario no está autenticado.
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado al obtener los datos del perfil.
+     */
     @GetMapping("/informacion-perfil")
     public ResponseEntity<StaffProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
@@ -39,9 +50,19 @@ public class StaffCDS {
     }
 
     /**
-     * Endpoint para obtener la lista de usuarios aprobados con el rol USER.
+     * Endpoint exclusivo para el centro de servicios: Listar usuarios aprobados.
      *
-     * @return Lista de usuarios aprobados.
+     * @param authentication Información de autenticación del usuario actual.
+     * @return Respuesta HTTP con una lista de usuarios aprobados en formato DTO.
+     *
+     * Proceso:
+     * - Valida que el usuario autenticado tenga los permisos necesarios.
+     * - Llama al servicio encargado de obtener la lista de usuarios aprobados.
+     *
+     * Manejo de errores:
+     * - 401 UNAUTHORIZED: Si el usuario no está autenticado.
+     * - 403 FORBIDDEN: Si el usuario no tiene los permisos adecuados.
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado durante la ejecución.
      */
     @GetMapping("/lista-usuarios")
     public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
@@ -49,13 +70,41 @@ public class StaffCDS {
         return ResponseEntity.ok(usuariosAprobados);
     }
 
+    /**
+     * Endpoint exclusivo para el centro de servicios: Listar nombres de usuarios aprobados.
+     *
+     * @param authentication Información de autenticación del usuario actual.
+     * @return Respuesta HTTP con una lista de nombres de usuarios aprobados.
+     *
+     * Proceso:
+     * - Valida que el usuario autenticado tenga los permisos necesarios.
+     * - Llama al servicio encargado de obtener los nombres de los usuarios aprobados.
+     *
+     * Manejo de errores:
+     * - 401 UNAUTHORIZED: Si el usuario no está autenticado.
+     * - 403 FORBIDDEN: Si el usuario no tiene los permisos adecuados.
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado durante la ejecución.
+     */
     @GetMapping("/lista-nombres-usuarios")
     public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
         List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
         return ResponseEntity.ok(usernames);
     }
 
-    //Buscar usuario por id, username o email (solo para administradores)
+    /**
+     * Endpoint exclusivo para el centro de servicios: Buscar usuario por diferentes criterios.
+     *
+     * @param request Objeto con los criterios de búsqueda (ID, nombre de usuario o email).
+     * @return Respuesta HTTP con la información del usuario encontrado o mensaje de error si no existe.
+     *
+     * Proceso:
+     * - Recibe un objeto `UserRequestDTO` con los parámetros de búsqueda.
+     * - Llama al servicio correspondiente para realizar la búsqueda.
+     *
+     * Manejo de errores:
+     * - 400 BAD REQUEST: Si los parámetros de búsqueda no son válidos o están incompletos.
+     * - 404 NOT FOUND: Si no se encuentra ningún usuario que cumpla con los criterios.
+     */
     @PostMapping("/buscar-usuario")
     public ResponseEntity<?> buscarUsuario(@Valid @RequestBody UserRequestDTO request) {
         // Llama al servicio para procesar la búsqueda
@@ -75,6 +124,20 @@ public class StaffCDS {
         return ResponseEntity.ok(tickets);
     }
 
+    /**
+     * Endpoint exclusivo para el centro de servicios: Buscar usuario por diferentes criterios.
+     *
+     * @param request Objeto con los criterios de búsqueda (ID, nombre de usuario o email).
+     * @return Respuesta HTTP con la información del usuario encontrado o mensaje de error si no existe.
+     *
+     * Proceso:
+     * - Recibe un objeto `UserRequestDTO` con los parámetros de búsqueda.
+     * - Llama al servicio correspondiente para realizar la búsqueda.
+     *
+     * Manejo de errores:
+     * - 400 BAD REQUEST: Si los parámetros de búsqueda no son válidos o están incompletos.
+     * - 404 NOT FOUND: Si no se encuentra ningún usuario que cumpla con los criterios.
+     */
     @PostMapping("/filtrar-tickets")
     public ResponseEntity<List<TicketDTO>> listarTicketsConFiltros(@RequestBody TicketRequestDTO requestDTO) {
         List<TicketDTO> tickets = ticketServiceImpl.listarTicketsConFiltros(requestDTO);
@@ -82,9 +145,16 @@ public class StaffCDS {
     }
 
     /**
-     * Endpoint para listar todas las facturas.
+     * Endpoint exclusivo para el centro de servicios: Listar todas las facturas registradas.
      *
-     * @return Listado de todas las facturas registradas.
+     * @return Respuesta HTTP con la lista de facturas detalladas.
+     *
+     * Proceso:
+     * - Llama al servicio de facturas para obtener todas las facturas registradas.
+     * - Regresa un listado detallado de facturas en la respuesta.
+     *
+     * Manejo de errores:
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado al recuperar las facturas.
      */
     @GetMapping("/listado-facturas")
     public ResponseEntity<List<FacturaDetalleResponseDTO>> listarTodasLasFacturas() {
@@ -94,6 +164,21 @@ public class StaffCDS {
         return ResponseEntity.ok(facturas);
     }
 
+    /**
+     * Endpoint para listar facturas aplicando filtros dinámicos.
+     *
+     * @param requestDTO Objeto que contiene los filtros para la búsqueda de facturas, como fecha de inicio, fecha fin,
+     *                   estado de pago y/o usuario.
+     * @return ResponseEntity que contiene el objeto FacturaResponseDTO con el resultado de la búsqueda.
+     *
+     * Proceso:
+     * - Recibe los parámetros de filtrado en el cuerpo de la solicitud.
+     * - Llama al servicio de facturas para aplicar los filtros y obtener los resultados.
+     * - Devuelve un resumen de las facturas que coinciden con los filtros aplicados.
+     *
+     * Manejo de errores:
+     * - Devuelve un mensaje claro en caso de parámetros inválidos o errores internos.
+     */
     @PostMapping("/listado-con-filtros")
     public ResponseEntity<FacturaResponseDTO> listarFacturasConFiltros(@RequestBody FacturaRequestDTO requestDTO) {
         log.info("Solicitud recibida para listar facturas con filtros dinámicos: {}", requestDTO);
@@ -103,6 +188,15 @@ public class StaffCDS {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Endpoint para generar y descargar un PDF con el reporte de facturas.
+     *
+     * @param response Objeto HttpServletResponse utilizado para configurar y enviar el archivo PDF al cliente.
+     * @param filtros Objeto FacturaRequestDTO que contiene los parámetros de filtrado para generar el reporte.
+     *
+     * Manejo de errores:
+     * - Lanza una excepción si ocurre un problema durante la generación o descarga del PDF.
+     */
     @GetMapping(value = "/descargar-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public void descargarPdf(HttpServletResponse response, @RequestBody FacturaRequestDTO filtros) {
         try {
