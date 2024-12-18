@@ -12,6 +12,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Configuración inicial para la creación de usuarios predeterminados en el sistema,
+ * como el administrador y el personal del centro de servicios.
+ */
 @Configuration
 public class AdminUserInitializer {
 
@@ -21,7 +25,8 @@ public class AdminUserInitializer {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-    //Admin
+
+    // Variables para el usuario administrador
     @Value("${admin.username}")
     private String adminUsername;
 
@@ -40,7 +45,7 @@ public class AdminUserInitializer {
     @Value("${admin.permiso}")
     private boolean adminPermiso;
 
-    //Centro de servicios
+    // Variables para el usuario del centro de servicios
     @Value("${serviceStaff.username}")
     private String serviceStaffUsername;
 
@@ -59,6 +64,14 @@ public class AdminUserInitializer {
     @Value("${serviceStaff.permiso}")
     private boolean serviceStaffPermiso;
 
+    /**
+     * Inicializa los usuarios predeterminados en el sistema al arrancar la aplicación.
+     *
+     * - Crea un usuario administrador si no existe en la base de datos.
+     * - Crea un usuario del centro de servicios si no existe en la base de datos.
+     *
+     * @return Un {@link CommandLineRunner} que ejecuta la creación de usuarios.
+     */
     @Bean
     CommandLineRunner createAdminUser() {
         return args -> {

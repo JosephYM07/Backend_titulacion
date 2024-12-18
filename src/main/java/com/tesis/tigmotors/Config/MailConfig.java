@@ -23,6 +23,22 @@ public class MailConfig {
     @Value("${spring.mail.password}")
     private String mailPassword;
 
+    /**
+     * Configura el servicio de envío de correos electrónicos (JavaMailSender).
+     *
+     * - Define las propiedades necesarias para conectarse al servidor SMTP.
+     * - Los detalles como host, puerto, usuario y contraseña son inyectados desde las propiedades del entorno.
+     * - Activa autenticación SMTP y encriptación mediante STARTTLS.
+     *
+     * Este método asegura que la aplicación pueda enviar correos electrónicos utilizando
+     * un servidor SMTP configurado de manera segura.
+     *
+     * Propiedades configuradas:
+     * - `mail.transport.protocol`: Protocolo SMTP.
+     * - `mail.smtp.auth`: Habilitación de autenticación.
+     * - `mail.smtp.starttls.enable`: Uso de STARTTLS para seguridad.
+     * - `mail.debug`: Activación del modo de depuración para análisis.
+     */
     @Bean
     public JavaMailSender getJavaMailSender() {
         JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
