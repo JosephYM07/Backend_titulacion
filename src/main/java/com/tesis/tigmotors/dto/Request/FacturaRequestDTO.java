@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.dto.Request;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 
 /**
@@ -11,4 +12,6 @@ public class FacturaRequestDTO {
     private String fechaFin;
     private String username;
     private String estadoPago;
+    private Boolean generarPdf; // Bandera para decidir si se genera PDF
+    private transient HttpServletResponse response;
 }

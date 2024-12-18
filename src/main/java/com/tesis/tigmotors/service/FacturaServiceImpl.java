@@ -32,6 +32,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final FacturaConverter facturaConverter;
     private final SequenceGeneratorService sequenceGeneratorService;
 
+
     @Override
     public Factura generarFacturaDesdeTicket(String ticketId, double cotizacion) {
         // Buscar el ticket asociado
@@ -122,7 +123,7 @@ public class FacturaServiceImpl implements FacturaService {
 
                 responseBuilder
                         .numeroFacturas(facturasFiltradas.size())
-                        .totalCotizacion(totalCotizacion);
+                        .total(totalCotizacion);
             }
 
             return responseBuilder.build();

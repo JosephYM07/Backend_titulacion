@@ -241,12 +241,15 @@ public class AdminController {
 
     /**
      * Endpoint para actualizar el estado de un ticket.
-     * @param ticketId ID del ticket a actualizar.
+     *
+     * @param ticketId    ID del ticket a actualizar.
      * @param nuevoEstado Nuevo estado del ticket (TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO, RECHAZADO).
      * @return TicketDTO con los datos del ticket actualizado.
      */
     @PutMapping("/{ticketId}/estado-ticket")
-    public ResponseEntity<TicketDTO> actualizarEstadoTicket(@PathVariable String ticketId, @RequestParam TicketEstado nuevoEstado) {
+    public ResponseEntity<TicketDTO> actualizarEstadoTicket(
+            @PathVariable String ticketId,
+            @RequestParam String nuevoEstado) {
         TicketDTO ticketActualizado = ticketServiceImpl.actualizarEstadoTicket(ticketId, nuevoEstado);
         return ResponseEntity.ok(ticketActualizado);
     }

@@ -17,5 +17,5 @@ import java.util.List;
 public class FacturaResponseDTO {
     private List<FacturaDetalleResponseDTO> facturas; // Lista de facturas individuales
     private Integer numeroFacturas;            // Total de facturas (Integer permite nulos)
-    private Double totalCotizacion;;          // Suma total de cotizaciones
+    private Double total;          // Suma total de cotizaciones
 }

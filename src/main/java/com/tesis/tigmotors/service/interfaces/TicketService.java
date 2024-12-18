@@ -61,8 +61,8 @@ public interface TicketService {
      * Actualiza el estado de un ticket.
      *
      * @param ticketId ID del ticket a actualizar.
-     * @param nuevoEstado Nuevo estado del ticket.
+     * @param nuevoEstadoStr Nuevo estado del ticket.
      * @return DTO con los datos actualizados del ticket.
      */
-    TicketDTO actualizarEstadoTicket(String ticketId, TicketEstado nuevoEstado);
+    TicketDTO actualizarEstadoTicket(String ticketId, String nuevoEstadoStr);
 }
