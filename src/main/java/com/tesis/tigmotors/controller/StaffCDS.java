@@ -40,6 +40,11 @@ public class StaffCDS {
         List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
         return ResponseEntity.ok(usuariosAprobados);
     }
+    @GetMapping("/lista-nombres-usuarios")
+    public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
+        List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
+        return ResponseEntity.ok(usernames);
+    }
 
     /**
      * Endpoint para listar tickets por su estado.

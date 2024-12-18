@@ -85,7 +85,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     @Transactional
     public List<String> obtenerUsernamesAprobados(Authentication authentication) {
 
-        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN)) {
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN,Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
             throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
         }
 
