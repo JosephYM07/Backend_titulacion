@@ -304,9 +304,7 @@ public class TicketServiceImpl implements TicketService {
             TicketEstado nuevoEstado;
             if (nuevoEstadoStr.startsWith("TRABAJO_")) {
                 nuevoEstado = TicketEstado.fromTrabajoString(nuevoEstadoStr);
-            } else if (nuevoEstadoStr.equalsIgnoreCase("PENDIENTE_PAGO") || nuevoEstadoStr.equalsIgnoreCase("VALOR_PAGADO")) {
-                nuevoEstado = TicketEstado.fromPagoString(nuevoEstadoStr);
-            } else {
+            }else {
                 nuevoEstado = TicketEstado.fromPrioridadString(nuevoEstadoStr);
             }
 

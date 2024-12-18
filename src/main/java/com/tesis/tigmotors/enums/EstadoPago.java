@@ -9,7 +9,7 @@ public enum EstadoPago {
 
     /**
      * Valida si el estado pertenece a los estados de pago válidos.
-     *
+     * NO ELIMINAR se usa en facturas
      * @param estado El estado a validar.
      * @return true si el estado pertenece a los estados de pago, false de lo contrario.
      */
@@ -21,5 +21,7 @@ public enum EstadoPago {
             return false;
         }
     }
+
+
 }
 

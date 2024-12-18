@@ -11,14 +11,11 @@ public enum TicketEstado {
     TRABAJO_EN_PROGRESO,
     TRABAJO_TERMINADO,
     RECHAZADO,
-    VALOR_PAGADO,
-    PENDIENTE_PAGO,
     ALTA,
     MEDIA,
     BAJA;
 
     private static final Set<TicketEstado> ESTADOS_TRABAJO = EnumSet.of(TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO);
-    private static final Set<TicketEstado> ESTADOS_PAGO = EnumSet.of(PENDIENTE_PAGO, VALOR_PAGADO);
     private static final Set<TicketEstado> PRIORIDADES = EnumSet.of(ALTA, MEDIA, BAJA);
 
     /**
@@ -46,16 +43,6 @@ public enum TicketEstado {
      */
     public static TicketEstado fromTrabajoString(String estado) {
         return fromString(estado, ESTADOS_TRABAJO, "El estado proporcionado no es válido. Estados válidos: TRABAJO_PENDIENTE, TRABAJO_EN_PROGRESO, TRABAJO_TERMINADO.");
-    }
-
-    /**
-     * Convierte y valida un estado para pagos.
-     *
-     * @param estado Estado ingresado.
-     * @return El valor del enum si es válido.
-     */
-    public static TicketEstado fromPagoString(String estado) {
-        return fromString(estado, ESTADOS_PAGO, "El estado proporcionado no es válido. Estados válidos: PENDIENTE_PAGO, VALOR_PAGADO.");
     }
 
     /**
