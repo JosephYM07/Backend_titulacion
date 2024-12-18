@@ -10,12 +10,22 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Conversor para manejar la conversión de datos entre las entidades Factura y DTOs relacionados.
+ */
 @Component
 public class FacturaConverter {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    /**
+     * Genera una entidad Factura a partir de un Ticket y un monto de cotización.
+     *
+     * @param ticket Objeto Ticket del cual se generan los datos de la factura.
+     * @param cotizacion Monto de la cotización asociado a la factura.
+     * @return Objeto Factura construido con los datos del Ticket y la cotización.
+     */
     public Factura generarFacturaDesdeTicket(Ticket ticket, double cotizacion) {
         return Factura.builder()
                 .facturaId(null)
@@ -32,6 +42,13 @@ public class FacturaConverter {
                 .horaCreacion(LocalTime.now().format(TIME_FORMATTER))
                 .build();
     }
+
+    /**
+     * Convierte una entidad Factura en un DTO de respuesta detallada.
+     *
+     * @param factura Entidad Factura a convertir.
+     * @return DTO FacturaDetalleResponseDTO con los datos de la factura.
+     */
     public FacturaDetalleResponseDTO entityToDto(Factura factura) {
         FacturaDetalleResponseDTO responseDTO = new FacturaDetalleResponseDTO();
         responseDTO.setFacturaId(factura.getFacturaId());

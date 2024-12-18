@@ -8,19 +8,31 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Conversor para manejar la transformación entre entidades Ticket y sus respectivos DTOs.
+ */
 @Component
 public class TicketConverter {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    // Asignar automáticamente fecha y hora formateadas al ticket
+    /**
+     * Asigna la fecha y hora actuales formateadas a un ticket.
+     *
+     * @param ticket Entidad Ticket a la que se le asignará la fecha y hora actuales.
+     */
     public void asignarFechaYHoraActual(Ticket ticket) {
         ticket.setFechaCreacion(LocalDate.now().format(DATE_FORMATTER));
         ticket.setHoraCreacion(LocalTime.now().format(TIME_FORMATTER));
     }
 
-    // Convertir de DTO a Entidad
+    /**
+     * Convierte un DTO de ticket a una entidad Ticket.
+     *
+     * @param ticketDTO DTO TicketDTO a convertir.
+     * @return Entidad Ticket con los datos del DTO.
+     */
     public Ticket dtoToEntity(TicketDTO ticketDTO) {
         Ticket ticket = new Ticket();
         ticket.setId(ticketDTO.getId());
@@ -41,7 +53,12 @@ public class TicketConverter {
         return ticket;
     }
 
-    // Convertir de Entidad a DTO
+    /**
+     * Convierte una entidad Ticket a un DTO de ticket.
+     *
+     * @param ticket Entidad Ticket a convertir.
+     * @return DTO TicketDTO con los datos de la entidad.
+     */
     public TicketDTO entityToDto(Ticket ticket) {
         TicketDTO ticketDTO = new TicketDTO();
         ticketDTO.setId(ticket.getId());

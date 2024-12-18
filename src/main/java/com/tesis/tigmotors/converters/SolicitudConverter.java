@@ -11,19 +11,31 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+/**
+ * Conversor para manejar la transformación entre entidades Solicitud y sus respectivos DTOs.
+ */
 @Component
 public class SolicitudConverter {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    // Método para asignar automáticamente la fecha y la hora actuales a una solicitud
+    /**
+     * Asigna la fecha y hora actuales a una solicitud.
+     *
+     * @param solicitud Entidad Solicitud a la que se le asignará la fecha y hora.
+     */
     public void asignarFechaYHoraActual(Solicitud solicitud) {
         solicitud.setFechaCreacion(LocalDate.now().format(DATE_FORMATTER));
         solicitud.setHoraCreacion(LocalTime.now().format(TIME_FORMATTER));
     }
 
-    // Convertir de Entidad a SolicitudDTO
+    /**
+     * Convierte una entidad Solicitud a un DTO de solicitud.
+     *
+     * @param solicitud Entidad Solicitud a convertir.
+     * @return DTO SolicitudDTO con los datos de la entidad.
+     */
     public SolicitudDTO entityToDto(Solicitud solicitud) {
         SolicitudDTO solicitudDTO = new SolicitudDTO();
         solicitudDTO.setIdSolicitud(solicitud.getIdSolicitud());
@@ -42,7 +54,12 @@ public class SolicitudConverter {
         return solicitudDTO;
     }
 
-    // Convertir de SolicitudDTO a Entidad
+    /**
+     * Convierte un DTO de solicitud a una entidad Solicitud.
+     *
+     * @param solicitudDTO DTO SolicitudDTO a convertir.
+     * @return Entidad Solicitud con los datos del DTO.
+     */
     public Solicitud dtoToEntity(SolicitudDTO solicitudDTO) {
         Solicitud solicitud = new Solicitud();
         solicitud.setIdSolicitud(solicitudDTO.getIdSolicitud());
@@ -61,7 +78,12 @@ public class SolicitudConverter {
         return solicitud;
     }
 
-    // Convertir de SolicitudAdminRequestDTO a Entidad
+    /**
+     * Convierte un DTO de solicitud administrativa a una entidad Solicitud.
+     *
+     * @param solicitudAdminRequestDTO DTO SolicitudAdminRequestDTO a convertir.
+     * @return Entidad Solicitud con los datos del DTO.
+     */
     public Solicitud adminRequestToEntity(SolicitudAdminRequestDTO solicitudAdminRequestDTO) {
         Solicitud solicitud = new Solicitud();
         solicitud.setUsername(solicitudAdminRequestDTO.getUsername());
@@ -76,7 +98,12 @@ public class SolicitudConverter {
         return solicitud;
     }
 
-    // Convertir de Entidad a SolicitudResponseDTO
+    /**
+     * Convierte una entidad Solicitud a un DTO de respuesta detallada.
+     *
+     * @param solicitud Entidad Solicitud a convertir.
+     * @return DTO SolicitudResponseDTO con los datos de la entidad.
+     */
     public SolicitudResponseDTO entityToResponseDto(Solicitud solicitud) {
         SolicitudResponseDTO responseDTO = new SolicitudResponseDTO();
         responseDTO.setIdSolicitud(solicitud.getIdSolicitud());

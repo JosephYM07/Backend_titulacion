@@ -9,7 +9,7 @@ import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
-import com.tesis.tigmotors.service.TicketServiceImpl;
+import com.tesis.tigmotors.service.interfaces.TicketService;
 import com.tesis.tigmotors.service.interfaces.PasswordResetService;
 import com.tesis.tigmotors.service.interfaces.SolicitudService;
 import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
@@ -32,16 +32,23 @@ import java.util.List;
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    private final TicketServiceImpl ticketServiceImpl;
-    private final SolicitudServiceImpl solicitudServiceImpl;
+    private final TicketService ticketServiceImpl;
+    private final SolicitudService solicitudServiceImpl;
     private final UserServiceUpdate userServiceUpdate;
     private final SolicitudService solicitudService;
     private final PasswordResetService passwordResetService;
 
     /**
-     * Obtener información del perfil del usuario autenticado.
-     * @param authentication Contexto de autenticación para obtener el username.
-     * @return Respuesta con los datos del perfil del usuario.
+     * Endpoint para obtener la información básica del perfil del usuario.
+     * Solo disponible para usuarios autenticados.
+     *
+     * @param authentication Objeto de autenticación que contiene la información del usuario autenticado.
+     * @return UserBasicInfoResponseDTO con los datos básicos del perfil del usuario.
+     *
+     * Manejo de errores:
+     * - HTTP 401 (Unauthorized): Si el usuario no está autenticado.
+     * - HTTP 403 (Forbidden): Si el usuario no tiene permisos para realizar esta operación.
+     * - HTTP 404 (Not Found): Si el perfil del usuario no se encuentra.
      */
     @GetMapping("/informacion-usuario")
     public ResponseEntity<UserBasicInfoResponseDTO> getUserProfile(Authentication authentication) {
@@ -51,34 +58,43 @@ public class UserController {
     }
 
     /**
-     * Actualizar información del usuario autenticado.
-     * @param updateRequest Datos que el usuario desea actualizar.
-     * @param authentication Información del usuario autenticado.
-     * @return Respuesta con los datos actualizados del usuario.
+     * Endpoint para actualizar la información básica del perfil del usuario autenticado.
+     *
+     * @param updateRequest Datos nuevos para actualizar el perfil del usuario.
+     * @param authentication Información de autenticación del usuario.
+     * @return Detalles del usuario actualizado.
+     *
+     * Manejo de errores:
+     * - HTTP 400: Datos inválidos.
+     * - HTTP 401: Usuario no autenticado.
+     * - HTTP 403: Operación no permitida.
+     * - HTTP 404: Usuario no encontrado.
      */
     @PutMapping("/actualizar-informacion")
     public ResponseEntity<UserBasicInfoResponseDTO> updateMyProfile(
             @Valid @RequestBody UserSelfUpdateRequestDTO updateRequest,
             Authentication authentication) {
-        // Obtener el username del token
         String usernameFromToken = authentication.getName();
-
         UserBasicInfoResponseDTO updatedUser = userServiceUpdate.updateMyProfile(updateRequest, usernameFromToken);
-
         return ResponseEntity.ok(updatedUser);
     }
 
     /**
-     * Cambia la contraseña del usuario autenticado.
+     * Endpoint para cambiar la contraseña del usuario autenticado.
      *
-     * @param authentication Contexto de autenticación para obtener el username.
-     * @param cambioContraseniaRequest Objeto con la contraseña actual y la nueva contraseña.
-     * @return Respuesta indicando éxito o error en el cambio de contraseña.
+     * @param authentication Información de autenticación del usuario.
+     * @param cambioContraseniaRequest Datos actuales y nueva contraseña.
+     * @return Respuesta indicando el resultado del cambio de contraseña.
+     *
+     * Manejo de errores:
+     * - HTTP 400: Datos inválidos.
+     * - HTTP 401: Usuario no autenticado.
+     * - HTTP 403: Operación no permitida.
      */
     @PutMapping("/cambiar-contrasena")
     public ResponseEntity<?> changePassword(Authentication authentication,
                                             @Valid @RequestBody CambioContraseniaRequest cambioContraseniaRequest) {
-        String username = authentication.getName(); // Obtener el username desde el contexto de autenticación
+        String username = authentication.getName();
         return passwordResetService.changePasswordAuthenticated(
                 username,
                 cambioContraseniaRequest.getCurrentPassword(),
@@ -87,10 +103,15 @@ public class UserController {
     }
 
     /**
-     * Endpoint para crear una solicitud.
-     * @param solicitudDTO Objeto con los datos de la solicitud.
-     * Debe contener: nombre, email, teléfono, dirección, descripción, prioridad-
-     * @return ResponseEntity con la solicitud creada.
+     * Endpoint para crear una nueva solicitud.
+     *
+     * @param solicitudDTO Datos de la solicitud a crear.
+     * @param authentication Información de autenticación del usuario.
+     * @return Detalles de la solicitud creada.
+     *
+     * Manejo de errores:
+     * - HTTP 400: Datos inválidos.
+     * - HTTP 401: Usuario no autenticado.
      */
     @PostMapping("/crear-solicitud")
     public ResponseEntity<?> crearSolicitud(@RequestBody @Valid SolicitudDTO solicitudDTO, Authentication authentication) {
@@ -99,7 +120,20 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint para aceptar la cotización y generar un ticket automáticamente (solo para usuarios)
+    /**
+     * Endpoint para aceptar la cotización y generar un ticket automáticamente.
+     * Solo disponible para usuarios autenticados.
+     *
+     * @param idSolicitud ID de la solicitud cuya cotización será aceptada.
+     * @param authentication Objeto de autenticación que contiene la información del usuario autenticado.
+     * @return SolicitudResponseDTO con los detalles de la solicitud actualizada y el ticket generado.
+     *
+     * Manejo de errores:
+     * - HTTP 400 (Bad Request): Si el ID de la solicitud no es válido o no se puede procesar.
+     * - HTTP 401 (Unauthorized): Si el usuario no está autenticado.
+     * - HTTP 403 (Forbidden): Si el usuario no tiene permisos para realizar la operación.
+     * - HTTP 404 (Not Found): Si la solicitud no existe.
+     */
     @PutMapping("/aceptar-cotizacion/{idSolicitud}")
     public ResponseEntity<SolicitudResponseDTO> aceptarCotizacion(@PathVariable String idSolicitud, Authentication authentication) {
         String username = authentication.getName();
@@ -108,11 +142,17 @@ public class UserController {
     }
 
     /**
-     * Endpoint para que un usuario rechace la cotización de una solicitud.
+     * Endpoint para rechazar una cotización de solicitud.
      *
-     * @param solicitudId ID de la solicitud cuya cotización se va a rechazar.
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity con el DTO de la solicitud actualizada.
+     * @param solicitudId ID de la solicitud cuya cotización será rechazada.
+     * @param authentication Información de autenticación del usuario.
+     * @return Detalles de la solicitud actualizada con el estado rechazado.
+     *
+     * Manejo de errores:
+     * - HTTP 400: Datos inválidos.
+     * - HTTP 401: Usuario no autenticado.
+     * - HTTP 403: Operación no permitida.
+     * - HTTP 404: Solicitud no encontrada.
      */
     @PutMapping("/rechazar-cotizacion/{solicitudId}")
     public ResponseEntity<SolicitudDTO> rechazarCotizacion(
@@ -126,8 +166,12 @@ public class UserController {
 
     /**
      * Endpoint para obtener el historial de solicitudes del usuario autenticado.
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity con la lista de solicitudes en formato DTO o un mensaje de error en caso de falla.
+     *
+     * @param authentication Información de autenticación del usuario.
+     * @return Lista de solicitudes asociadas al usuario autenticado.
+     *
+     * Manejo de errores:
+     * - HTTP 500: Error interno al obtener el historial de solicitudes.
      */
     @GetMapping("/historial-solicitud")
     public ResponseEntity<?> obtenerHistorialSolicitudes(Authentication authentication) {
@@ -142,10 +186,13 @@ public class UserController {
     }
 
     /**
-     * Endpoint para obtener las solicitudes del usuario autenticado filtradas por estado (PENDIENTE Y ACEPTADO).
-     * @param estado Estado de las solicitudes que se desean filtrar.
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity con la lista de solicitudes en formato DTO o un mensaje de error en caso de falla.
+     * Endpoint para obtener el historial de solicitudes del usuario autenticado.
+     *
+     * @param authentication Información de autenticación del usuario.
+     * @return Lista de solicitudes asociadas al usuario autenticado.
+     *
+     * Manejo de errores:
+     * - HTTP 500: Error interno al obtener el historial de solicitudes.
      */
     @GetMapping("/estado-solicitud/{estado}")
     public ResponseEntity<?> obtenerSolicitudesPorEstado(@PathVariable String estado, Authentication authentication) {
@@ -160,11 +207,14 @@ public class UserController {
     }
 
     /**
-     * Endpoint para obtener el historial completo de todas las solicitudes en el sistema.
-     * Este endpoint está diseñado exclusivamente para administradores y realiza las siguientes acciones:
-     * - Llama al servicio para recuperar todas las solicitudes registradas en el sistema.
-     * - Retorna la lista de solicitudes en formato DTO si la operación es exitosa.
-     * @return Un ResponseEntity con la lista de todas las solicitudes en formato DTO.
+     * Endpoint para obtener las solicitudes del usuario autenticado filtradas por prioridad.
+     *
+     * @param prioridad Prioridad de las solicitudes a filtrar.
+     * @param authentication Información de autenticación del usuario.
+     * @return Lista de solicitudes filtradas por prioridad asociadas al usuario autenticado.
+     *
+     * Manejo de errores:
+     * - HTTP 500: Error interno al obtener las solicitudes por prioridad.
      */
     @GetMapping("/prioridad-solicitud/{prioridad}")
     public ResponseEntity<?> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
@@ -179,11 +229,16 @@ public class UserController {
     }
 
     /**
-     * Endpoint para modificar una solicitud existente del usuario autenticado.
-     * @param solicitudId ID de la solicitud que se desea modificar.
-     * @param solicitudDTO DTO con los datos actualizados de la solicitud (opcionalmente `descripcionInicial` y/o `prioridad`).
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity con el DTO de la solicitud modificada o un mensaje de error en caso de falla.
+     * Endpoint para modificar una solicitud específica del usuario autenticado.
+     *
+     * @param solicitudId ID de la solicitud a modificar.
+     * @param solicitudDTO Datos actualizados de la solicitud.
+     * @param authentication Información de autenticación del usuario.
+     * @return Detalles de la solicitud modificada.
+     *
+     * Manejo de errores:
+     * - HTTP 403: Acceso denegado al intentar modificar la solicitud.
+     * - HTTP 500: Error interno al modificar la solicitud.
      */
     @PutMapping("/modificar-solicitud/{solicitudId}")
     public ResponseEntity<?> modificarSolicitud(@PathVariable String solicitudId, @RequestBody SolicitudDTO solicitudDTO, Authentication authentication) {
@@ -201,10 +256,16 @@ public class UserController {
     }
 
     /**
-     * Endpoint para eliminar una solicitud existente del usuario autenticado.
-     * @param solicitudId ID de la solicitud que se desea eliminar.
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity sin contenido (HTTP 204) si la operación es exitosa.
+     * Endpoint para eliminar una solicitud específica del usuario autenticado.
+     *
+     * @param solicitudId ID de la solicitud a eliminar.
+     * @param authentication Información de autenticación del usuario.
+     * @return Respuesta con el estado de la operación y el código HTTP correspondiente.
+     *
+     * Manejo de errores:
+     * - HTTP 403: Acceso denegado al intentar eliminar la solicitud.
+     * - HTTP 404: Solicitud no encontrada.
+     * - HTTP 500: Error interno al eliminar la solicitud.
      */
     @DeleteMapping("/eliminar-solicitud/{solicitudId}")
     public ResponseEntity<EliminarSolicitudResponse> eliminarSolicitud(
@@ -214,12 +275,17 @@ public class UserController {
         EliminarSolicitudResponse resultado = solicitudService.eliminarSolicitudUsuario(solicitudId, username);
         return ResponseEntity.status(resultado.getStatusCode()).body(resultado); // Configura el código de estado HTTP
     }
+
     /*TICKETS*/
 
     /**
      * Endpoint para obtener el historial de tickets del usuario autenticado.
-     * @param authentication Información del usuario autenticado.
-     * @return Un ResponseEntity con la lista de tickets en formato DTO o un mensaje de error en caso de falla.
+     *
+     * @param authentication Información de autenticación del usuario.
+     * @return Lista de tickets asociados al usuario autenticado.
+     *
+     * Manejo de errores:
+     * - HTTP 500: Error interno al obtener el historial de tickets.
      */
     @GetMapping("/historial-tickets")
     public ResponseEntity<List<TicketDTO>> obtenerHistorialTickets(Authentication authentication) {
