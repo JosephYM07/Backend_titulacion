@@ -1,5 +1,6 @@
 package com.tesis.tigmotors.service.interfaces;
 
+import com.tesis.tigmotors.dto.Request.TicketRequestDTO;
 import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
 
@@ -65,4 +66,11 @@ public interface TicketService {
      * @return DTO con los datos actualizados del ticket.
      */
     TicketDTO actualizarEstadoTicket(String ticketId, String nuevoEstadoStr);
+
+    /**
+     * Lista los tickets aplicando filtros dinámicos.
+     * @param requestDTO Contiene los filtros: fecha, usuario, prioridad y estado.
+     * @return Lista de tickets filtrados como TicketDTO.
+     */
+    List<TicketDTO> listarTicketsConFiltros(TicketRequestDTO requestDTO);
 }

@@ -18,6 +18,7 @@ import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -135,41 +136,75 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
 
-    // Métodos auxiliares
+    // Validar fechas con manejo de errores
     private void validarFechas(FacturaRequestDTO requestDTO) {
-        if (requestDTO.getFechaInicio() == null || requestDTO.getFechaFin() == null) {
-            log.warn("Las fechas de inicio y fin son obligatorias.");
-            throw new IllegalArgumentException("Las fechas de inicio y fin son obligatorias.");
+        String fechaRegex = "\\d{4}/\\d{2}/\\d{2}";
+
+        if (requestDTO.getFechaInicio() == null || !requestDTO.getFechaInicio().matches(fechaRegex)) {
+            log.warn("La fecha de inicio es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+            throw new IllegalArgumentException("La fecha de inicio es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+        }
+
+        if (requestDTO.getFechaFin() == null || !requestDTO.getFechaFin().matches(fechaRegex)) {
+            log.warn("La fecha de fin es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+            throw new IllegalArgumentException("La fecha de fin es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+        }
+
+        if (requestDTO.getFechaInicio().compareTo(requestDTO.getFechaFin()) > 0) {
+            log.warn("La fecha de inicio no puede ser posterior a la fecha de fin.");
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
         }
     }
 
+
+    // Obtener facturas con validación de filtros
     private List<Factura> obtenerFacturasPorFiltros(FacturaRequestDTO requestDTO) {
-        if (requestDTO.getUsername() != null && requestDTO.getEstadoPago() != null) {
-            return facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
-                    requestDTO.getFechaInicio(),
-                    requestDTO.getFechaFin(),
-                    requestDTO.getUsername(),
-                    requestDTO.getEstadoPago()
-            );
-        } else if (requestDTO.getUsername() != null) {
-            return facturaRepository.findByFechaCreacionAndUsername(
-                    requestDTO.getFechaInicio(),
-                    requestDTO.getFechaFin(),
-                    requestDTO.getUsername()
-            );
-        } else if (requestDTO.getEstadoPago() != null) {
-            return facturaRepository.findByFechaCreacionAndEstadoPago(
-                    requestDTO.getFechaInicio(),
-                    requestDTO.getFechaFin(),
-                    requestDTO.getEstadoPago()
-            );
-        } else {
-            return facturaRepository.findByFechaCreacionBetween(
-                    requestDTO.getFechaInicio(),
-                    requestDTO.getFechaFin()
-            );
+        try {
+            if (requestDTO.getUsername() != null && requestDTO.getEstadoPago() != null) {
+                validarEstadoPago(requestDTO.getEstadoPago());
+                return facturaRepository.findByFechaCreacionAndUsernameAndEstadoPago(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin(),
+                        requestDTO.getUsername(),
+                        requestDTO.getEstadoPago()
+                );
+            } else if (requestDTO.getUsername() != null) {
+                return facturaRepository.findByFechaCreacionAndUsername(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin(),
+                        requestDTO.getUsername()
+                );
+            } else if (requestDTO.getEstadoPago() != null) {
+                validarEstadoPago(requestDTO.getEstadoPago());
+                return facturaRepository.findByFechaCreacionAndEstadoPago(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin(),
+                        requestDTO.getEstadoPago()
+                );
+            } else {
+                return facturaRepository.findByFechaCreacionBetween(
+                        requestDTO.getFechaInicio(),
+                        requestDTO.getFechaFin()
+                );
+            }
+        } catch (IllegalArgumentException e) {
+            log.error("Error en los filtros: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error inesperado al filtrar facturas: {}", e.getMessage(), e);
+            throw new RuntimeException("Ocurrió un error inesperado al filtrar facturas.", e);
         }
     }
+
+    // Validar estado de pago
+    private void validarEstadoPago(String estadoPago) {
+        Set<String> estadosValidos = Set.of("PENDIENTE_PAGO", "VALOR_PAGADO");
+        if (!estadosValidos.contains(estadoPago.toUpperCase())) {
+            log.warn("El estado de pago '{}' no es válido. Estados válidos: {}", estadoPago, estadosValidos);
+            throw new IllegalArgumentException("El estado de pago no es válido. Estados válidos: " + estadosValidos);
+        }
+    }
+
 
 
 }

@@ -6,13 +6,18 @@ import com.tesis.tigmotors.converters.UserConverter;
 import com.tesis.tigmotors.dto.Request.UserRequestDTO;
 import com.tesis.tigmotors.dto.Response.ErrorResponse;
 import com.tesis.tigmotors.dto.Response.UserResponseDTO;
+import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.models.User;
+import com.tesis.tigmotors.utils.RoleValidator;
+import org.springframework.security.core.Authentication;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -25,9 +30,19 @@ public class BusquedaUsuarioServiceImpl implements BusquedaUsuarioService {
     private final UserRepository userRepository;
     private final UserConverter userConverter;
 
+    private final RoleValidator roleValidator;
+
+
     @Override
     public ResponseEntity<?> buscarUsuario(UserRequestDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Validar si el usuario tiene el rol adecuado
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            log.error("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        }
         try {
+
             Optional<User> userOptional;
 
             // Validar los datos de entrada
@@ -57,7 +72,7 @@ public class BusquedaUsuarioServiceImpl implements BusquedaUsuarioService {
             throw ex; // Manejado por el GlobalExceptionHandler
         } catch (Exception ex) {
             log.error("Error inesperado al buscar usuario: {}", ex.getMessage(), ex);
-            throw new RuntimeException("Error inesperado al buscar usuario.", ex); // Manejado globalmente
+            throw new RuntimeException("Error inesperado al buscar usuario.", ex);
         }
     }
 }

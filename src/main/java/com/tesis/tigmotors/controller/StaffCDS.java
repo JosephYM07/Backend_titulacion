@@ -4,7 +4,9 @@ import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.service.*;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
+import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -25,6 +27,7 @@ public class StaffCDS {
     private final AdminProfileServiceImpl adminProfileServiceImpl;
     private final FacturaPdfService facturaPdfService;
     private final AdminVerificationUserService adminVerificationUserService;
+    private final BusquedaUsuarioService busquedaUsuarioService;
 
 
     //Informacion Propia
@@ -35,15 +38,28 @@ public class StaffCDS {
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
 
+    /**
+     * Endpoint para obtener la lista de usuarios aprobados con el rol USER.
+     *
+     * @return Lista de usuarios aprobados.
+     */
     @GetMapping("/lista-usuarios")
     public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
         List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
         return ResponseEntity.ok(usuariosAprobados);
     }
+
     @GetMapping("/lista-nombres-usuarios")
     public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
         List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
         return ResponseEntity.ok(usernames);
+    }
+
+    //Buscar usuario por id, username o email (solo para administradores)
+    @PostMapping("/buscar-usuario")
+    public ResponseEntity<?> buscarUsuario(@Valid @RequestBody UserRequestDTO request) {
+        // Llama al servicio para procesar la búsqueda
+        return busquedaUsuarioService.buscarUsuario(request);
     }
 
     /**
@@ -56,6 +72,12 @@ public class StaffCDS {
     public ResponseEntity<List<TicketDTO>> listarTicketsPorEstado(@PathVariable String estado) {
         // Llama al servicio para listar tickets por estado
         List<TicketDTO> tickets = ticketServiceImpl.listarTicketsPorEstado(String.valueOf(estado.toUpperCase()));
+        return ResponseEntity.ok(tickets);
+    }
+
+    @PostMapping("/filtrar-tickets")
+    public ResponseEntity<List<TicketDTO>> listarTicketsConFiltros(@RequestBody TicketRequestDTO requestDTO) {
+        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsConFiltros(requestDTO);
         return ResponseEntity.ok(tickets);
     }
 
