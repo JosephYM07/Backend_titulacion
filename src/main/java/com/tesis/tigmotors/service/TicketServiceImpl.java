@@ -4,6 +4,7 @@ import com.tesis.tigmotors.Exceptions.ResourceNotFoundException;
 import com.tesis.tigmotors.Exceptions.TicketNotFoundException;
 import com.tesis.tigmotors.converters.FacturaConverter;
 import com.tesis.tigmotors.converters.TicketConverter;
+import com.tesis.tigmotors.dto.Request.TicketRequestDTO;
 import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.enums.Role;
 import com.tesis.tigmotors.enums.TicketEstado;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +53,6 @@ public class TicketServiceImpl implements TicketService {
 
     private final RoleValidator roleValidator;
     private final Map<TicketEstado, Set<TicketEstado>> transicionesValidas = inicializarTransicionesValidas();
-
 
 
     private final EmailService emailService;
@@ -304,7 +305,7 @@ public class TicketServiceImpl implements TicketService {
             TicketEstado nuevoEstado;
             if (nuevoEstadoStr.startsWith("TRABAJO_")) {
                 nuevoEstado = TicketEstado.fromTrabajoString(nuevoEstadoStr);
-            }else {
+            } else {
                 nuevoEstado = TicketEstado.fromPrioridadString(nuevoEstadoStr);
             }
 
@@ -371,6 +372,91 @@ public class TicketServiceImpl implements TicketService {
 
         return solicitud.getCotizacion();
     }
+
+    @Override
+    public List<TicketDTO> listarTicketsConFiltros(TicketRequestDTO requestDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // Validar si el usuario tiene el rol adecuado
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            logger.error("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        }
+        logger.info("Iniciando proceso para listar tickets con filtros: {}", requestDTO);
+
+        try {
+            validarFechas(requestDTO);
+
+            String prioridad = (requestDTO.getPrioridad() != null) ? validarPrioridad(requestDTO.getPrioridad()) : null;
+            String estado = (requestDTO.getEstado() != null) ? validarEstado(requestDTO.getEstado()) : null;
+
+            List<Ticket> tickets = obtenerTicketsPorFiltros(requestDTO, estado, prioridad);
+
+            return tickets.stream()
+                    .map(ticketConverter::entityToDto)
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error en validaciones: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error inesperado al listar tickets: {}", e.getMessage(), e);
+            throw new RuntimeException("Error inesperado al listar tickets.");
+        }
+    }
+
+// Métodos auxiliares
+
+    private void validarFechas(TicketRequestDTO requestDTO) {
+        String fechaRegex = "\\d{4}/\\d{2}/\\d{2}";
+
+        // Validar formato de fechaInicio
+        if (requestDTO.getFechaInicio() == null || !requestDTO.getFechaInicio().matches(fechaRegex)) {
+            throw new IllegalArgumentException("La fecha de inicio es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+        }
+
+        // Validar formato de fechaFin
+        if (requestDTO.getFechaFin() == null || !requestDTO.getFechaFin().matches(fechaRegex)) {
+            throw new IllegalArgumentException("La fecha de fin es obligatoria y debe estar en el formato 'yyyy/MM/dd'.");
+        }
+        // Validar que fechaInicio no sea posterior a fechaFin
+        if (requestDTO.getFechaInicio().compareTo(requestDTO.getFechaFin()) > 0) {
+            log.warn("La fecha de inicio no puede ser posterior a la fecha de fin.");
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha de fin.");
+        }
+    }
+
+    private String validarPrioridad(String prioridad) {
+        return TicketEstado.fromPrioridadString(prioridad).name();
+    }
+
+    private String validarEstado(String estado) {
+        return TicketEstado.fromTrabajoString(estado).name();
+    }
+
+    private List<Ticket> obtenerTicketsPorFiltros(TicketRequestDTO requestDTO, String estado, String prioridad) {
+        if (requestDTO.getUsername() != null && estado != null && prioridad != null) {
+            return ticketRepository.findByFechaCreacionAndUsernameAndEstadoAndPrioridad(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado, prioridad);
+        } else if (requestDTO.getUsername() != null && estado != null) {
+            return ticketRepository.findByFechaCreacionAndUsernameAndEstado(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado);
+        } else if (estado != null && prioridad != null) {
+            return ticketRepository.findByFechaCreacionAndEstadoAndPrioridad(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado, prioridad);
+        } else if (requestDTO.getUsername() != null) {
+            return ticketRepository.findByFechaCreacionAndUsername(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername());
+        } else if (estado != null) {
+            return ticketRepository.findByFechaCreacionAndEstado(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado);
+        } else if (prioridad != null) {
+            return ticketRepository.findByFechaCreacionAndPrioridad(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), prioridad);
+        } else {
+            return ticketRepository.findByFechaCreacionBetween(
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin());
+        }
+    }
+
 
     private String construirCorreoTrabajoFinalizado(String username, Ticket ticket, double cotizacion) {
         return "<html>" +

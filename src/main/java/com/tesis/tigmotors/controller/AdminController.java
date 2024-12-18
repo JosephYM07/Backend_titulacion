@@ -253,4 +253,10 @@ public class AdminController {
         TicketDTO ticketActualizado = ticketServiceImpl.actualizarEstadoTicket(ticketId, nuevoEstado);
         return ResponseEntity.ok(ticketActualizado);
     }
+
+    @PostMapping("/filtrar-tickets")
+    public ResponseEntity<List<TicketDTO>> listarTicketsConFiltros(@RequestBody TicketRequestDTO requestDTO) {
+        List<TicketDTO> tickets = ticketServiceImpl.listarTicketsConFiltros(requestDTO);
+        return ResponseEntity.ok(tickets);
+    }
 }
