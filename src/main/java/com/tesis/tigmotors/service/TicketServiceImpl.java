@@ -29,6 +29,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +48,10 @@ public class TicketServiceImpl implements TicketService {
     private final FacturaRepository facturaRepository;
     private final SolicitudRepository solicitudRepository;
     private final UserRepository userRepository;
+
     private final RoleValidator roleValidator;
+    private final Map<TicketEstado, Set<TicketEstado>> transicionesValidas = inicializarTransicionesValidas();
+
 
 
     private final EmailService emailService;
@@ -281,61 +291,61 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public TicketDTO actualizarEstadoTicket(String ticketId, TicketEstado nuevoEstado) {
+    public TicketDTO actualizarEstadoTicket(String ticketId, String nuevoEstadoStr) {
         try {
             // Buscar el ticket por ID
             Ticket ticket = ticketRepository.findById(ticketId)
                     .orElseThrow(() -> new TicketNotFoundException("Ticket no encontrado con ID: " + ticketId));
 
-            // Validar que el nuevo estado sea válido
-            if (nuevoEstado == null ||
-                    (!nuevoEstado.equals(TicketEstado.TRABAJO_EN_PROGRESO) &&
-                            !nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO))) {
-                throw new IllegalStateException("El nuevo estado no es válido. Debe ser TRABAJO_EN_PROGRESO o TRABAJO_TERMINADO.");
+            // Obtener el estado actual del ticket
+            TicketEstado estadoActual = TicketEstado.valueOf(ticket.getEstado());
+
+            // Convertir el nuevo estado utilizando TicketEstado
+            TicketEstado nuevoEstado;
+            if (nuevoEstadoStr.startsWith("TRABAJO_")) {
+                nuevoEstado = TicketEstado.fromTrabajoString(nuevoEstadoStr);
+            } else if (nuevoEstadoStr.equalsIgnoreCase("PENDIENTE_PAGO") || nuevoEstadoStr.equalsIgnoreCase("VALOR_PAGADO")) {
+                nuevoEstado = TicketEstado.fromPagoString(nuevoEstadoStr);
+            } else {
+                nuevoEstado = TicketEstado.fromPrioridadString(nuevoEstadoStr);
             }
 
-            // Validaciones de transición de estados
-            if (nuevoEstado.equals(TicketEstado.TRABAJO_EN_PROGRESO) &&
-                    !ticket.getEstado().equals(TicketEstado.TRABAJO_PENDIENTE.name())) {
-                throw new IllegalStateException("El ticket debe estar en estado TRABAJO_PENDIENTE para avanzar a TRABAJO_EN_PROGRESO.");
-            }
-
-            if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO) &&
-                    !ticket.getEstado().equals(TicketEstado.TRABAJO_EN_PROGRESO.name())) {
-                throw new IllegalStateException("El ticket debe estar en estado TRABAJO_EN_PROGRESO para avanzar a TRABAJO_TERMINADO.");
+            // Validar si la transición de estado es válida
+            if (!esTransicionValida(estadoActual, nuevoEstado)) {
+                throw new IllegalStateException(String.format(
+                        "Transición no válida: No se puede pasar de %s a %s.",
+                        estadoActual, nuevoEstado));
             }
 
             // Actualizar el estado del ticket
             ticket.setEstado(nuevoEstado.name());
             Ticket ticketActualizado = ticketRepository.save(ticket);
 
-            /// Si el estado es TRABAJO_TERMINADO
+            // Si el estado es TRABAJO_TERMINADO, generar factura y enviar correo
             if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO)) {
-                // Generar y guardar factura usando el servicio
                 double cotizacion = obtenerCotizacion(ticket.getSolicitudId());
                 Factura factura = facturaService.generarFacturaDesdeTicket(ticketId, cotizacion);
                 logger.info("Factura generada con ID {} para el ticket {}", factura.getFacturaId(), ticketId);
 
-                // Enviar correo al usuario
                 String username = ticket.getUsername();
-
-                // Obtener el correo del usuario desde MySQL
                 String email = userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado con username: " + username))
                         .getEmail();
 
-                // Crear y enviar la notificación por correo
                 String asunto = "Tu trabajo ha sido completado";
                 String contenido = construirCorreoTrabajoFinalizado(username, ticket, cotizacion);
                 emailService.sendEmail(email, asunto, contenido);
-
             }
 
             // Retornar DTO del ticket actualizado
             return ticketConverter.entityToDto(ticketActualizado);
+
         } catch (TicketNotFoundException e) {
             logger.error("Error: Ticket no encontrado. ID: {}", ticketId, e);
             throw e;
+        } catch (IllegalArgumentException e) {
+            logger.error("Error: El estado '{}' proporcionado no es válido.", nuevoEstadoStr);
+            throw new IllegalArgumentException("El estado '" + nuevoEstadoStr + "' no es válido.");
         } catch (IllegalStateException e) {
             logger.error("Error: Transición de estado inválida. ID: {}", ticketId, e);
             throw e;
@@ -344,6 +354,7 @@ public class TicketServiceImpl implements TicketService {
             throw new RuntimeException("Error interno al actualizar el estado del ticket");
         }
     }
+
 
     /**
      * Obtiene la cotización de una solicitud por su ID.
@@ -381,5 +392,29 @@ public class TicketServiceImpl implements TicketService {
                 "</html>";
     }
 
+    /**
+     * Inicializa las transiciones válidas entre estados de tickets.
+     *
+     * @return Mapa con las transiciones válidas.
+     */
+    private Map<TicketEstado, Set<TicketEstado>> inicializarTransicionesValidas() {
+        Map<TicketEstado, Set<TicketEstado>> transiciones = new EnumMap<>(TicketEstado.class);
+        transiciones.put(TicketEstado.TRABAJO_PENDIENTE, EnumSet.of(TicketEstado.TRABAJO_EN_PROGRESO));
+        transiciones.put(TicketEstado.TRABAJO_EN_PROGRESO, EnumSet.of(TicketEstado.TRABAJO_TERMINADO));
+        transiciones.put(TicketEstado.TRABAJO_TERMINADO, EnumSet.noneOf(TicketEstado.class)); // No hay transiciones desde TERMINADO
+        return transiciones;
+    }
+
+    /**
+     * Valida si una transición entre dos estados es válida.
+     *
+     * @param estadoActual El estado actual del ticket.
+     * @param nuevoEstado  El estado al que se quiere transicionar.
+     * @return true si la transición es válida, false en caso contrario.
+     */
+    private boolean esTransicionValida(TicketEstado estadoActual, TicketEstado nuevoEstado) {
+        return transicionesValidas.getOrDefault(estadoActual, EnumSet.noneOf(TicketEstado.class)).contains(nuevoEstado);
+    }
 
 }
+
