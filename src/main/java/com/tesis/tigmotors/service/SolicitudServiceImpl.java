@@ -603,11 +603,6 @@ public class SolicitudServiceImpl implements SolicitudService {
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
                     });
 
-            // Validar permisos del usuario y estado de la solicitud
-            if (!solicitud.getUsername().equals(username)) {
-                logger.warn("Acceso denegado: el usuario '{}' no es el propietario de la solicitud ID '{}'", username, solicitudId);
-                throw new AccessDeniedException("No tiene permisos para modificar esta solicitud.");
-            }
             if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
                 logger.warn("La solicitud con ID '{}' no está en estado 'Pendiente'", solicitudId);
                 throw new IllegalStateException("La solicitud no está en estado 'Pendiente' y no puede ser modificada.");
