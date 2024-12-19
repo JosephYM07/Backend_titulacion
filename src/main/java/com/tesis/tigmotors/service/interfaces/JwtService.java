@@ -1,6 +1,7 @@
 package com.tesis.tigmotors.service.interfaces;
 
 import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.function.Function;
 
 public interface JwtService {
@@ -12,12 +13,6 @@ public interface JwtService {
      */
     String generateAccessToken(UserDetails user);
 
-    /**
-     * Genera un token de actualización para un usuario.
-     * @param user Usuario del cual se genera el token.
-     * @return Token de actualización.
-     */
-    String generateRefreshToken(UserDetails user);
 
     /**
      * Obtiene el nombre de usuario a partir del token JWT.
