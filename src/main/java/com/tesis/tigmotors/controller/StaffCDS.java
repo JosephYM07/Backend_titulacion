@@ -112,6 +112,24 @@ public class StaffCDS {
     }
 
     /**
+     * Endpoint exclusivo para el centro de servicios: Listar todos los tickets registrados.
+     *
+     * @return Respuesta HTTP con la lista de tickets registrados.
+     *
+     * Proceso:
+     * - Llama al servicio de tickets para obtener todos los tickets registrados.
+     * - Regresa un listado de tickets en la respuesta.
+     *
+     * Manejo de errores:
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado al recuperar los tickets.
+     */
+    @GetMapping("/historial-tickets")
+    public ResponseEntity<List<TicketDTO>> listarTodosLosTickets() {
+        List<TicketDTO> tickets = ticketServiceImpl.listarTodosLosTickets();
+        return ResponseEntity.ok(tickets);
+    }
+
+    /**
      * Endpoint para listar tickets por su estado.
      *
      * @param estado El estado de los tickets a listar.
