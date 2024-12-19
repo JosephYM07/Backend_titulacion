@@ -215,7 +215,8 @@ public class StaffCDS {
      * Manejo de errores:
      * - Lanza una excepción si ocurre un problema durante la generación o descarga del PDF.
      */
-    @GetMapping(value = "/descargar-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+
+    @PostMapping(value = "/descargar-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public void descargarPdf(HttpServletResponse response, @RequestBody FacturaRequestDTO filtros) {
         try {
             facturaPdfService.generarPdf(response, filtros);
