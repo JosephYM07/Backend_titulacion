@@ -22,7 +22,7 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 15;
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 30;
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
 
     public String generateAccessToken(UserDetails user) {

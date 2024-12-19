@@ -2,6 +2,7 @@ package com.tesis.tigmotors.Config;
 
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.security.CustomAccessDeniedHandler;
+import com.tesis.tigmotors.security.CustomNotFoundHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final CustomNotFoundHandler customNotFoundHandler;
 
     /**
      * Configura la cadena de filtros de seguridad para la aplicación.
@@ -49,6 +51,9 @@ public class SecurityConfig {
                         .requestMatchers("/api-user/**", "/crear-solicitud").hasAuthority("USER")
                         .requestMatchers("/api/staff-cds/**").hasAuthority("PERSONAL_CENTRO_DE_SERVICIOS")
                         .anyRequest().authenticated())
+                .sessionManagement(session -> session
+                        .maximumSessions(1)
+                        .expiredUrl("/api/v1/login-global"))
                 // Configuración de sesiones sin estado
                 .sessionManagement(sessionManager -> sessionManager
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -58,7 +63,8 @@ public class SecurityConfig {
 
                 // Manejador de accesos denegados personalizado
                 .exceptionHandling(exception -> exception
-                        .accessDeniedHandler(accessDeniedHandler))
+                        .accessDeniedHandler(accessDeniedHandler)
+                        .authenticationEntryPoint(customNotFoundHandler))
 
                 // Construir la configuración
                 .build();

@@ -62,16 +62,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } else if (currentAuth != null && !currentAuth.getName().equals(usernameFromToken)) {
                     // Si el usuario autenticado actual no coincide con el token, devuelve error
                     logger.warn("Usuario autenticado actual ({}) no coincide con el usuario del token ({}).", currentAuth.getName(), usernameFromToken);
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token no autorizado para el usuario actual.\"}");
+                    /*response.setStatus(HttpServletResponse.SC_FORBIDDEN);*/
+                    /*response.setContentType("application/json");
+                    response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token no autorizado para el usuario actual.\"}");*/
+                    /*response.setStatus(HttpServletResponse.SC_FORBIDDEN);*/
+                    redirigirLogin(response, HttpServletResponse.SC_FORBIDDEN, "Token no autorizado para el usuario actual.");
                     return;
                 }
+            } catch (io.jsonwebtoken.ExpiredJwtException e) {
+                // Manejo específico para token expirado
+                logger.warn("Token expirado detectado: {}", e.getMessage());
+                redirigirLogin(response, HttpServletResponse.SC_UNAUTHORIZED, "Token expirado. Por favor, inicie sesión nuevamente.");
+                return;
             } catch (Exception e) {
                 logger.error("Error procesando el token JWT: ", e);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token Invalido o Caducado\"}");
+                /*response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);*/
+                /*response.setContentType("application/json");
+                response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token Invalido o Caducado\"}");*/
+                /*response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);*/
+                redirigirLogin(response, HttpServletResponse.SC_UNAUTHORIZED, "Token expirado. Por favor, inicie sesión nuevamente.");
                 return;
             }
         }
@@ -86,5 +95,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return authHeader.substring(7);
         }
         return null;
+    }
+
+    /**
+     * Método reutilizable para manejar redirecciones al login global.
+     *
+     * @param response      Respuesta HTTP.
+     * @param status        Código de estado HTTP.
+     * @param mensaje       Mensaje adicional para los logs.
+     */
+    private void redirigirLogin(HttpServletResponse response, int status, String mensaje) throws IOException {
+        logger.warn("Redirigiendo al login global: {}", mensaje);
+        response.setStatus(status);
+        response.sendRedirect("/api/v1/login-global");
     }
 }
