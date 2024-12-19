@@ -296,6 +296,9 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
             }
 
+            solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
+            solicitudRepository.save(solicitud);
+
             // Crear el ticket utilizando la interfaz del servicio
             TicketDTO ticketDTO = new TicketDTO();
             ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
