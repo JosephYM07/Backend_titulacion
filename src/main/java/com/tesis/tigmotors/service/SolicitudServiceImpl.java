@@ -224,7 +224,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             Double cotizacion = Optional.ofNullable(requestBody.get("cotizacion"))
                     .map(Object::toString)
                     .map(Double::valueOf)
-                    .orElseThrow(() -> new IllegalArgumentException("El valor de 'cotizacion' es inválido o no está presente."));
+                    .filter(valor -> valor > 0)
+                    .orElseThrow(() -> new IllegalArgumentException("El valor de 'cotizacion' debe ser un número positivo, mayor que cero y no puede estar en blanco el campo"));
             String descripcionTrabajo = Optional.ofNullable(requestBody.get("descripcionTrabajo"))
                     .map(Object::toString)
                     .filter(descripcion -> !descripcion.isBlank())

@@ -30,7 +30,6 @@ public class SolicitudDTO {
 
     @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
     @Digits(integer = 10, fraction = 2, message = "El precio debe tener un máximo de 10 dígitos enteros y 2 decimales")
-    @NotBlank(message = "El precio no puede estar vacío")
     private Double cotizacion;
 
     private String cotizacionAceptada;
