@@ -170,9 +170,16 @@ public class SolicitudServiceImpl implements SolicitudService {
     public SolicitudResponseDTO aceptarSolicitud(String solicitudId) {
         logger.info("Iniciando el proceso para aceptar la solicitud con ID '{}'", solicitudId);
 
+        // Validar el formato del ID
+        if (!solicitudId.toUpperCase().startsWith("SOLICITUD-")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", solicitudId);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'SOLICITUD-' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedSolicitudId = solicitudId.toUpperCase();
         try {
-            // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+            // Buscar la solicitud con el ID normalizado
+            Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> {
                         logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);

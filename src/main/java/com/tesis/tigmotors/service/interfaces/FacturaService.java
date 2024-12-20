@@ -39,4 +39,13 @@ public interface FacturaService {
      */
     List<FacturaDetalleResponseDTO> listarTodasLasFacturas();
 
+    /**
+     * Actualiza el estado de pago de una factura.
+     *
+     * @param facturaId ID de la factura a actualizar.
+     * @return La factura actualizada.
+     */
+    FacturaDetalleResponseDTO actualizarEstadoPago(String facturaId);
+
+
 }

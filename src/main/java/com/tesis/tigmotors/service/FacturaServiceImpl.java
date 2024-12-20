@@ -135,7 +135,6 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
-
     // Validar fechas con manejo de errores
     private void validarFechas(FacturaRequestDTO requestDTO) {
         String fechaRegex = "\\d{4}/\\d{2}/\\d{2}";
@@ -205,6 +204,61 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
+    @Override
+    public FacturaDetalleResponseDTO actualizarEstadoPago(String facturaId) {
+        log.info("Iniciando proceso para actualizar el estado de pago de la factura con ID '{}'.", facturaId);
+
+        try {
+            // Validar que el ID de la factura no sea nulo o vacío
+            if (facturaId == null || facturaId.trim().isEmpty()) {
+                log.error("El ID de la factura no puede ser nulo o vacío.");
+                throw new IllegalArgumentException("El ID de la factura no puede ser nulo o vacío.");
+            }
+
+            // Validar que el formato del ID sea correcto
+            if (!facturaId.toUpperCase().startsWith("FACTURA-")) {
+                log.error("El ID de la factura '{}' no tiene el formato correcto. Debe comenzar con 'FACTURA-'.", facturaId);
+                throw new IllegalArgumentException("El ID de la factura no es válido. Debe comenzar con 'FACTURA-' seguido de un número.");
+            }
+
+            // Convertir el ID a mayúsculas para garantizar consistencia
+            String normalizedFacturaId = facturaId.toUpperCase();
+
+            // Buscar la factura por ID normalizado
+            Factura factura = facturaRepository.findById(normalizedFacturaId)
+                    .orElseThrow(() -> {
+                        log.error("Factura no encontrada con ID '{}'.", normalizedFacturaId);
+                        return new ResourceNotFoundException("Factura no encontrada con ID: " + normalizedFacturaId);
+                    });
+
+            // Validar el estado actual del pago
+            if (EstadoPago.VALOR_PAGADO.name().equals(factura.getPago())) {
+                log.warn("El estado de la factura ya está en 'VALOR_PAGADO'. ID: {}", facturaId);
+                throw new IllegalStateException("El estado de la factura ya está en 'VALOR_PAGADO'.");
+            }
+
+            if (!EstadoPago.PENDIENTE_PAGO.name().equals(factura.getPago())) {
+                log.warn("El estado de la factura no es 'PENDIENTE_PAGO', no se puede actualizar. ID: {}", facturaId);
+                throw new IllegalStateException("El estado de la factura no es 'PENDIENTE_PAGO', no se puede actualizar.");
+            }
+
+            // Actualizar el estado de pago
+            factura.setPago(EstadoPago.VALOR_PAGADO.name());
+            Factura facturaActualizada = facturaRepository.save(factura);
+
+            log.info("Estado de pago actualizado a 'VALOR_PAGADO' para la factura con ID '{}'.", facturaId);
+
+            // Convertir a DTO y retornar
+            return facturaConverter.entityToDto(facturaActualizada);
+
+        } catch (ResourceNotFoundException | IllegalArgumentException | IllegalStateException e) {
+            log.error("Error controlado al actualizar el estado de pago: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Error inesperado al actualizar el estado de pago para la factura con ID '{}': {}", facturaId, e.getMessage(), e);
+            throw new RuntimeException("Error interno al actualizar el estado de pago.", e);
+        }
+    }
 
 
 }

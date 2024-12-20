@@ -52,7 +52,7 @@ public class UserController {
      */
     @GetMapping("/informacion-usuario")
     public ResponseEntity<UserBasicInfoResponseDTO> getUserProfile(Authentication authentication) {
-        String username = authentication.getName(); // Obtener el username desde el token JWT
+        String username = authentication.getName();
         UserBasicInfoResponseDTO userProfile = userServiceUpdate.getUserProfile(username);
         return ResponseEntity.ok(userProfile);
     }

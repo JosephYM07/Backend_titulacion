@@ -225,4 +225,22 @@ public class StaffCDS {
         }
     }
 
+    /**
+     * Endpoint exclusivo para el centro de servicios: Actualizar el estado de pago de una factura.
+     *
+     * @param facturaId ID de la factura a actualizar.
+     * @return Respuesta HTTP con la factura actualizada.
+     *
+     * Proceso:
+     * - Llama al servicio de facturas para actualizar el estado de pago de la factura.
+     * - Regresa la factura actualizada en la respuesta.
+     *
+     * Manejo de errores:
+     * - 500 INTERNAL SERVER ERROR: Si ocurre un error inesperado al actualizar el estado de pago.
+     */
+    @PutMapping("/{facturaId}/actualizar-pago")
+    public ResponseEntity<FacturaDetalleResponseDTO> actualizarEstadoPago(@PathVariable String facturaId) {
+        FacturaDetalleResponseDTO facturaActualizada = facturaService.actualizarEstadoPago(facturaId);
+        return ResponseEntity.ok(facturaActualizada);
+    }
 }
