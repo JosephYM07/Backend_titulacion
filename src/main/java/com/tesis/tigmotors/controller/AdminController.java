@@ -5,10 +5,7 @@ import com.tesis.tigmotors.dto.Request.*;
 import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.service.*;
-import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
-import com.tesis.tigmotors.service.interfaces.AuthService;
-import com.tesis.tigmotors.service.interfaces.BusquedaUsuarioService;
-import com.tesis.tigmotors.service.interfaces.SolicitudService;
+import com.tesis.tigmotors.service.interfaces.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +28,11 @@ import java.util.Map;
 public class AdminController {
     private static final Logger logger = LoggerFactory.getLogger(SolicitudServiceImpl.class);
 
-    private final AdminVerificationUserServiceImpl userService;
-    private final AdminProfileServiceImpl adminProfileServiceImpl;
-    private final TicketServiceImpl ticketServiceImpl;
-    private final CrudUserImpl crudUserService;
+    private final AdminVerificationUserService userService;
+    private final AdminProfileService adminProfileServiceImpl;
+    private final TicketService ticketServiceImpl;
+    private final UserServiceUpdate crudUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
-    private final AdminVerificationUserService adminVerificationUserService;
     private final AuthService authService;
     private final SolicitudService solicitudService;
 
@@ -53,7 +49,7 @@ public class AdminController {
      */
     @GetMapping("/lista-usuarios")
     public ResponseEntity<?> obtenerUsuariosAprobados(Authentication authentication) {
-        List<PendingUserDTO> usuariosAprobados = adminVerificationUserService.obtenerUsuariosAprobados(authentication);
+        List<PendingUserDTO> usuariosAprobados = userService.obtenerUsuariosAprobados(authentication);
         return ResponseEntity.ok(usuariosAprobados);
     }
 
@@ -83,7 +79,7 @@ public class AdminController {
      */
     @GetMapping("/lista-nombres-usuarios")
     public ResponseEntity<List<String>> obtenerUsernamesAprobados(Authentication authentication) {
-        List<String> usernames = adminVerificationUserService.obtenerUsernamesAprobados(authentication);
+        List<String> usernames = userService.obtenerUsernamesAprobados(authentication);
         return ResponseEntity.ok(usernames);
     }
 

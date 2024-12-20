@@ -5,11 +5,7 @@ public enum SolicitudEstado {
     ACEPTADO, // Cuando el administrador acepta la solicitud
     COTIZACION_ACEPTADA, // Cuando el usuario acepta la cotización
     SOLICITUD_RECHAZADA, // Cuando el administrador rechaza la solicitud
-    RECHAZO_COTIZACION_USUARIO,// Cuando el usuario rechaza la cotización
-    ALTA, //Prioridad de solicitud
-    MEDIA,//Prioridad de solicitud
-    BAJA,
-    PAGO_PENDIENTE; //Prioridad de solicitud
+    RECHAZO_COTIZACION_USUARIO; //Prioridad de solicitud
 
     /**
      * Normaliza y valida la prioridad.
