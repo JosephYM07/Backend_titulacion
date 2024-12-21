@@ -60,25 +60,19 @@ public class SolicitudServiceImpl implements SolicitudService {
         try {
             // Convertir el DTO a entidad
             Solicitud solicitud = solicitudConverter.dtoToEntity(solicitudDTO);
-            // Validar la prioridad
-            if (solicitud.getPrioridad() == null) {
-                throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTA, MEDIA o BAJA.");
-            }
-            try {
-                solicitud.setPrioridad(SolicitudEstado.valueOf(solicitud.getPrioridad().toUpperCase()).name());
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIA o BAJA.");
-            }
-            logger.info("Prioridad validada y transformada: {}", solicitud.getPrioridad());
+
+            // Validar y normalizar la prioridad reutilizando el método
+            String normalizedPrioridad = normalizarYValidarPrioridad(solicitud.getPrioridad());
+            solicitud.setPrioridad(normalizedPrioridad);
+
             // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
 
-            // Asignar datos al modelo
+            // Asignar datos adicionales al modelo
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
-            // Asignar fecha y hora actuales utilizando el convertidor
-            solicitudConverter.asignarFechaYHoraActual(solicitud);
 
+            // Asignar fecha y hora actuales utilizando el convertidor
             solicitudConverter.asignarFechaYHoraActual(solicitud);
 
             // Guardar la solicitud en la base de datos
@@ -98,28 +92,35 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
     }
 
+
     @Override
     @Transactional
     public SolicitudResponseDTO registrarSolicitudPorAdmin(SolicitudAdminRequestDTO solicitudAdminRequestDTO) {
         try {
+            // Validar y normalizar el username
+            if (solicitudAdminRequestDTO.getUsername() == null || solicitudAdminRequestDTO.getUsername().trim().isEmpty()) {
+                logger.error("El username proporcionado está vacío.");
+                throw new IllegalArgumentException("El username proporcionado no puede estar vacío.");
+            }
+            String normalizedUsername = solicitudAdminRequestDTO.getUsername().trim();
+
             // Validar si el usuario especificado existe
-            User user = userRepository.findByUsername(solicitudAdminRequestDTO.getUsername().trim())
+            User user = userRepository.findByUsername(normalizedUsername)
                     .orElseThrow(() -> {
-                        logger.error("Usuario no encontrado: '{}'", solicitudAdminRequestDTO.getUsername());
+                        logger.error("Usuario no encontrado: '{}'", normalizedUsername);
                         return new IllegalArgumentException("Usuario no encontrado: El usuario especificado no existe.");
                     });
+
+            logger.info("Usuario encontrado: '{}'", user.getUsername());
 
             // Convertir el DTO a entidad
             Solicitud solicitud = solicitudConverter.adminRequestToEntity(solicitudAdminRequestDTO);
 
-            // Validar y asignar prioridad
-            try {
-                SolicitudEstado prioridad = SolicitudEstado.fromString(solicitud.getPrioridad());
-                solicitud.setPrioridad(prioridad.name());
-            } catch (IllegalArgumentException e) {
-                logger.warn("Prioridad inválida proporcionada: {}", solicitud.getPrioridad());
-                throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIO o BAJA.");
-            }
+            // Normalizar y validar la prioridad
+            logger.info("Normalizando y validando la prioridad: '{}'", solicitud.getPrioridad());
+            String normalizedPrioridad = normalizarYValidarPrioridad(solicitud.getPrioridad());
+            solicitud.setPrioridad(normalizedPrioridad);
+            logger.info("Prioridad validada: '{}'", normalizedPrioridad);
 
             // Generar ID único para la solicitud
             solicitud.setIdSolicitud("SOLICITUD-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.SOLICITUD_SEQUENCE));
@@ -225,6 +226,13 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Override
     @Transactional
     public SolicitudDTO anadirCotizacion(String solicitudId, Map<String, Object> requestBody, String username) {
+        // Validar el formato del ID
+        if (!solicitudId.toUpperCase().startsWith("SOLICITUD-")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", solicitudId);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'SOLICITUD-' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedSolicitudId = solicitudId.toUpperCase();
         try {
             logger.info("Usuario {} inició el proceso para añadir cotización. ID Solicitud: {}", username, solicitudId);
             // Validar y extraer parámetros del requestBody
@@ -238,7 +246,7 @@ public class SolicitudServiceImpl implements SolicitudService {
                     .filter(descripcion -> !descripcion.isBlank())
                     .orElseThrow(() -> new IllegalArgumentException("La 'descripcionTrabajo' es obligatoria."));
             // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+            Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada"));
             // Validar estado y cotización existente
             if (!solicitud.getEstado().equals(SolicitudEstado.ACEPTADO.name())) {
@@ -273,10 +281,16 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Transactional
     public SolicitudResponseDTO aceptarCotizacionGenerarTicket(String solicitudId, String username) {
         logger.info("Usuario '{}' intentando aceptar cotización para solicitud ID '{}'", username, solicitudId);
-
+        // Validar el formato del ID
+        if (!solicitudId.toUpperCase().startsWith("SOLICITUD-")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", solicitudId);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'SOLICITUD-' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedSolicitudId = solicitudId.toUpperCase();
         try {
             // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+            Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
 
             // Validar que el usuario tiene permisos para aceptar la cotización
@@ -347,10 +361,16 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Transactional
     public SolicitudDTO rechazarCotizacion(String solicitudId, String username) {
         logger.info("Usuario '{}' intentando rechazar la cotización para la solicitud ID '{}'", username, solicitudId);
-
+        // Validar el formato del ID
+        if (!solicitudId.toUpperCase().startsWith("SOLICITUD-")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", solicitudId);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'SOLICITUD-' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedSolicitudId = solicitudId.toUpperCase();
         try {
             // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+            Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> {
                         logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
@@ -431,10 +451,16 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorEstado(String estado) {
         logger.info("Iniciando la consulta de solicitudes con estado '{}'", estado);
-
+        // Validar el formato del ID
+        if (!estado.toUpperCase().startsWith("PENDIENTE") && !estado.toUpperCase().startsWith("ACEPTADO") && !estado.toUpperCase().startsWith("SOLICITUD_RECHAZADA")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", estado);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'Pendiente, ACEPTADO o SOLICITUD_RECHAZADA' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedEstadoSolicitud = estado.toUpperCase();
         try {
             // Buscar solicitudes por estado
-            List<Solicitud> solicitudes = solicitudRepository.findByEstado(estado);
+            List<Solicitud> solicitudes = solicitudRepository.findByEstado(normalizedEstadoSolicitud);
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes con el estado '{}'", estado);
             } else {
@@ -462,10 +488,19 @@ public class SolicitudServiceImpl implements SolicitudService {
     @Transactional(readOnly = true)
     public List<SolicitudDTO> obtenerSolicitudesPorUsuarioYEstado(String username, String estado) {
         logger.info("Iniciando la consulta de solicitudes para el usuario '{}' con estado '{}'", username, estado);
+// Convertir el estado a mayúsculas
+        String normalizedEstado = estado.toUpperCase();
 
+        // Validar que el estado sea uno de los valores permitidos
+        if (!normalizedEstado.equals("PENDIENTE") &&
+                !normalizedEstado.equals("ACEPTADO") &&
+                !normalizedEstado.equals("SOLICITUD_RECHAZADA")) {
+            logger.error("El estado ingresado '{}' no es válido. Debe ser 'PENDIENTE', 'ACEPTADO' o 'SOLICITUD_RECHAZADA'.", estado);
+            throw new IllegalArgumentException("Estado inválido. Use 'PENDIENTE', 'ACEPTADO' o 'SOLICITUD_RECHAZADA'.");
+        }
         try {
             // Buscar solicitudes por usuario y estado
-            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndEstado(username, estado);
+            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndEstado(username, normalizedEstado);
 
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes para el usuario '{}' con estado '{}'", username, estado);
@@ -652,6 +687,7 @@ public class SolicitudServiceImpl implements SolicitudService {
      * @throws AccessDeniedException Si el usuario no tiene permisos para eliminar la solicitud.
      * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
      */
+
     @Override
     @Transactional
     public EliminarSolicitudResponse eliminarSolicitudUsuario(String solicitudId, String username) {
@@ -746,9 +782,16 @@ public class SolicitudServiceImpl implements SolicitudService {
      * @throws RuntimeException           Para errores inesperados.
      */
     public SolicitudDTO rechazarSolicitud(String solicitudId) {
+        // Validar el formato del ID
+        if (!solicitudId.toUpperCase().startsWith("SOLICITUD-")) {
+            logger.error("El ID ingresado '{}' no tiene el formato correcto. Debe comenzar con 'SOLICITUD-'.", solicitudId);
+            throw new IllegalArgumentException("El ID proporcionado no es válido. Debe comenzar con 'SOLICITUD-' seguido de un número.");
+        }
+        // Convertir el ID a mayúsculas
+        String normalizedSolicitudId = solicitudId.toUpperCase();
         try {
             // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
+            Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
             // Validar que la solicitud esté en estado PENDIENTE
             if (SolicitudEstado.valueOf(solicitud.getEstado()) != SolicitudEstado.PENDIENTE) {
@@ -777,5 +820,16 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error interno al rechazar la solicitud");
         }
     }
+    public static String normalizarYValidarPrioridad(String prioridad) {
+        if (prioridad == null || prioridad.trim().isEmpty()) {
+            throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTA, MEDIA o BAJA.");
+        }
+        String normalizedPrioridad = prioridad.trim().toUpperCase();
+        if (!normalizedPrioridad.equals("ALTA") && !normalizedPrioridad.equals("MEDIA") && !normalizedPrioridad.equals("BAJA")) {
+            throw new IllegalArgumentException("La prioridad proporcionada no es válida. Use ALTA, MEDIA o BAJA.");
+        }
+        return normalizedPrioridad;
+    }
+
 
 }
