@@ -196,14 +196,9 @@ public class UserController {
      */
     @GetMapping("/estado-solicitud/{estado}")
     public ResponseEntity<?> obtenerSolicitudesPorEstado(@PathVariable String estado, Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorUsuarioYEstado(username, estado);
-            return ResponseEntity.ok(solicitudes);
-        } catch (Exception e) {
-            logger.error("Error al obtener las solicitudes por estado: ", e);
-            return ResponseEntity.internalServerError().body("Error al obtener las solicitudes por estado");
-        }
+        String username = authentication.getName();
+        List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorUsuarioYEstado(username, estado);
+        return ResponseEntity.ok(solicitudes);
     }
 
     /**
