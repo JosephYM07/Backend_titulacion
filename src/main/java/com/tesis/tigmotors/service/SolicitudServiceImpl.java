@@ -134,17 +134,8 @@ public class SolicitudServiceImpl implements SolicitudService {
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
             logger.info("Solicitud creada exitosamente con ID '{}'", solicitudGuardada.getIdSolicitud());
 
-            // Crear un ticket asociado a la solicitud
-            TicketDTO ticketDTO = new TicketDTO();
-            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-            ticketDTO.setSolicitudId(solicitudGuardada.getIdSolicitud());
-            ticketDTO.setPrioridad(solicitud.getPrioridad());
-            ticketDTO.setUsername(user.getUsername());
-            ticketDTO.setDescripcionInicial(solicitudGuardada.getDescripcionInicial());
-            ticketDTO.setDescripcionTrabajo(solicitudGuardada.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
-            ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
-            logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudGuardada.getIdSolicitud());
+            //Crear un ticket asociado a la solicitud
+            generarYCrearTicket(solicitudGuardada, user);
 
             // Convertir la solicitud guardada a DTO de respuesta
             return solicitudConverter.entityToResponseDto(solicitudGuardada);
@@ -316,23 +307,14 @@ public class SolicitudServiceImpl implements SolicitudService {
                 logger.error("Estado inválido: la solicitud con ID '{}' no está en estado 'ACEPTADO'", solicitudId);
                 throw new InvalidSolicitudStateException("La solicitud debe estar en estado 'ACEPTADO' para aceptar la cotización.");
             }
-
+            // Actualizar el estado de la cotización
             solicitud.setCotizacionAceptada(SolicitudEstado.COTIZACION_ACEPTADA.name());
             solicitudRepository.save(solicitud);
 
-            // Crear el ticket utilizando la interfaz del servicio
-            TicketDTO ticketDTO = new TicketDTO();
-            ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
-            ticketDTO.setSolicitudId(solicitud.getIdSolicitud());
-            ticketDTO.setPrioridad(solicitud.getPrioridad());
-            ticketDTO.setUsername(solicitud.getUsername());
-            ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
-            ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
-            ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
-
-            // Crear el ticket pero no retornarlo
-            ticketService.crearTicketAutomatico(ticketDTO, solicitud.getUsername());
-            logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitudId);
+            // Crear el ticket asociado reutilizando el método
+            User user = new User();
+            user.setUsername(username);
+            generarYCrearTicket(solicitud, user);
 
             // Retornar la solicitud actualizada como DTO de respuesta
             return solicitudConverter.entityToResponseDto(solicitud);
@@ -831,5 +813,21 @@ public class SolicitudServiceImpl implements SolicitudService {
         return normalizedPrioridad;
     }
 
+    private void generarYCrearTicket(Solicitud solicitud, User user) {
+        TicketDTO ticketDTO = new TicketDTO();
+        ticketDTO.setId("TICKET-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.TICKET_SEQUENCE));
+        ticketDTO.setSolicitudId(solicitud.getIdSolicitud());
+        ticketDTO.setPrioridad(solicitud.getPrioridad());
+        ticketDTO.setUsername(user.getUsername());
+        ticketDTO.setDescripcionInicial(solicitud.getDescripcionInicial());
+        ticketDTO.setDescripcionTrabajo(solicitud.getDescripcionTrabajo());
+        ticketDTO.setEstado(TicketEstado.TRABAJO_PENDIENTE.name());
+
+        // Llamar al servicio de tickets para crear el ticket automáticamente
+        ticketService.crearTicketAutomatico(ticketDTO, user.getUsername());
+
+        // Loguear la creación del ticket
+        logger.info("Ticket creado exitosamente para la solicitud ID '{}'", solicitud.getIdSolicitud());
+    }
 
 }
