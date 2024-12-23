@@ -306,7 +306,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                 "<h2 style='color: #333;'>¡Tu cuenta ha sido aprobada!</h2>" +
                 "<p>Hola " + username + ",</p>" +
                 "<p>Nos complace informarte que tu cuenta ha sido aprobada exitosamente. Ahora puedes acceder a nuestra plataforma y disfrutar de todos los servicios que TigMotors tiene para ofrecerte.</p>" +
-                "<p>Por favor, <a href='\" + urlLogin + \"' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
+                "<a href='" + urlLogin + "' style='color: #4CAF50;'>haz clic aquí</a>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
                 "<br>" +
