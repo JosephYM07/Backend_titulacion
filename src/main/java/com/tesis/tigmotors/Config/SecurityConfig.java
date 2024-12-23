@@ -4,6 +4,7 @@ import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.security.CustomAccessDeniedHandler;
 import com.tesis.tigmotors.security.CustomNotFoundHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,6 +26,12 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomNotFoundHandler customNotFoundHandler;
+
+    @Value("${url.backend}")
+    private String urlBackend;
+
+    @Value("${url.frontend}")
+    private String urlFrontend;
 
     /**
      * Configura la cadena de filtros de seguridad para la aplicación.
@@ -88,7 +95,7 @@ public class SecurityConfig {
 /*
         config.setAllowedOrigins(Arrays.asList("http://localhost:5173/"));
 */
-        config.setAllowedOrigins(Arrays.asList("*"));
+        config.setAllowedOrigins(Arrays.asList(urlBackend, urlFrontend));
         // Permitir los métodos HTTP necesarios
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // Permitir los encabezados necesarios

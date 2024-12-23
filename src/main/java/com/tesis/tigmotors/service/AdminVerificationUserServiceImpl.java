@@ -11,9 +11,11 @@ import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.RefreshTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
+import com.tesis.tigmotors.service.interfaces.EmailService;
 import com.tesis.tigmotors.utils.RoleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -33,11 +35,14 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final UserRepository userRepository;
 
-    private final EmailServiceImpl emailServiceImpl;
+    private final EmailService emailServiceImpl;
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     private final RoleValidator roleValidator;
+
+    @Value("${url.frontend.login}")
+    private String urlLogin;
 
     /**
      * Obtiene el estado de los usuarios (pendientes y aprobados).
@@ -85,7 +90,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     @Transactional
     public List<String> obtenerUsernamesAprobados(Authentication authentication) {
 
-        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN,Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
             throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
         }
 
@@ -301,7 +306,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                 "<h2 style='color: #333;'>¡Tu cuenta ha sido aprobada!</h2>" +
                 "<p>Hola " + username + ",</p>" +
                 "<p>Nos complace informarte que tu cuenta ha sido aprobada exitosamente. Ahora puedes acceder a nuestra plataforma y disfrutar de todos los servicios que TigMotors tiene para ofrecerte.</p>" +
-                "<p>Por favor, <a href='https://yourcompany.com/login' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
+                "<p>Por favor, <a href='\" + urlLogin + \"' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
                 "<br>" +

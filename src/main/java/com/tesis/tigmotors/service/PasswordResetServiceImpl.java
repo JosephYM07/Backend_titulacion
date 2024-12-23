@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+
+    @Value("${url.frontend.cambiar.contrasenia}")
+    private String urlCambiarContrasenia;
 
 
     @Transactional
@@ -225,9 +229,13 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 "</div>" +
                 "<h2 style='color: #333;'>Recuperación de contraseña</h2>" +
                 "<p>Estimado usuario,</p>" +
-                "<p>Hemos recibido una solicitud para restablecer su contraseña. Para completar el proceso, utilice el siguiente código de recuperación:</p>" +
+                "<p>Hemos recibido una solicitud para restablecer su contraseña. Utilice el siguiente código de recuperación:</p>" +
                 "<p style='font-size: 18px; font-weight: bold; color: #4CAF50; text-align: center;'>" + token + "</p>" +
-                "<p>Este código es válido durante 15 minutos. Si no solicitó este cambio, ignore este mensaje o comuníquese con nuestro equipo de soporte.</p>" +
+                "<p>Para completar el proceso, también puede hacer clic en el botón a continuación para ser redirigido a la página de restablecimiento:</p>" +
+                "<div style='text-align: center; margin: 20px 0;'>" +
+                "<a href='" + urlCambiarContrasenia + "' style='background-color: #4CAF50; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-size: 16px;'>Restablecer contraseña</a>" +
+                "</div>" +
+                "<p>Este enlace es válido durante 15 minutos. Si no solicitó este cambio, ignore este mensaje o comuníquese con nuestro equipo de soporte.</p>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
                 "<br>" +
                 "<p>Atentamente,</p>" +
@@ -240,4 +248,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 "</body>" +
                 "</html>";
     }
+
+
 }
