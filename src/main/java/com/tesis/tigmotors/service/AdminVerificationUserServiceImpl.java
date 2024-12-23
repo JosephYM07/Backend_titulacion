@@ -11,8 +11,11 @@ import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.RefreshTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
+import com.tesis.tigmotors.service.interfaces.EmailService;
+import com.tesis.tigmotors.utils.RoleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -32,11 +35,14 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final UserRepository userRepository;
 
-    private final EmailServiceImpl emailServiceImpl;
+    private final EmailService emailServiceImpl;
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RoleValidator roleValidator;
+
+    @Value("${url.frontend.login}")
+    private String urlLogin;
 
     /**
      * Obtiene el estado de los usuarios (pendientes y aprobados).
@@ -79,15 +85,15 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
      * @param authentication el objeto de autenticación del usuario.
      * @return Lista de usernames de usuarios aprobados.
      */
+
     @Override
     @Transactional
     public List<String> obtenerUsernamesAprobados(Authentication authentication) {
-        boolean esAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
 
-        if (!esAdmin) {
-            throw new SecurityException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
         }
+
         try {
             List<User> usuariosAprobados = userRepository.findByPermisoAndRole(true, Role.USER);
             if (usuariosAprobados.isEmpty()) {
@@ -118,11 +124,8 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     @Transactional
     public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
 
-        boolean esAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
-
-        if (!esAdmin) {
-            throw new AccessDeniedException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
+        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
         }
         try {
             // Obtener usuarios aprobados con rol USER
@@ -264,7 +267,6 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
             // Eliminar tokens asociados al usuario
             passwordResetTokenRepository.deleteByUserId(userId);
-            refreshTokenRepository.deleteByUserId(userId);
 
             // Eliminar al usuario
             userRepository.delete(user);
@@ -304,7 +306,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                 "<h2 style='color: #333;'>¡Tu cuenta ha sido aprobada!</h2>" +
                 "<p>Hola " + username + ",</p>" +
                 "<p>Nos complace informarte que tu cuenta ha sido aprobada exitosamente. Ahora puedes acceder a nuestra plataforma y disfrutar de todos los servicios que TigMotors tiene para ofrecerte.</p>" +
-                "<p>Por favor, <a href='https://yourcompany.com/login' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
+                "<p>Por favor, <a href='\" + urlLogin + \"' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
                 "<br>" +
