@@ -11,7 +11,6 @@ import com.tesis.tigmotors.repository.PasswordResetTokenRepository;
 import com.tesis.tigmotors.repository.RefreshTokenRepository;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.AdminVerificationUserService;
-import com.tesis.tigmotors.utils.RoleValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -37,7 +36,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
-    private final RoleValidator roleValidator;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     /**
      * Obtiene el estado de los usuarios (pendientes y aprobados).
@@ -80,15 +79,15 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
      * @param authentication el objeto de autenticación del usuario.
      * @return Lista de usernames de usuarios aprobados.
      */
-
     @Override
     @Transactional
     public List<String> obtenerUsernamesAprobados(Authentication authentication) {
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
 
-        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN,Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
-            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        if (!esAdmin) {
+            throw new SecurityException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
         }
-
         try {
             List<User> usuariosAprobados = userRepository.findByPermisoAndRole(true, Role.USER);
             if (usuariosAprobados.isEmpty()) {
@@ -119,8 +118,11 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
     @Transactional
     public List<PendingUserDTO> obtenerUsuariosAprobados(Authentication authentication) {
 
-        if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
-            throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+        boolean esAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals(Role.ADMIN.name()));
+
+        if (!esAdmin) {
+            throw new AccessDeniedException("Acceso denegado. Solo los administradores pueden realizar esta acción.");
         }
         try {
             // Obtener usuarios aprobados con rol USER
@@ -262,6 +264,7 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
             // Eliminar tokens asociados al usuario
             passwordResetTokenRepository.deleteByUserId(userId);
+            refreshTokenRepository.deleteByUserId(userId);
 
             // Eliminar al usuario
             userRepository.delete(user);
