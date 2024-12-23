@@ -13,6 +13,7 @@ import com.tesis.tigmotors.service.interfaces.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -36,6 +37,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailServiceImpl emailServiceImpl;
+
+    @Value("${url.frontend.login}")
+    private String urlFrontendLogin;
 
     @Override
     @Transactional
@@ -231,7 +235,7 @@ public class AuthServiceImpl implements AuthService {
                 "<p>Hola " + username + ",</p>" +
                 "<p>Nos complace informarte que un administrador de TigMotors ha creado tu cuenta exitosamente.</p>" +
                 "<p>Puedes acceder a nuestra plataforma utilizando tus credenciales y disfrutar de todos los servicios que TigMotors tiene para ofrecerte.</p>" +
-                "<p>Por favor, <a href='https://yourcompany.com/login' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
+                "<p>Por favor, <a href='" + urlFrontendLogin + "' style='color: #4CAF50;'>haz clic aquí</a> para iniciar sesión en tu cuenta.</p>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
                 "<br>" +
