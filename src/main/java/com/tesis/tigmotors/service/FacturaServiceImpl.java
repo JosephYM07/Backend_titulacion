@@ -12,11 +12,13 @@ import com.tesis.tigmotors.repository.FacturaRepository;
 import com.tesis.tigmotors.repository.TicketRepository;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,6 +34,59 @@ public class FacturaServiceImpl implements FacturaService {
     private final TicketRepository ticketRepository;
     private final FacturaConverter facturaConverter;
     private final SequenceGeneratorService sequenceGeneratorService;
+
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FacturaDetalleResponseDTO> filtrarFacturasPorEstadoPagoUsuario(String username, String estadoPago) {
+        log.info("Iniciando el filtrado de facturas para el usuario '{}' con estado de pago '{}'", username, estadoPago);
+
+        try {
+            // Buscar facturas asociadas al usuario y estado de pago
+            List<Factura> facturas = facturaRepository.findByUsernameAndPago(username, estadoPago, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
+            if (facturas.isEmpty()) {
+                log.warn("No se encontraron facturas para el usuario '{}' con estado de pago '{}'", username, estadoPago);
+            } else {
+                log.info("Se encontraron {} facturas para el usuario '{}' con estado de pago '{}'", facturas.size(), username, estadoPago);
+            }
+
+            // Convertir las facturas a DTO detallado y retornar
+            return facturas.stream()
+                    .map(facturaConverter::entityToDto)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error filtrando las facturas para el usuario '{}' con estado de pago '{}': {}", username, estadoPago, e.getMessage(), e);
+            throw new RuntimeException("Error filtrando las facturas del usuario por estado de pago.", e);
+        }
+    }
+
+
+    /**
+     * Obtiene el historial de facturas asociadas a un usuario específico (perfil USER).
+     *
+     * @param username Nombre del usuario cuyas facturas se desean obtener.
+     * @return Una lista de facturas en formato DTO detallado asociadas al usuario.
+     * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<FacturaDetalleResponseDTO> obtenerHistorialFacturasPorUsuario(String username) {
+        try {
+            List<Factura> facturas = facturaRepository.findByUsername(username, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
+            if (facturas.isEmpty()) {
+                log.warn("No se encontraron facturas para el usuario '{}'", username);
+            }
+            return facturas.stream()
+                    .map(facturaConverter::entityToDto)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error obteniendo el historial de facturas para el usuario '{}': {}", username, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo el historial de facturas del usuario", e);
+        }
+    }
+
 
 
     @Override

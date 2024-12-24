@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -61,6 +63,41 @@ public class TicketServiceImpl implements TicketService {
     private final TicketConverter ticketConverter;
     private final FacturaConverter facturaConverter;
 
+
+    /**
+     * Obtiene las estadísticas de tickets por estado.
+     *
+     * @return ResponseEntity con el conteo de tickets por estado.
+     */
+    @Override
+    @Transactional
+    public ResponseEntity<Object> getTicketsStatus() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            // Validar si el usuario tiene el rol adecuado
+            if (!roleValidator.tieneAlgunRol(authentication, Role.ADMIN, Role.PERSONAL_CENTRO_DE_SERVICIOS)) {
+                logger.error("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+                throw new SecurityException("Acceso denegado. Se requiere el rol ADMIN o PERSONAL_CENTRO_DE_SERVICIOS.");
+            }
+            // Contar los tickets por estado
+            long trabajoPendienteCount = ticketRepository.countByEstado("TRABAJO_PENDIENTE");
+            long trabajoEnProgresoCount = ticketRepository.countByEstado("TRABAJO_EN_PROGRESO");
+            long trabajoTerminadoCount = ticketRepository.countByEstado("TRABAJO_TERMINADO");
+
+            // Crear la respuesta
+            Map<String, Long> response = Map.of(
+                    "TRABAJO_PENDIENTE", trabajoPendienteCount,
+                    "TRABAJO_EN_PROGRESO", trabajoEnProgresoCount,
+                    "TRABAJO_TERMINADO", trabajoTerminadoCount
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception ex) {
+            log.error("Error inesperado al obtener el estado de los tickets: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al obtener el estado de los tickets.", ex); // Manejado globalmente
+        }
+    }
 
     /**
      * Crea un ticket automáticamente asociado a una solicitud.
@@ -151,7 +188,7 @@ public class TicketServiceImpl implements TicketService {
 
         try {
             // Usa findAll para obtener todos los tickets
-            List<Ticket> tickets = ticketRepository.findAll();
+            List<Ticket> tickets = ticketRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (tickets.isEmpty()) {
                 logger.warn("No se encontraron tickets en la base de datos");
@@ -184,7 +221,7 @@ public class TicketServiceImpl implements TicketService {
 
         try {
             // Buscar tickets asociados al usuario
-            List<Ticket> tickets = ticketRepository.findByUsername(username);
+            List<Ticket> tickets = ticketRepository.findByUsername(username, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (tickets.isEmpty()) {
                 logger.warn("No se encontraron tickets para el usuario '{}'", username);
             } else {
@@ -225,7 +262,7 @@ public class TicketServiceImpl implements TicketService {
             }
 
             // Buscar tickets por usuario y estado
-            List<Ticket> tickets = ticketRepository.findByUsernameAndEstado(username, estadoEnum.name());
+            List<Ticket> tickets = ticketRepository.findByUsernameAndEstado(username, estadoEnum.name(), Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (tickets.isEmpty()) {
                 logger.warn("No se encontraron tickets para el usuario '{}' con estado '{}'", username, estadoEnum);
@@ -267,7 +304,7 @@ public class TicketServiceImpl implements TicketService {
             TicketEstado prioridadEnum = TicketEstado.fromPrioridadString(prioridad);
 
             // Buscar tickets por usuario y prioridad
-            List<Ticket> tickets = ticketRepository.findByUsernameAndPrioridad(username, prioridadEnum.name());
+            List<Ticket> tickets = ticketRepository.findByUsernameAndPrioridad(username, prioridadEnum.name(), Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (tickets.isEmpty()) {
                 logger.warn("No se encontraron tickets para el usuario '{}' con prioridad '{}'", username, prioridadEnum);
@@ -433,27 +470,28 @@ public class TicketServiceImpl implements TicketService {
     }
 
     private List<Ticket> obtenerTicketsPorFiltros(TicketRequestDTO requestDTO, String estado, String prioridad) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "fechaCreacion");
         if (requestDTO.getUsername() != null && estado != null && prioridad != null) {
             return ticketRepository.findByFechaCreacionAndUsernameAndEstadoAndPrioridad(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado, prioridad);
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado, prioridad, sort);
         } else if (requestDTO.getUsername() != null && estado != null) {
             return ticketRepository.findByFechaCreacionAndUsernameAndEstado(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado);
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), estado, sort);
         } else if (estado != null && prioridad != null) {
             return ticketRepository.findByFechaCreacionAndEstadoAndPrioridad(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado, prioridad);
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado, prioridad, sort);
         } else if (requestDTO.getUsername() != null) {
             return ticketRepository.findByFechaCreacionAndUsername(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername());
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), requestDTO.getUsername(), sort);
         } else if (estado != null) {
             return ticketRepository.findByFechaCreacionAndEstado(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado);
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), estado, sort);
         } else if (prioridad != null) {
             return ticketRepository.findByFechaCreacionAndPrioridad(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), prioridad);
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), prioridad, sort);
         } else {
             return ticketRepository.findByFechaCreacionBetween(
-                    requestDTO.getFechaInicio(), requestDTO.getFechaFin());
+                    requestDTO.getFechaInicio(), requestDTO.getFechaFin(), sort);
         }
     }
 
@@ -467,7 +505,7 @@ public class TicketServiceImpl implements TicketService {
                 "<p>Hola " + username + ",</p>" +
                 "<p>Nos complace informarte que el trabajo asociado a tu solicitud <strong>" + ticket.getSolicitudId() + "</strong> ha sido finalizado.</p>" +
                 "<p>El costo total de la reparación es: <strong>$" + String.format("%.2f", cotizacion) + "</strong>.</p>" +
-                "<p>Por favor, acércate a nuestro taller para completar el proceso de pago y recoger tu vehículo.</p>" +
+                "<p>Por favor, acércate a nuestro taller para completar el proceso de pago.</p>" +
                 "<p>Si tienes alguna pregunta, no dudes en contactarnos.</p>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
@@ -485,7 +523,7 @@ public class TicketServiceImpl implements TicketService {
         Map<TicketEstado, Set<TicketEstado>> transiciones = new EnumMap<>(TicketEstado.class);
         transiciones.put(TicketEstado.TRABAJO_PENDIENTE, EnumSet.of(TicketEstado.TRABAJO_EN_PROGRESO));
         transiciones.put(TicketEstado.TRABAJO_EN_PROGRESO, EnumSet.of(TicketEstado.TRABAJO_TERMINADO));
-        transiciones.put(TicketEstado.TRABAJO_TERMINADO, EnumSet.noneOf(TicketEstado.class)); // No hay transiciones desde TERMINADO
+        transiciones.put(TicketEstado.TRABAJO_TERMINADO, EnumSet.noneOf(TicketEstado.class));
         return transiciones;
     }
 

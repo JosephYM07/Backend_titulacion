@@ -13,9 +13,11 @@ import com.tesis.tigmotors.models.Solicitud;
 import com.tesis.tigmotors.enums.SolicitudEstado;
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.models.User;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate; // Para realizar consultas dinámicas
 import org.springframework.data.mongodb.core.query.Criteria; // Para construir los filtros
 import org.springframework.data.mongodb.core.query.Query; // Para representar la consulta
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.tesis.tigmotors.repository.SolicitudRepository;
 import com.tesis.tigmotors.repository.UserRepository;
@@ -47,6 +49,32 @@ public class SolicitudServiceImpl implements SolicitudService {
     private final TicketService ticketService;
     private final UserRepository userRepository;
 
+    /**
+     * Obtiene las estadísticas de solicitudes por estado.
+     *
+     * @return ResponseEntity con el conteo de solicitudes por estado.
+     */
+    @Override
+    @Transactional
+    public ResponseEntity<Object> getSolicitudesStatus() {
+        try {
+            // Contar las solicitudes por estado
+            long pendientesCount = solicitudRepository.countByEstado("PENDIENTE");
+            long aceptadasCount = solicitudRepository.countByEstado("ACEPTADO");
+
+            // Crear la respuesta
+            Map<String, Long> response = Map.of(
+                    "PENDIENTE", pendientesCount,
+                    "ACEPTADO", aceptadasCount
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception ex) {
+            log.error("Error inesperado al obtener el estado de las solicitudes: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado al obtener el estado de las solicitudes.", ex); // Manejado globalmente
+        }
+    }
 
     /**
      * Crea una nueva solicitud en el sistema desde la cuenta usuario.
@@ -395,7 +423,7 @@ public class SolicitudServiceImpl implements SolicitudService {
     }
 
     /**
-     * Obtiene el historial de solicitudes asociadas a un usuario específico.
+     * Obtiene el historial de solicitudes asociadas a un usuario específico perfil USER.
      * @param username Nombre del usuario cuyas solicitudes se desean obtener.
      * @return Una lista de solicitudes en formato DTO asociadas al usuario.
      * @throws RuntimeException Si ocurre un error inesperado durante el proceso.
@@ -407,7 +435,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         try {
             // Buscar solicitudes asociadas al usuario
-            List<Solicitud> solicitudes = solicitudRepository.findByUsername(username);
+            List<Solicitud> solicitudes = solicitudRepository.findByUsername(username, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes para el usuario '{}'", username);
             } else {
@@ -442,7 +470,7 @@ public class SolicitudServiceImpl implements SolicitudService {
         String normalizedEstadoSolicitud = estado.toUpperCase();
         try {
             // Buscar solicitudes por estado
-            List<Solicitud> solicitudes = solicitudRepository.findByEstado(normalizedEstadoSolicitud);
+            List<Solicitud> solicitudes = solicitudRepository.findByEstado(normalizedEstadoSolicitud, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes con el estado '{}'", estado);
             } else {
@@ -482,7 +510,7 @@ public class SolicitudServiceImpl implements SolicitudService {
         }
         try {
             // Buscar solicitudes por usuario y estado
-            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndEstado(username, normalizedEstado);
+            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndEstado(username, normalizedEstado, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes para el usuario '{}' con estado '{}'", username, estado);
@@ -515,7 +543,7 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         try {
             // Buscar solicitudes por prioridad
-            List<Solicitud> solicitudes = solicitudRepository.findByPrioridad(prioridad);
+            List<Solicitud> solicitudes = solicitudRepository.findByPrioridad(prioridad, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes con la prioridad '{}'", prioridad);
             } else {
@@ -552,7 +580,7 @@ public class SolicitudServiceImpl implements SolicitudService {
                 throw new IllegalArgumentException("Prioridad inválida. Las prioridades válidas son: ALTO, MEDIO, BAJA");
             }
             // Buscar solicitudes por usuario y prioridad
-            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndPrioridad(username, prioridad);
+            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndPrioridad(username, prioridad, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes para el usuario '{}' con prioridad '{}'", username, prioridad);
             } else {
@@ -586,7 +614,7 @@ public class SolicitudServiceImpl implements SolicitudService {
         try {
 
             // Obtener todas las solicitudes
-            List<Solicitud> solicitudes = solicitudRepository.findAll();
+            List<Solicitud> solicitudes = solicitudRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (solicitudes.isEmpty()) {
                 logger.warn("No se encontraron solicitudes en el sistema");
                 // Lanza una excepción específica cuando no hay solicitudes
@@ -802,6 +830,7 @@ public class SolicitudServiceImpl implements SolicitudService {
             throw new RuntimeException("Error interno al rechazar la solicitud");
         }
     }
+
     public static String normalizarYValidarPrioridad(String prioridad) {
         if (prioridad == null || prioridad.trim().isEmpty()) {
             throw new IllegalArgumentException("La prioridad es obligatoria y debe ser ALTA, MEDIA o BAJA.");

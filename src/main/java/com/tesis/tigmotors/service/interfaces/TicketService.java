@@ -3,10 +3,18 @@ package com.tesis.tigmotors.service.interfaces;
 import com.tesis.tigmotors.dto.Request.TicketRequestDTO;
 import com.tesis.tigmotors.dto.Response.TicketDTO;
 import com.tesis.tigmotors.enums.TicketEstado;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
 public interface TicketService {
+
+    /**
+     * Obtiene el estado de los tickets.
+     *
+     * @return ResponseEntity con el estado de los tickets.
+     */
+    ResponseEntity<Object> getTicketsStatus();
 
     /**
      * Crea un ticket automáticamente asociado a una solicitud.

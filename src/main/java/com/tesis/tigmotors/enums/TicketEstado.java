@@ -10,7 +10,6 @@ public enum TicketEstado {
     TRABAJO_PENDIENTE,
     TRABAJO_EN_PROGRESO,
     TRABAJO_TERMINADO,
-    RECHAZADO,
     ALTA,
     MEDIA,
     BAJA;

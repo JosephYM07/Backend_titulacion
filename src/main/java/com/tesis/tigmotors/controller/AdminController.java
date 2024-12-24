@@ -234,6 +234,11 @@ public class AdminController {
 
     /* Solicitudes */
 
+    @GetMapping("/estadisticas-solicitudes")
+    public ResponseEntity<Object> getSolicitudesStatus() {
+        return solicitudService.getSolicitudesStatus();
+    }
+
     /**
      * Crea una nueva solicitud en nombre de un usuario a través del administrador.
      *
@@ -400,6 +405,22 @@ public class AdminController {
     }
 
     /*Tickets*/
+
+
+    /**
+     * Endpoint para obtener estadísticas sobre el estado de los tickets.
+     *
+     * @return ResponseEntity con las estadísticas de los tickets.
+     *
+     * HTTP:
+     * - 200 OK: Estadísticas obtenidas correctamente.
+     * - 403 FORBIDDEN: Sin permisos para realizar esta acción.
+     * - 401 UNAUTHORIZED: Usuario no autenticado.
+     */
+    @GetMapping("/estadisticas-tickets")
+    public ResponseEntity<Object> getTicketsStatus() {
+        return ticketServiceImpl.getTicketsStatus();
+    }
 
     /**
      * Lista todos los tickets filtrados por un estado específico. Este endpoint es exclusivo para administradores.

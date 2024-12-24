@@ -110,6 +110,22 @@ public class StaffCDS {
         // Llama al servicio para procesar la búsqueda
         return busquedaUsuarioService.buscarUsuario(request);
     }
+    /*TICKETS*/
+
+    /**
+     * Endpoint para obtener estadísticas sobre el estado de los tickets.
+     *
+     * @return ResponseEntity con las estadísticas de los tickets.
+     *
+     * HTTP:
+     * - 200 OK: Estadísticas obtenidas correctamente.
+     * - 403 FORBIDDEN: Sin permisos para realizar esta acción.
+     * - 401 UNAUTHORIZED: Usuario no autenticado.
+     */
+    @GetMapping("/estadisticas-tickets")
+    public ResponseEntity<Object> getTicketsStatus() {
+        return ticketServiceImpl.getTicketsStatus();
+    }
 
     /**
      * Endpoint exclusivo para el centro de servicios: Listar todos los tickets registrados.
@@ -161,6 +177,7 @@ public class StaffCDS {
         List<TicketDTO> tickets = ticketServiceImpl.listarTicketsConFiltros(requestDTO);
         return ResponseEntity.ok(tickets);
     }
+    /*FACTURAS*/
 
     /**
      * Endpoint exclusivo para el centro de servicios: Listar todas las facturas registradas.

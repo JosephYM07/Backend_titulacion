@@ -2,6 +2,7 @@ package com.tesis.tigmotors.repository;
 
 import com.tesis.tigmotors.enums.TicketEstado;
 import com.tesis.tigmotors.models.Ticket;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -11,9 +12,12 @@ import java.util.List;
 
 @Repository
 public interface TicketRepository extends MongoRepository<Ticket, String> {
+
+    long countByEstado(String estado);
+
     List<Ticket> findByEstado(TicketEstado estado);
 
-    List<Ticket> findByUsername(String username);
+    List<Ticket> findByUsername(String username, Sort sort);
 
     /**
      * Busca los tickets asociados a un usuario específico y filtrados por prioridad.
@@ -22,7 +26,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @param prioridad La prioridad del ticket (ALTA, MEDIO, BAJA).
      * @return Una lista de tickets que cumplen con los criterios de búsqueda.
      */
-    List<Ticket> findByUsernameAndPrioridad(String username, String prioridad);
+    List<Ticket> findByUsernameAndPrioridad(String username, String prioridad, Sort sort);
 
     /**
      * Busca los tickets asociados a un usuario específico y filtrados por estado.
@@ -31,7 +35,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @param estado El estado del ticket.
      * @return Una lista de tickets que cumplen con los criterios de búsqueda.
      */
-    List<Ticket> findByUsernameAndEstado(String username, String estado);
+    List<Ticket> findByUsernameAndEstado(String username, String estado, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas.
@@ -41,7 +45,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets dentro del rango de fechas.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 } }")
-    List<Ticket> findByFechaCreacionBetween(String fechaInicio, String fechaFin);
+    List<Ticket> findByFechaCreacionBetween(String fechaInicio, String fechaFin, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas y usuario.
@@ -52,7 +56,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets que coincidan con los filtros.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'username': ?2 }")
-    List<Ticket> findByFechaCreacionAndUsername(String fechaInicio, String fechaFin, String username);
+    List<Ticket> findByFechaCreacionAndUsername(String fechaInicio, String fechaFin, String username, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas y estado.
@@ -63,7 +67,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets que coincidan con los filtros.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'estado': ?2 }")
-    List<Ticket> findByFechaCreacionAndEstado(String fechaInicio, String fechaFin, String estado);
+    List<Ticket> findByFechaCreacionAndEstado(String fechaInicio, String fechaFin, String estado, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas, estado y prioridad.
@@ -75,7 +79,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets que coincidan con los filtros.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'estado': ?2, 'prioridad': ?3 }")
-    List<Ticket> findByFechaCreacionAndEstadoAndPrioridad(String fechaInicio, String fechaFin, String estado, String prioridad);
+    List<Ticket> findByFechaCreacionAndEstadoAndPrioridad(String fechaInicio, String fechaFin, String estado, String prioridad, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas, usuario y estado.
@@ -87,7 +91,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets que coincidan con los filtros.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'username': ?2, 'estado': ?3 }")
-    List<Ticket> findByFechaCreacionAndUsernameAndEstado(String fechaInicio, String fechaFin, String username, String estado);
+    List<Ticket> findByFechaCreacionAndUsernameAndEstado(String fechaInicio, String fechaFin, String username, String estado, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas, usuario, estado y prioridad.
@@ -101,7 +105,7 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'username': ?2, 'estado': ?3, 'prioridad': ?4 }")
     List<Ticket> findByFechaCreacionAndUsernameAndEstadoAndPrioridad(
-            String fechaInicio, String fechaFin, String username, String estado, String prioridad);
+            String fechaInicio, String fechaFin, String username, String estado, String prioridad, Sort sort);
 
     /**
      * Filtrar tickets por rango de fechas y prioridad.
@@ -112,6 +116,6 @@ public interface TicketRepository extends MongoRepository<Ticket, String> {
      * @return Lista de tickets que coincidan con los filtros.
      */
     @Query("{ 'fechaCreacion': { $gte: ?0, $lte: ?1 }, 'prioridad': ?2 }")
-    List<Ticket> findByFechaCreacionAndPrioridad(String fechaInicio, String fechaFin, String prioridad);
+    List<Ticket> findByFechaCreacionAndPrioridad(String fechaInicio, String fechaFin, String prioridad, Sort sort);
 
 }
