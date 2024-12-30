@@ -100,8 +100,13 @@ public class SolicitudServiceImpl implements SolicitudService {
             solicitud.setUsername(username);
             solicitud.setEstado(SolicitudEstado.PENDIENTE.name());
 
+
             // Asignar fecha y hora actuales utilizando el convertidor
             solicitudConverter.asignarFechaYHoraActual(solicitud);
+            // Asignar valores por defecto a los campos faltantes
+            solicitud.setDescripcionTrabajo("Pendiente de asignación");
+            solicitud.setCotizacion(0.0);
+            solicitud.setCotizacionAceptada("PENDIENTE");
 
             // Guardar la solicitud en la base de datos
             Solicitud solicitudGuardada = solicitudRepository.save(solicitud);
@@ -272,9 +277,9 @@ public class SolicitudServiceImpl implements SolicitudService {
                 logger.error("La solicitud no está en estado 'Aceptado'. ID: {}", solicitudId);
                 throw new IllegalStateException("La solicitud no está en estado 'Aceptado'");
             }
-            if (solicitud.getCotizacion() != null) {
+            if (solicitud.getCotizacion() != null && solicitud.getCotizacion() > 0.0) {
                 logger.error("La solicitud ya tiene una cotización asignada. ID: {}", solicitudId);
-                throw new IllegalStateException("La solicitud ya tiene una cotización asignada");
+                throw new IllegalStateException("La solicitud ya tiene una cotización asignada y no puede ser modificada.");
             }
             // Actualizar los datos
             solicitud.setCotizacion(cotizacion);
@@ -385,6 +390,11 @@ public class SolicitudServiceImpl implements SolicitudService {
                         logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
                         return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
                     });
+            // Validar que el usuario tiene permisos para aceptar la cotización
+            if (!solicitud.getUsername().equals(username)) {
+                logger.error("Acceso denegado: usuario '{}' no coincide con el propietario de la solicitud '{}'", username, solicitud.getUsername());
+                throw new AccessDeniedException("No tiene permisos para rechazar esta cotización.");
+            }
             // Verificar si la cotización ya fue aceptada
             if (SolicitudEstado.COTIZACION_ACEPTADA.name().equals(solicitud.getCotizacionAceptada())) {
                 logger.warn("Intento de rechazar una cotización ya aceptada. ID Solicitud: '{}'", solicitudId);
@@ -573,32 +583,40 @@ public class SolicitudServiceImpl implements SolicitudService {
         logger.info("Iniciando la consulta de solicitudes para el usuario '{}' con prioridad '{}'", username, prioridad);
 
         try {
+            // Transformar prioridad ingresada a mayúsculas
+            String prioridadMayusculas = prioridad.toUpperCase();
+
+            // Validar que la prioridad ingresada sea válida
             try {
-                SolicitudEstado.valueOf(prioridad.toUpperCase());
+                SolicitudEstado.valueOf(prioridadMayusculas);
             } catch (IllegalArgumentException e) {
-                logger.warn("Prioridad inválida ingresada: '{}'. Las prioridades válidas son: ALTO, MEDIO, BAJA", prioridad);
-                throw new IllegalArgumentException("Prioridad inválida. Las prioridades válidas son: ALTO, MEDIO, BAJA");
+                logger.warn("Prioridad inválida ingresada: '{}'. Las prioridades válidas son: ALTA, MEDIA, BAJA", prioridad);
+                throw new IllegalArgumentException("Prioridad inválida. Las prioridades válidas son: ALTA, MEDIA, BAJA.");
             }
+
             // Buscar solicitudes por usuario y prioridad
-            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndPrioridad(username, prioridad, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
+            List<Solicitud> solicitudes = solicitudRepository.findByUsernameAndPrioridad(
+                    username, prioridadMayusculas, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
+
             if (solicitudes.isEmpty()) {
-                logger.warn("No se encontraron solicitudes para el usuario '{}' con prioridad '{}'", username, prioridad);
+                logger.warn("No se encontraron solicitudes para el usuario '{}' con prioridad '{}'", username, prioridadMayusculas);
             } else {
-                logger.info("Se encontraron {} solicitudes para el usuario '{}' con prioridad '{}'", solicitudes.size(), username, prioridad);
+                logger.info("Se encontraron {} solicitudes para el usuario '{}' con prioridad '{}'", solicitudes.size(), username, prioridadMayusculas);
             }
+
             // Convertir las solicitudes a DTO y retornar
             return solicitudes.stream()
                     .map(solicitudConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (IllegalArgumentException e) {
-            // Manejo específico para prioridad inválida
             logger.error("Error de validación: {}", e.getMessage(), e);
-            throw e;
+            throw e; // Esto será capturado por el GlobalExceptionHandler
         } catch (Exception e) {
             logger.error("Error obteniendo las solicitudes para el usuario '{}' con prioridad '{}': {}", username, prioridad, e.getMessage(), e);
-            throw new RuntimeException("Error obteniendo las solicitudes del usuario por prioridad", e);
+            throw new RuntimeException("Error inesperado al obtener las solicitudes del usuario por prioridad.", e);
         }
     }
+
 
 
     /**
@@ -650,41 +668,44 @@ public class SolicitudServiceImpl implements SolicitudService {
     public SolicitudDTO modificarSolicitud(String solicitudId, SolicitudDTO solicitudDTO, String username) {
         logger.info("Usuario '{}' intentando modificar la solicitud con ID '{}'", username, solicitudId);
 
-        try {
-            // Buscar la solicitud por ID
-            Solicitud solicitud = solicitudRepository.findById(solicitudId)
-                    .orElseThrow(() -> {
-                        logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
-                        return new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
-                    });
+        // Buscar la solicitud por ID
+        Solicitud solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> {
+                    logger.error("Solicitud no encontrada con ID '{}'", solicitudId);
+                    return new ResourceNotFoundException("Solicitud no encontrada con ID: " + solicitudId);
+                });
 
-            if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
-                logger.warn("La solicitud con ID '{}' no está en estado 'Pendiente'", solicitudId);
-                throw new IllegalStateException("La solicitud no está en estado 'Pendiente' y no puede ser modificada.");
-            }
-            // Actualizar campos solo si están presentes en el DTO
-            if (solicitudDTO.getDescripcionInicial() != null) {
-                solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
-                logger.info("Descripción inicial actualizada para la solicitud ID '{}'", solicitudId);
-            }
-            if (solicitudDTO.getPrioridad() != null) {
-                String prioridadMayusculas = solicitudDTO.getPrioridad().toUpperCase();
-                solicitud.setPrioridad(prioridadMayusculas);
-                logger.info("Prioridad actualizada para la solicitud ID '{}'", solicitudId);
-            }
+        // Validar que el usuario autenticado es el propietario de la solicitud
+        if (!solicitud.getUsername().equals(username)) {
+            logger.error("Acceso denegado: usuario '{}' no coincide con el propietario de la solicitud '{}'", username, solicitud.getUsername());
+            throw new AccessDeniedException("El usuario autenticado no tiene permisos para modificar esta solicitud.");
+        }
+
+        // Validar el estado de la solicitud
+        if (!solicitud.getEstado().equals(SolicitudEstado.PENDIENTE.name())) {
+            logger.warn("La solicitud con ID '{}' no está en estado 'Pendiente'", solicitudId);
+            throw new IllegalStateException("La solicitud con ID " + solicitudId + " no está en estado 'Pendiente' y no puede ser modificada.");
+        }
+
+        // Actualizar campos solo si están presentes en el DTO
+        if (solicitudDTO.getDescripcionInicial() != null) {
+            solicitud.setDescripcionInicial(solicitudDTO.getDescripcionInicial());
+            logger.info("Descripción inicial actualizada para la solicitud ID '{}'", solicitudId);
+        }
+        if (solicitudDTO.getPrioridad() != null) {
+            String prioridadMayusculas = solicitudDTO.getPrioridad().toUpperCase();
+            solicitud.setPrioridad(prioridadMayusculas);
+            logger.info("Prioridad actualizada para la solicitud ID '{}'", solicitudId);
+        }
+
+        try {
             // Guardar la solicitud modificada
             Solicitud solicitudModificada = solicitudRepository.save(solicitud);
             logger.info("Solicitud con ID '{}' modificada exitosamente por el usuario '{}'", solicitudId, username);
-            // Convertir la solicitud modificada a DTO y retornar
             return solicitudConverter.entityToDto(solicitudModificada);
-        } catch (SolicitudNotFoundException | AccessDeniedException | IllegalStateException e) {
-            // Manejo específico de excepciones conocidas
-            logger.error("Error procesando la modificación de la solicitud ID '{}': {}", solicitudId, e.getMessage(), e);
-            throw e;
         } catch (Exception e) {
-            // Manejo general de errores inesperados
             logger.error("Error inesperado al modificar la solicitud con ID '{}', Usuario: '{}'. Detalle: {}", solicitudId, username, e.getMessage(), e);
-            throw new RuntimeException("Error inesperado al modificar la solicitud", e);
+            throw new RuntimeException("Error inesperado al modificar la solicitud. Intente nuevamente.");
         }
     }
 
@@ -803,15 +824,21 @@ public class SolicitudServiceImpl implements SolicitudService {
             // Buscar la solicitud por ID
             Solicitud solicitud = solicitudRepository.findById(normalizedSolicitudId)
                     .orElseThrow(() -> new SolicitudNotFoundException("Solicitud no encontrada con ID: " + solicitudId));
-            // Validar que la solicitud esté en estado PENDIENTE
-            if (SolicitudEstado.valueOf(solicitud.getEstado()) != SolicitudEstado.PENDIENTE) {
-                logger.warn("Intento de rechazar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
-                throw new IllegalStateException("La solicitud no está en estado 'Pendiente, Aceptado o Rechazado'");
+            if (SolicitudEstado.valueOf(solicitud.getEstado()) == SolicitudEstado.SOLICITUD_RECHAZADA) {
+                logger.warn("Intento de rechazar una solicitud ya rechazada. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud ya fue rechazada.");
+
             }
             if (SolicitudEstado.valueOf(solicitud.getEstado()) == SolicitudEstado.ACEPTADO) {
                 logger.warn("Intento de rechazar una solicitud ya aceptada. ID: {}", solicitudId);
                 throw new IllegalStateException("La solicitud ya fue aceptada y no puede ser rechazada.");
             }
+            // Validar que la solicitud esté en estado PENDIENTE
+            if (SolicitudEstado.valueOf(solicitud.getEstado()) != SolicitudEstado.PENDIENTE) {
+                logger.warn("Intento de rechazar una solicitud que no está en estado PENDIENTE. ID: {}", solicitudId);
+                throw new IllegalStateException("La solicitud no está en estado 'Pendiente'");
+            }
+
             // Actualizar estado a RECHAZADO
             solicitud.setEstado(SolicitudEstado.SOLICITUD_RECHAZADA.name());
             Solicitud solicitudRechazada = solicitudRepository.save(solicitud);

@@ -5,12 +5,10 @@ import com.tesis.tigmotors.dto.Request.CambioContraseniaRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
+import com.tesis.tigmotors.service.AuthServiceImpl;
 import com.tesis.tigmotors.service.FacturaServiceImpl;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
-import com.tesis.tigmotors.service.interfaces.TicketService;
-import com.tesis.tigmotors.service.interfaces.PasswordResetService;
-import com.tesis.tigmotors.service.interfaces.SolicitudService;
-import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
+import com.tesis.tigmotors.service.interfaces.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -35,7 +34,24 @@ public class UserController {
     private final UserServiceUpdate userServiceUpdate;
     private final SolicitudService solicitudService;
     private final PasswordResetService passwordResetService;
-    private final FacturaServiceImpl facturaServiceImpl;
+    private final FacturaService facturaServiceImpl;
+    private final AuthService authServiceImpl;
+
+    /**
+     * Endpoint para cerrar sesión de un usuario autenticado.
+     *
+     * @param authHeader Token JWT incluido en el encabezado Authorization.
+     * @param authentication Información del usuario autenticado.
+     * @return Respuesta con un mensaje de confirmación.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestHeader("Authorization") String authHeader,
+            Authentication authentication) {
+        // Llamar al servicio de cierre de sesión
+        return authServiceImpl.logout(authHeader, authentication.getName());
+    }
+
 
     /**
      * Endpoint para obtener la información básica del perfil del usuario.
@@ -212,14 +228,9 @@ public class UserController {
      */
     @GetMapping("/prioridad-solicitud/{prioridad}")
     public ResponseEntity<?> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
-        try {
             String username = authentication.getName();
             List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorPrioridadYUsuario(prioridad, username);
             return ResponseEntity.ok(solicitudes);
-        } catch (Exception e) {
-            logger.error("Error al obtener las solicitudes por prioridad: ", e);
-            return ResponseEntity.internalServerError().body("Error al obtener las solicitudes por prioridad");
-        }
     }
 
     /**

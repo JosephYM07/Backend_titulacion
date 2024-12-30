@@ -21,6 +21,8 @@ public class JwtServiceImpl implements JwtService {
 
     @Value("${jwt.secret}")
     private String secretKey;
+    // Declaración de la lista de tokens invalidados
+    private final Map<String, Boolean> invalidatedTokens = new HashMap<>();
 
     private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 30;
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7;
@@ -60,10 +62,13 @@ public class JwtServiceImpl implements JwtService {
                 .getSubject();
     }
 
+    // Validar token (modificado para incluir tokens invalidados)
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             final String username = getUsernameFromToken(token);
-            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+            return (username.equals(userDetails.getUsername())
+                    && !isTokenExpired(token)
+                    && !isTokenInvalidated(token));
         } catch (Exception e) {
             System.err.println("Token validation error: " + e.getMessage());
             return false;
@@ -89,5 +94,14 @@ public class JwtServiceImpl implements JwtService {
     public <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = getAllClaims(token);
         return claimsResolver.apply(claims);
+    }
+    // Invalida un token específico
+    public void invalidateToken(String token) {
+        invalidatedTokens.put(token, true);
+    }
+
+    // Verifica si un token está invalidado
+    public boolean isTokenInvalidated(String token) {
+        return invalidatedTokens.getOrDefault(token, false);
     }
 }

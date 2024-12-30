@@ -1,14 +1,19 @@
 package com.tesis.tigmotors.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-@Document(collection = "solicitudes")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection = "solicitudes")
 public class Solicitud {
     @Id
     private String idSolicitud;

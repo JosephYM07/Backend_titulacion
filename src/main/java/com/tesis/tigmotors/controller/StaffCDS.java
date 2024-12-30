@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -29,7 +30,22 @@ public class StaffCDS {
     private final FacturaPdfService facturaPdfService;
     private final AdminVerificationUserService adminVerificationUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
+    private final AuthServiceImpl authServiceImpl;
 
+    /**
+     * Endpoint para cerrar sesión de un usuario autenticado.
+     *
+     * @param authHeader Token JWT incluido en el encabezado Authorization.
+     * @param authentication Información del usuario autenticado.
+     * @return Respuesta con un mensaje de confirmación.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestHeader("Authorization") String authHeader,
+            Authentication authentication) {
+        // Llamar al servicio de cierre de sesión
+        return authServiceImpl.logout(authHeader, authentication.getName());
+    }
 
     /**
      * Endpoint exclusivo para el centro de servicios: Obtener información del perfil del usuario autenticado.
@@ -45,7 +61,7 @@ public class StaffCDS {
     @GetMapping("/informacion-perfil")
     public ResponseEntity<StaffProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
-        log.info("Obteniendo perfil para el administrador: {}", username);
+        log.info("Obteniendo perfil para Staff: {}", username);
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
 

@@ -37,7 +37,6 @@ public class FacturaServiceImpl implements FacturaService {
 
 
 
-
     @Override
     @Transactional(readOnly = true)
     public List<FacturaDetalleResponseDTO> filtrarFacturasPorEstadoPagoUsuario(String username, String estadoPago) {
@@ -111,7 +110,7 @@ public class FacturaServiceImpl implements FacturaService {
         log.info("Iniciando proceso para listar todas las facturas...");
         try {
 
-            List<Factura> facturas = facturaRepository.findAll();
+            List<Factura> facturas = facturaRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (facturas.isEmpty()) {
                 log.warn("No se encontraron facturas registradas.");

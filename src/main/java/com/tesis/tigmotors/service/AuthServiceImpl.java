@@ -38,8 +38,14 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final EmailServiceImpl emailServiceImpl;
 
+    @Value("${admin.email}")
+    private String adminEmail;
+    @Value("${admin.phoneNumber}")
+    private String adminPhoneNumber;
+
     @Value("${url.frontend.login}")
     private String urlFrontendLogin;
+
 
     @Override
     @Transactional
@@ -70,7 +76,11 @@ public class AuthServiceImpl implements AuthService {
 
             // Generar el token JWT para el usuario autenticado
             String accessToken = jwtServiceImpl.generateAccessToken(user);
-
+            // Enviar notificación por correo electrónico
+            if (user.getRole().equals(Role.USER)) {
+                String emailContent = construirCorreoInicioSesion(user.getUsername());
+                emailServiceImpl.sendEmail(user.getEmail(), "Inicio de sesión en TigMotors", emailContent);
+            }
             // Respuesta exitosa
             return ResponseEntity.ok(AuthResponse.builder()
                     .status("success")
@@ -78,18 +88,24 @@ public class AuthServiceImpl implements AuthService {
                     .token(accessToken)
                     .build());
 
+        } catch (ResourceNotFoundException ex) {
+            // Log específico para el caso de usuario no encontrado
+            log.error("Error: Usuario no encontrado - {}", ex.getMessage(), ex);
+            throw ex; // Relanzar la excepción sin modificar el mensaje
         } catch (AuthenticationException ex) {
+            // Log específico para errores de autenticación
             log.error("Error de autenticación para el usuario: {}", request.getUsername(), ex);
             throw new InvalidRequestException("Nombre de usuario o contraseña no válidos.");
-        } catch (ResourceNotFoundException | InvalidRequestException | AccessDeniedException ex) {
-            log.error("Error en el proceso de inicio de sesión: {}", ex.getMessage(), ex);
-            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (AccessDeniedException ex) {
+            // Log específico para errores de acceso denegado
+            log.warn("Error de acceso denegado para el usuario: {}", request.getUsername(), ex);
+            throw ex; // Relanzar la excepción sin modificar el mensaje
         } catch (Exception ex) {
+            // Manejo genérico para otras excepciones
             log.error("Error inesperado durante el inicio de sesión: {}", ex.getMessage(), ex);
             throw new RuntimeException("Error inesperado durante el inicio de sesión.", ex);
         }
     }
-
 
     @Override
     @Transactional
@@ -127,6 +143,9 @@ public class AuthServiceImpl implements AuthService {
 
             userRepository.save(user);
             log.info("Usuario registrado con éxito: {}", user.getUsername());
+            // Enviar correo de confirmación
+            String emailContent = construirCorreoRegistro(request.getUsername(), request.getEmail());
+            emailServiceImpl.sendEmail(request.getEmail(), "Registro en TigMotors", emailContent);
 
             // Retornar solo el mensaje
             Map<String, String> response = new HashMap<>();
@@ -142,7 +161,6 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Error inesperado al registrar usuario.", ex);
         }
     }
-
 
     @Override
     @Transactional
@@ -222,6 +240,44 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    @Override
+    @Transactional
+    public ResponseEntity<Map<String, String>> logout(String authHeader, String username) {
+
+        try {
+            // Validar el encabezado Authorization
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new InvalidRequestException("Token no proporcionado o formato inválido.");
+            }
+
+            // Extraer el token del encabezado
+            String token = authHeader.substring(7); // Remover "Bearer "
+
+            // Verificar que el token pertenece al usuario actual
+            String tokenUsername = jwtServiceImpl.getUsernameFromToken(token);
+            if (!tokenUsername.equals(username)) {
+                log.error("El token no pertenece al usuario autenticado: {}", username);
+                throw new AccessDeniedException("No tienes permiso para cerrar sesión con este token.");
+            }
+
+            // Invalidar el token
+            jwtServiceImpl.invalidateToken(token);
+
+            // Respuesta de éxito
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Sesión cerrada correctamente para el usuario: " + username);
+
+            log.info("Sesión cerrada correctamente para el usuario: {}", username);
+            return ResponseEntity.ok(response);
+
+        } catch (InvalidRequestException | AccessDeniedException ex) {
+            log.error("Error durante el cierre de sesión: {}", ex.getMessage(), ex);
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Error inesperado durante el cierre de sesión: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Error inesperado durante el cierre de sesión.", ex);
+        }
+    }
 
     private String buildAccountCreatedByAdminEmailContent(String username) {
         return "<html>" +
@@ -249,5 +305,47 @@ public class AuthServiceImpl implements AuthService {
                 "</body>" +
                 "</html>";
     }
+
+    private String construirCorreoRegistro(String username, String email) {
+        return "<html>" +
+                "<meta charset='UTF-8'>" +
+                "<body style='font-family: Arial, sans-serif;'>" +
+                "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
+                "<h2 style='color: #333;'>Bienvenido a TigMotors, " + username + "</h2>" +
+                "<p>Hola " + username + ",</p>" +
+                "<p>Tu cuenta ha sido registrada con éxito, pero necesitas esperar a que un administrador apruebe tu cuenta antes de poder iniciar sesión.</p>" +
+                "<p>Si necesitas más información o si tu cuenta no es aprobada en un tiempo razonable, por favor contacta a nuestro equipo de soporte:</p>" +
+                "<ul>" +
+                "<li><strong>Correo:</strong> " + adminEmail + "</li>" +
+                "<li><strong>Teléfono:</strong> " + adminPhoneNumber + "</li>" +
+                "</ul>" +
+                "<p>Gracias por registrarte en TigMotors. Estamos aquí para ayudarte en todo lo que necesites.</p>" +
+                "<br>" +
+                "<p>Atentamente,</p>" +
+                "<p>El equipo de TigMotors</p>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
+
+    private String construirCorreoInicioSesion(String username) {
+        String fechaHora = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        return "<html>" +
+                "<meta charset='UTF-8'>" +
+                "<body style='font-family: Arial, sans-serif;'>" +
+                "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
+                "<h2 style='color: #333;'>Inicio de sesión detectado</h2>" +
+                "<p>Hola " + username + ",</p>" +
+                "<p>Se ha detectado un inicio de sesión en tu cuenta de TigMotors.</p>" +
+                "<p>Fecha y hora: " + fechaHora + "</p>" +
+                "<p>Si no reconoces esta actividad, por favor contacta de inmediato a nuestro equipo de soporte.</p>" +
+                "<br>" +
+                "<p>Atentamente,</p>" +
+                "<p>El equipo de TigMotors</p>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
+    }
+
 
 }
