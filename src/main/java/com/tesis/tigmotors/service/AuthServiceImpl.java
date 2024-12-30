@@ -76,11 +76,11 @@ public class AuthServiceImpl implements AuthService {
 
             // Generar el token JWT para el usuario autenticado
             String accessToken = jwtServiceImpl.generateAccessToken(user);
-            // Enviar notificación por correo electrónico
+/*            // Enviar notificación por correo electrónico
             if (user.getRole().equals(Role.USER)) {
                 String emailContent = construirCorreoInicioSesion(user.getUsername());
                 emailServiceImpl.sendEmail(user.getEmail(), "Inicio de sesión en TigMotors", emailContent);
-            }
+            }*/
             // Respuesta exitosa
             return ResponseEntity.ok(AuthResponse.builder()
                     .status("success")
