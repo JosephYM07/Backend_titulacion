@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("api/v1")
 public class AuthController {
+
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
@@ -58,6 +60,21 @@ public class AuthController {
         log.info("Solicitud de inicio de sesión recibida para el usuario: " + request.getUsername());
         return authService.login(request);
     }
+    /**
+     * Endpoint para cerrar sesión de un usuario autenticado.
+     *
+     * @param authHeader Token JWT incluido en el encabezado Authorization.
+     * @param authentication Información del usuario autenticado.
+     * @return Respuesta con un mensaje de confirmación.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestHeader("Authorization") String authHeader,
+            Authentication authentication) {
+        // Llamar al servicio de cierre de sesión
+        return authService.logout(authHeader, authentication.getName());
+    }
+
 
     /**
      * Endpoint público para registrar un nuevo usuario en el sistema.
