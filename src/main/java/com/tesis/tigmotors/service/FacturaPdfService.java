@@ -6,7 +6,6 @@ import com.tesis.tigmotors.dto.Response.FacturaResponseDTO;
 import com.tesis.tigmotors.service.interfaces.FacturaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.Model;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -14,7 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.OutputStream;
 import java.time.LocalDate;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,15 +26,25 @@ public class FacturaPdfService {
             // Obtener las facturas filtradas
             FacturaResponseDTO responseDTO = facturaService.listarFacturasConFiltros(filtros);
 
+            // Verificar si los totales deben incluirse
+            boolean incluyeTotales = filtros.getEstadoPago() != null;
+
             // Configurar el contexto de Thymeleaf
             Context context = new Context();
             context.setVariable("facturas", responseDTO.getFacturas());
-            context.setVariable("totalCotizacion", responseDTO.getTotal());
-            context.setVariable("numeroFacturas", responseDTO.getNumeroFacturas());
             context.setVariable("fechaActual", LocalDate.now());
 
+            // Si los totales aplican, agregar al contexto
+            if (incluyeTotales) {
+                context.setVariable("totalCotizacion", responseDTO.getTotal());
+                context.setVariable("numeroFacturas", responseDTO.getNumeroFacturas());
+            }
+
+            // Determinar el HTML a utilizar
+            String htmlTemplate = incluyeTotales ? "facturaTotal.html" : "facturaSinTotal.html";
+
             // Generar HTML desde la plantilla
-            String htmlContent = templateEngine.process("facturas", context);
+            String htmlContent = templateEngine.process(htmlTemplate, context);
 
             // Configurar la respuesta HTTP
             response.setContentType("application/pdf");

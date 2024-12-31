@@ -194,14 +194,8 @@ public class AdminController {
      * - 401 UNAUTHORIZED: Usuario no autenticado.
      * - 404 NOT FOUND: Usuario no encontrado.
      */
-    @PostMapping("/eliminar-usuarios")
-    public ResponseEntity<Object> deleteUser(@RequestBody Map<String, Integer> requestBody) {
-        Integer userId = requestBody.get("userId");
-
-        if (userId == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El campo 'userId' es obligatorio"));
-        }
-
+    @DeleteMapping("/eliminar-usuarios")
+    public ResponseEntity<Object> deleteUserByQuery(@RequestParam("param") Integer userId) {
         return userService.deleteUserById(userId);
     }
 

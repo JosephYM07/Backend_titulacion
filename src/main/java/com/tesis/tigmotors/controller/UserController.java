@@ -37,20 +37,7 @@ public class UserController {
     private final FacturaService facturaServiceImpl;
     private final AuthService authServiceImpl;
 
-    /**
-     * Endpoint para cerrar sesión de un usuario autenticado.
-     *
-     * @param authHeader Token JWT incluido en el encabezado Authorization.
-     * @param authentication Información del usuario autenticado.
-     * @return Respuesta con un mensaje de confirmación.
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(
-            @RequestHeader("Authorization") String authHeader,
-            Authentication authentication) {
-        // Llamar al servicio de cierre de sesión
-        return authServiceImpl.logout(authHeader, authentication.getName());
-    }
+
 
 
     /**
