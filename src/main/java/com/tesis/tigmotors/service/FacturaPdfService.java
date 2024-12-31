@@ -42,13 +42,22 @@ public class FacturaPdfService {
 
             // Determinar el HTML a utilizar
             String htmlTemplate = incluyeTotales ? "facturaTotal.html" : "facturaSinTotal.html";
-
-            // Generar HTML desde la plantilla
             String htmlContent = templateEngine.process(htmlTemplate, context);
+
+            // Configurar el nombre del archivo según los filtros
+            String nombreArchivo;
+            if (filtros.getUsername() != null && !filtros.getUsername().isEmpty()) {
+                // Si se aplica filtro con username
+                String fechaActual = LocalDate.now().toString();
+                nombreArchivo = String.format("factura_%s_%s.pdf", filtros.getUsername(), fechaActual);
+            } else {
+                // Nombre general para otros filtros
+                nombreArchivo = "facturas_generales.pdf";
+            }
 
             // Configurar la respuesta HTTP
             response.setContentType("application/pdf");
-            response.setHeader("Content-Disposition", "attachment; filename=facturas.pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=" + nombreArchivo);
 
             // Convertir HTML a PDF
             try (OutputStream os = response.getOutputStream()) {
