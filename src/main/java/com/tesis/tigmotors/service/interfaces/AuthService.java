@@ -30,4 +30,11 @@ public interface AuthService {
      */
     // Firma del método para registrar un usuario por parte del administrador
     ResponseEntity<Map<String, String>> registerByAdmin(RegisterRequest request, String adminUsername);
+    /**
+     * Cierra sesión de un usuario invalidando su token.
+     * @param token Token JWT que se desea invalidar.
+     * @param username Nombre del usuario autenticado.
+     * @return Respuesta con un mensaje de confirmación.
+     */
+    ResponseEntity<Map<String, String>> logout(String token, String username);
 }

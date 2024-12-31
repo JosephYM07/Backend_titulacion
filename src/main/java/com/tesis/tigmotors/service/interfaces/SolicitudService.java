@@ -4,11 +4,15 @@ import com.tesis.tigmotors.dto.Request.SolicitudAdminRequestDTO;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
 import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
 
 public interface SolicitudService {
+
+    ResponseEntity<Object> getSolicitudesStatus();
+
     /**
      * Crea una nueva solicitud asociada al usuario autenticado.
      *
@@ -47,7 +51,6 @@ public interface SolicitudService {
      * @return TicketDTO con los datos del ticket generado.
      */
     SolicitudResponseDTO aceptarCotizacionGenerarTicket(String solicitudId, String username);
-
 
 
     /**

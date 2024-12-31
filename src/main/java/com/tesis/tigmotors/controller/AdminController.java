@@ -36,6 +36,7 @@ public class AdminController {
     private final AuthService authService;
     private final SolicitudService solicitudService;
 
+
     /**
      * Obtiene una lista de usuarios aprobados.
      *
@@ -193,14 +194,8 @@ public class AdminController {
      * - 401 UNAUTHORIZED: Usuario no autenticado.
      * - 404 NOT FOUND: Usuario no encontrado.
      */
-    @PostMapping("/eliminar-usuarios")
-    public ResponseEntity<Object> deleteUser(@RequestBody Map<String, Integer> requestBody) {
-        Integer userId = requestBody.get("userId");
-
-        if (userId == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El campo 'userId' es obligatorio"));
-        }
-
+    @DeleteMapping("/eliminar-usuarios")
+    public ResponseEntity<Object> deleteUserByQuery(@RequestParam("param") Integer userId) {
         return userService.deleteUserById(userId);
     }
 
@@ -233,6 +228,11 @@ public class AdminController {
     }
 
     /* Solicitudes */
+
+    @GetMapping("/estadisticas-solicitudes")
+    public ResponseEntity<Object> getSolicitudesStatus() {
+        return solicitudService.getSolicitudesStatus();
+    }
 
     /**
      * Crea una nueva solicitud en nombre de un usuario a través del administrador.
@@ -400,6 +400,22 @@ public class AdminController {
     }
 
     /*Tickets*/
+
+
+    /**
+     * Endpoint para obtener estadísticas sobre el estado de los tickets.
+     *
+     * @return ResponseEntity con las estadísticas de los tickets.
+     *
+     * HTTP:
+     * - 200 OK: Estadísticas obtenidas correctamente.
+     * - 403 FORBIDDEN: Sin permisos para realizar esta acción.
+     * - 401 UNAUTHORIZED: Usuario no autenticado.
+     */
+    @GetMapping("/estadisticas-tickets")
+    public ResponseEntity<Object> getTicketsStatus() {
+        return ticketServiceImpl.getTicketsStatus();
+    }
 
     /**
      * Lista todos los tickets filtrados por un estado específico. Este endpoint es exclusivo para administradores.

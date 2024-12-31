@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -29,6 +30,7 @@ public class StaffCDS {
     private final FacturaPdfService facturaPdfService;
     private final AdminVerificationUserService adminVerificationUserService;
     private final BusquedaUsuarioService busquedaUsuarioService;
+    private final AuthServiceImpl authServiceImpl;
 
 
     /**
@@ -45,7 +47,7 @@ public class StaffCDS {
     @GetMapping("/informacion-perfil")
     public ResponseEntity<StaffProfileResponse> getProfile(Authentication authentication) {
         String username = authentication.getName();
-        log.info("Obteniendo perfil para el administrador: {}", username);
+        log.info("Obteniendo perfil para Staff: {}", username);
         return ResponseEntity.ok(adminProfileServiceImpl.getProfile(username));
     }
 
@@ -110,6 +112,22 @@ public class StaffCDS {
         // Llama al servicio para procesar la búsqueda
         return busquedaUsuarioService.buscarUsuario(request);
     }
+    /*TICKETS*/
+
+    /**
+     * Endpoint para obtener estadísticas sobre el estado de los tickets.
+     *
+     * @return ResponseEntity con las estadísticas de los tickets.
+     *
+     * HTTP:
+     * - 200 OK: Estadísticas obtenidas correctamente.
+     * - 403 FORBIDDEN: Sin permisos para realizar esta acción.
+     * - 401 UNAUTHORIZED: Usuario no autenticado.
+     */
+    @GetMapping("/estadisticas-tickets")
+    public ResponseEntity<Object> getTicketsStatus() {
+        return ticketServiceImpl.getTicketsStatus();
+    }
 
     /**
      * Endpoint exclusivo para el centro de servicios: Listar todos los tickets registrados.
@@ -161,6 +179,7 @@ public class StaffCDS {
         List<TicketDTO> tickets = ticketServiceImpl.listarTicketsConFiltros(requestDTO);
         return ResponseEntity.ok(tickets);
     }
+    /*FACTURAS*/
 
     /**
      * Endpoint exclusivo para el centro de servicios: Listar todas las facturas registradas.

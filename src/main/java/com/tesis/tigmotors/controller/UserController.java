@@ -3,16 +3,12 @@ package com.tesis.tigmotors.controller;
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.dto.Request.CambioContraseniaRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
-import com.tesis.tigmotors.dto.Response.TicketDTO;
+import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
-import com.tesis.tigmotors.dto.Response.EliminarSolicitudResponse;
-import com.tesis.tigmotors.dto.Response.SolicitudResponseDTO;
-import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
+import com.tesis.tigmotors.service.AuthServiceImpl;
+import com.tesis.tigmotors.service.FacturaServiceImpl;
 import com.tesis.tigmotors.service.SolicitudServiceImpl;
-import com.tesis.tigmotors.service.interfaces.TicketService;
-import com.tesis.tigmotors.service.interfaces.PasswordResetService;
-import com.tesis.tigmotors.service.interfaces.SolicitudService;
-import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
+import com.tesis.tigmotors.service.interfaces.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -37,6 +34,11 @@ public class UserController {
     private final UserServiceUpdate userServiceUpdate;
     private final SolicitudService solicitudService;
     private final PasswordResetService passwordResetService;
+    private final FacturaService facturaServiceImpl;
+    private final AuthService authServiceImpl;
+
+
+
 
     /**
      * Endpoint para obtener la información básica del perfil del usuario.
@@ -213,14 +215,9 @@ public class UserController {
      */
     @GetMapping("/prioridad-solicitud/{prioridad}")
     public ResponseEntity<?> obtenerSolicitudesPorPrioridad(@PathVariable String prioridad, Authentication authentication) {
-        try {
             String username = authentication.getName();
             List<SolicitudDTO> solicitudes = solicitudServiceImpl.obtenerSolicitudesPorPrioridadYUsuario(prioridad, username);
             return ResponseEntity.ok(solicitudes);
-        } catch (Exception e) {
-            logger.error("Error al obtener las solicitudes por prioridad: ", e);
-            return ResponseEntity.internalServerError().body("Error al obtener las solicitudes por prioridad");
-        }
     }
 
     /**
@@ -319,6 +316,35 @@ public class UserController {
         String username = authentication.getName();
         List<TicketDTO> tickets = ticketServiceImpl.obtenerTicketsPorUsuarioYEstado(username, estado);
         return ResponseEntity.ok(tickets);
+    }
+    /*Facturas*/
+
+    /**
+     * Endpoint para obtener el historial de facturas del usuario autenticado.
+     *
+     * @param authentication Información de autenticación del usuario.
+     * @return Lista de facturas asociadas al usuario autenticado.
+     */
+    @GetMapping("/historial-facturas")
+    public ResponseEntity<List<FacturaDetalleResponseDTO>> obtenerHistorialFacturas(Authentication authentication) {
+        String username = authentication.getName();
+        List<FacturaDetalleResponseDTO> facturas = facturaServiceImpl.obtenerHistorialFacturasPorUsuario(username);
+        return ResponseEntity.ok(facturas);
+    }
+
+
+    /**
+     * Endpoint para filtrar facturas del usuario autenticado por estado de pago.
+     *
+     * @param authentication Información de autenticación del usuario.
+     * @param estadoPago     Estado del pago a filtrar (PENDIENTE_PAGO o VALOR_PAGADO).
+     * @return Lista de facturas filtradas por estado de pago.
+     */
+    @GetMapping("/filtrar-por-estado")
+    public ResponseEntity<?> filtrarFacturasPorEstadoPago(Authentication authentication, @RequestParam String estadoPago) {
+        String username = authentication.getName();
+        List<FacturaDetalleResponseDTO> facturas = facturaServiceImpl.filtrarFacturasPorEstadoPagoUsuario(username, estadoPago);
+        return ResponseEntity.ok(facturas);
     }
 
 

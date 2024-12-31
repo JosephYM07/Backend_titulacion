@@ -8,6 +8,7 @@ import com.tesis.tigmotors.models.Factura;
 import java.util.List;
 
 public interface FacturaService {
+    List<FacturaDetalleResponseDTO> filtrarFacturasPorEstadoPagoUsuario(String username, String estadoPago);
 
     /**
      * Genera una factura a partir de un ticket y una cotización.
@@ -30,7 +31,9 @@ public interface FacturaService {
      * @param requestDTO DTO con los filtros opcionales.
      * @return Lista de facturas que coincidan con los filtros.
      */
-    FacturaResponseDTO listarFacturasConFiltros(FacturaRequestDTO requestDTO);;
+    FacturaResponseDTO listarFacturasConFiltros(FacturaRequestDTO requestDTO);
+
+    ;
 
     /**
      * Lista todas las facturas registradas en la base de datos.
@@ -47,5 +50,6 @@ public interface FacturaService {
      */
     FacturaDetalleResponseDTO actualizarEstadoPago(String facturaId);
 
+    List<FacturaDetalleResponseDTO> obtenerHistorialFacturasPorUsuario(String username);
 
 }

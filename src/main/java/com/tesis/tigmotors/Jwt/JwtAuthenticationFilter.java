@@ -45,35 +45,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(usernameFromToken);
                 logger.info("Cargando UserDetails para el usuario: {}", usernameFromToken);
 
-                // Validación para asegurarnos de que el token pertenece al usuario autenticado
-                Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
-                if (jwtServiceImpl.isTokenValid(token, userDetails) && currentAuth == null) {
-                    logger.info("Token válido para el usuario: {}, asignando contexto de seguridad.", usernameFromToken);
+                // Validar el token
+                if (jwtServiceImpl.isTokenValid(token, userDetails)) {
+                    // Verificar que no haya conflicto con el usuario autenticado actual
+                    Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+                    if (currentAuth == null || currentAuth.getName().equals(usernameFromToken)) {
+                        logger.info("Token válido. Asignando contexto de seguridad para el usuario: {}", usernameFromToken);
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
 
-                    // Log para verificar las autoridades que se están asignando
-                    userDetails.getAuthorities().forEach(authority ->
-                            logger.info("Rol asignado al usuario {}: {}", usernameFromToken, authority.getAuthority()));
-
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else if (currentAuth != null && !currentAuth.getName().equals(usernameFromToken)) {
-                    // Si el usuario autenticado actual no coincide con el token, devuelve error
-                    logger.warn("Usuario autenticado actual ({}) no coincide con el usuario del token ({}).", currentAuth.getName(), usernameFromToken);
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType("application/json");
-                    response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token no autorizado para el usuario actual.\"}");
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    } else {
+                        logger.warn("Usuario autenticado actual ({}) no coincide con el token ({})", currentAuth.getName(), usernameFromToken);
+                        sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN, "Token no autorizado para el usuario actual.");
+                        return;
+                    }
+                } else {
+                    logger.warn("Token inválido o caducado para el usuario: {}", usernameFromToken);
+                    sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token Invalido o Caducado");
                     return;
                 }
             } catch (Exception e) {
-                logger.error("Error procesando el token JWT: ", e);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"Token Invalido o Caducado\"}");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                logger.error("Error procesando el token JWT: {}", e.getMessage(), e);
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token Invalido o Caducado");
                 return;
             }
         }
@@ -90,4 +86,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"Estado\":\"Error\", \"Mensaje\":\"" + message + "\"}");
+    }
 }
+
