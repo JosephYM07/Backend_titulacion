@@ -11,10 +11,13 @@ import com.tesis.tigmotors.models.User;
 import com.tesis.tigmotors.repository.UserRepository;
 import com.tesis.tigmotors.service.interfaces.UserServiceUpdate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +26,7 @@ public class CrudUserImpl implements UserServiceUpdate {
     private static final Logger logger = LoggerFactory.getLogger(CrudUserImpl.class);
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -173,5 +177,44 @@ public class CrudUserImpl implements UserServiceUpdate {
             throw ex;
         }
     }
+
+    @Override
+    @Transactional
+    public void deleteAccount(String usernameFromToken, Map<String, String> request) {
+        try {
+            // Validar que el campo "password" esté presente y no sea vacío
+            String providedPassword = request.get("password");
+            if (providedPassword == null || providedPassword.isBlank()) {
+                throw new InvalidRequestException("La contraseña es obligatoria para eliminar la cuenta.");
+            }
+
+            // Buscar al usuario en la base de datos
+            User user = userRepository.findByUsername(usernameFromToken)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario con username '" + usernameFromToken + "' no encontrado"));
+
+            // Verificar que la contraseña proporcionada coincida con la almacenada
+            if (!passwordEncoder.matches(providedPassword, user.getPassword())) {
+                throw new SecurityException("Contraseña incorrecta. No se puede eliminar la cuenta.");
+            }
+
+            // Eliminar la cuenta del usuario
+            userRepository.delete(user);
+            logger.info("Cuenta eliminada exitosamente para el usuario: {}", usernameFromToken);
+
+        } catch (ResourceNotFoundException ex) {
+            logger.error("Usuario no encontrado: {}", usernameFromToken, ex);
+            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (InvalidRequestException ex) {
+            logger.error("Error de validación al eliminar la cuenta para el usuario: {}", usernameFromToken, ex);
+            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (SecurityException ex) {
+            logger.error("Contraseña incorrecta para el usuario: {}", usernameFromToken, ex);
+            throw ex; // Delegado al GlobalExceptionHandler
+        } catch (Exception ex) {
+            logger.error("Error inesperado al eliminar la cuenta del usuario: {}", usernameFromToken, ex);
+            throw new RuntimeException("Error inesperado al eliminar la cuenta del usuario.", ex);
+        }
+    }
+
 
 }

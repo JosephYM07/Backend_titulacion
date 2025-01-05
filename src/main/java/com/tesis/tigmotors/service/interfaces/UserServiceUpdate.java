@@ -5,6 +5,8 @@ import com.tesis.tigmotors.dto.Response.UserBasicInfoResponseDTO;
 import com.tesis.tigmotors.dto.Request.UserUpdateRequestDTO;
 import com.tesis.tigmotors.dto.Response.UserResponseUser;
 
+import java.util.Map;
+
 public interface UserServiceUpdate {
 
     /**
@@ -29,4 +31,12 @@ public interface UserServiceUpdate {
      * @return UserBasicInfoResponseDTO con los datos básicos del usuario.
      */
     UserBasicInfoResponseDTO getUserProfile(String username);
+
+    /**
+     * Elimina la cuenta del usuario autenticado.
+     *
+     * @param usernameFromToken Nombre de usuario obtenido del token.
+     * @param
+     */
+    void deleteAccount(String usernameFromToken, Map<String, String> request);
 }
