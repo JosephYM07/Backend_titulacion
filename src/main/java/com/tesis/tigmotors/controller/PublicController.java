@@ -14,7 +14,7 @@ public class PublicController {
     @GetMapping("/status")
     public ResponseEntity<String> getStatus() {
         String saludo = generarSaludo();
-        String mensaje = saludo + " El sistema está funcionando correctamente. "
+        String mensaje = saludo + " El sistema está funcionando correctamente! "
                 + "Consulta la documentación en: https://tigmotors-uio.up.railway.app/docs";
         return ResponseEntity.ok(mensaje);
     }
