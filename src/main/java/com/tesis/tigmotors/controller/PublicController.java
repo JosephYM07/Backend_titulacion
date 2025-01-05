@@ -15,7 +15,7 @@ public class PublicController {
     public ResponseEntity<String> getStatus() {
         String saludo = generarSaludo();
         String mensaje = saludo + " El sistema está funcionando correctamente! "
-                + "Consulta la documentación en: https://tigmotors-uio.up.railway.app/docs";
+                + "Consulta la documentación en: https://documenter.getpostman.com/view/34383022/2sAYHwKQaJ";
         return ResponseEntity.ok(mensaje);
     }
 
