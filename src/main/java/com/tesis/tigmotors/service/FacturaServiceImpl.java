@@ -86,8 +86,6 @@ public class FacturaServiceImpl implements FacturaService {
         }
     }
 
-
-
     @Override
     public Factura generarFacturaDesdeTicket(String ticketId, double cotizacion) {
         // Buscar el ticket asociado
