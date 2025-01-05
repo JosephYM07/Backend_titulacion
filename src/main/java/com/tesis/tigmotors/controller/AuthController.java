@@ -67,7 +67,7 @@ public class AuthController {
      * @param authentication Información del usuario autenticado.
      * @return Respuesta con un mensaje de confirmación.
      */
-    @PostMapping("/logout")
+    @PostMapping("/cerrar-sesion")
     public ResponseEntity<Map<String, String>> logout(
             @RequestHeader("Authorization") String authHeader,
             Authentication authentication) {

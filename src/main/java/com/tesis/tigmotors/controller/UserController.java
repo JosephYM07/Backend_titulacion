@@ -2,6 +2,7 @@ package com.tesis.tigmotors.controller;
 
 import com.tesis.tigmotors.Jwt.JwtAuthenticationFilter;
 import com.tesis.tigmotors.dto.Request.CambioContraseniaRequest;
+import com.tesis.tigmotors.dto.Request.RegisterRequest;
 import com.tesis.tigmotors.dto.Request.SolicitudDTO;
 import com.tesis.tigmotors.dto.Response.*;
 import com.tesis.tigmotors.dto.Request.UserSelfUpdateRequestDTO;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -103,6 +105,15 @@ public class UserController {
                 cambioContraseniaRequest.getNewPassword()
         );
     }
+    @DeleteMapping("/eliminar-cuenta")
+    public ResponseEntity<?> deleteAccount(Authentication authentication,
+                                           @RequestBody Map<String, String> request) {
+        String username = authentication.getName();
+        userServiceUpdate.deleteAccount(username, request);
+        return ResponseEntity.ok("Cuenta eliminada exitosamente.");
+    }
+
+
 
     /**
      * Endpoint para crear una nueva solicitud.
