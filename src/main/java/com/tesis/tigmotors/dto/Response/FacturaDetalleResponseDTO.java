@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FacturaDetalleResponseDTO {
-    private String facturaId;
+    private String comprobanteId;
     private String ticketId;
     private String solicitudId;
     private String username;

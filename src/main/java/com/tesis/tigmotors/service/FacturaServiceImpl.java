@@ -93,11 +93,11 @@ public class FacturaServiceImpl implements FacturaService {
                 .orElseThrow(() -> new IllegalArgumentException("Ticket no encontrado con ID: " + ticketId));
 
         // Generar el ID único para la factura
-        String facturaId = "FACTURA-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.FACTURA_SEQUENCE);
+        String comprobanteId = "COMPROBANTE-" + sequenceGeneratorService.generateSequence(SequenceGeneratorService.FACTURA_SEQUENCE);
 
         // Crear la factura con el ID generado
         Factura factura = facturaConverter.generarFacturaDesdeTicket(ticket, cotizacion);
-        factura.setFacturaId(facturaId);
+        factura.setComprobanteId(comprobanteId);
 
         // Guardar la factura en la base de datos
         return facturaRepository.save(factura);

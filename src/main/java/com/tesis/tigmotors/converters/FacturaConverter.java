@@ -28,7 +28,7 @@ public class FacturaConverter {
      */
     public Factura generarFacturaDesdeTicket(Ticket ticket, double cotizacion) {
         return Factura.builder()
-                .facturaId(null)
+                .comprobanteId(null)
                 .ticketId(ticket.getId())
                 .solicitudId(ticket.getSolicitudId())
                 .username(ticket.getUsername())
@@ -51,7 +51,7 @@ public class FacturaConverter {
      */
     public FacturaDetalleResponseDTO entityToDto(Factura factura) {
         FacturaDetalleResponseDTO responseDTO = new FacturaDetalleResponseDTO();
-        responseDTO.setFacturaId(factura.getFacturaId());
+        responseDTO.setComprobanteId(factura.getComprobanteId());
         responseDTO.setTicketId(factura.getTicketId());
         responseDTO.setSolicitudId(factura.getSolicitudId());
         responseDTO.setUsername(factura.getUsername());

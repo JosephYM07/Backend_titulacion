@@ -15,7 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Factura {
 
     @Id
-    private String facturaId;
+    private String comprobanteId;
     private String ticketId;           // ID del ticket asociado
     private String solicitudId;
     private String username;

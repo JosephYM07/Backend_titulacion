@@ -361,7 +361,7 @@ public class TicketServiceImpl implements TicketService {
             if (nuevoEstado.equals(TicketEstado.TRABAJO_TERMINADO)) {
                 double cotizacion = obtenerCotizacion(ticket.getSolicitudId());
                 Factura factura = facturaService.generarFacturaDesdeTicket(ticketId, cotizacion);
-                logger.info("Factura generada con ID {} para el ticket {}", factura.getFacturaId(), ticketId);
+                logger.info("Factura generada con ID {} para el ticket {}", factura.getComprobanteId(), ticketId);
 
                 String username = ticket.getUsername();
                 String email = userRepository.findByUsername(username)
