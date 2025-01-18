@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Factura</title>
+    <title>Comprobante de Pago</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -90,7 +90,7 @@
 <div class="container">
     <div class="container">
         <div class="header">
-            <h1>Factura de Servicios</h1>
+            <h1>Comprobante de Servicios</h1>
             <p>TigMotors - Reparación de Blocs y Cabezas</p>
             <p>Dirección: La Dolorosa, Quito</p>
             <p>Teléfono: +593 98 161 5291 | Email: tigmotors.inc.uio@gmail.com</p>
@@ -103,7 +103,7 @@
         <table class="table">
             <thead>
             <tr>
-                <th>ID Factura</th>
+                <th>ID Comprobante</th>
                 <th>Usuario</th>
                 <th>Estado de Pago</th>
                 <th>Monton ($)</th>
@@ -112,7 +112,7 @@
             </thead>
             <tbody>
             <tr th:each="factura : ${facturas}">
-                <td th:text="${factura.facturaId}">FACTURA-1</td>
+                <td th:text="${factura.comprobanteId}">FACTURA-1</td>
                 <td th:text="${factura.username}">Usuario</td>
                 <td th:text="${factura.estadoPago}">PENDIENTE_PAGO</td>
                 <td th:text="${factura.cotizacion}">500.00</td>
@@ -125,7 +125,7 @@
         </table>
         <!-- Totales -->
         <div class="summary">
-            <p>Número Total de Facturas: <span th:text="${numeroFacturas != null ? numeroFacturas : '0'}"></span></p>
+            <p>Número Total de Comrpobantes: <span th:text="${numeroFacturas != null ? numeroFacturas : '0'}"></span></p>
             <p>Total a Pagar: <span th:text="${totalCotizacion != null ? totalCotizacion : '0.00'}"></span> $</p>
         </div>
         <!-- Footer -->
