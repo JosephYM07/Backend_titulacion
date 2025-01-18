@@ -97,7 +97,7 @@
         </div>
         <!-- Fecha Generación -->
         <div class="details">
-            <p><strong>Fecha Factura:</strong> <span th:text="${fechaActual}">2024-12-17</span></p>
+            <p><strong>Fecha:</strong> <span th:text="${fechaActual}">2024-12-17</span></p>
         </div>
         <!-- Tabla de Facturas -->
         <table class="table">
@@ -107,7 +107,6 @@
                 <th>Usuario</th>
                 <th>Estado de Pago</th>
                 <th>Monton ($)</th>
-                <th>Fecha Creación</th>
             </tr>
             </thead>
             <tbody>
@@ -116,7 +115,6 @@
                 <td th:text="${factura.username}">Usuario</td>
                 <td th:text="${factura.estadoPago}">PENDIENTE_PAGO</td>
                 <td th:text="${factura.cotizacion}">500.00</td>
-                <td th:text="${factura.fechaCreacion}">2024-12-17</td>
             </tr>
             <tr th:if="${facturas == null or facturas.isEmpty()}">
                 <td colspan="5" style="text-align: center;">No hay facturas disponibles</td>
