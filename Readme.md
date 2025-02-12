@@ -1,6 +1,6 @@
-# 🚀 Sistema de Gestión de Usuarios, Solicitudes, Tickets y Facturas
+# 🚀 Sistema de Gestión de Usuarios, Solicitudes, Tickets y Comprobantes
 
-Este sistema ha sido diseñado para la gestión de **usuarios**, **solicitudes**, **tickets** y **Comprobantes** en un entorno colaborativo y de servicios empresariales. Incluye módulos específicos para roles administrativos, personal del centro de servicios y usuarios empresariales.
+Este sistema ha sido diseñado para la gestión de **usuarios**, **solicitudes**, **tickets** y **comprobantes** en un entorno colaborativo y de servicios empresariales. Incluye módulos específicos para roles administrativos, personal del centro de servicios y usuarios empresariales.
 
 ---
 
