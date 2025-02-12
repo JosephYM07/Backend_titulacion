@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -63,6 +64,11 @@ public class TicketServiceImpl implements TicketService {
     private final TicketConverter ticketConverter;
     private final FacturaConverter facturaConverter;
 
+    @Value("${app.terms.url}")
+    private String termsUrl;
+
+    @Value("${app.privacy.url}")
+    private String privacyUrl;
 
     /**
      * Obtiene las estadísticas de tickets por estado.
@@ -509,6 +515,13 @@ public class TicketServiceImpl implements TicketService {
                 "<p>Si tienes alguna pregunta, no dudes en contactarnos.</p>" +
                 "<br>" +
                 "<p>Gracias por confiar en TigMotors.</p>" +
+                "<p>Atentamente,</p>" +
+                "<p>El equipo de TigMotors</p>" +
+                "<div style='text-align: center; font-size: 12px; color: #888; margin-top: 20px;'>" +
+                "<p>TigMotors © 2024 | Todos los derechos reservados</p>" +
+                "<p><a href='" + termsUrl + "' style='color: #888;'>Términos y Condiciones</a> | " +
+                "<a href='" + privacyUrl + "' style='color: #888;'>Política de Privacidad</a></p>" +
+                "</div>" +
                 "</div>" +
                 "</body>" +
                 "</html>";

@@ -46,6 +46,12 @@ public class AuthServiceImpl implements AuthService {
     @Value("${url.frontend.login}")
     private String urlFrontendLogin;
 
+    @Value("${app.terms.url}")
+    private String termsUrl;
+
+    @Value("${app.privacy.url}")
+    private String privacyUrl;
+
 
     @Override
     @Transactional
@@ -279,7 +285,7 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private String buildAccountCreatedByAdminEmailContent(String username) {
+    public String buildAccountCreatedByAdminEmailContent(String username) {
         return "<html>" +
                 "<meta charset='UTF-8'>" +
                 "<body style='font-family: Arial, sans-serif;'>" +
@@ -299,7 +305,8 @@ public class AuthServiceImpl implements AuthService {
                 "<p>El equipo de TigMotors</p>" +
                 "<div style='text-align: center; font-size: 12px; color: #888; margin-top: 20px;'>" +
                 "<p>TigMotors © 2024 | Todos los derechos reservados</p>" +
-                "<p><a href='https://yourcompany.com/terms' style='color: #888;'>Términos y Condiciones</a> | <a href='https://yourcompany.com/privacy' style='color: #888;'>Política de Privacidad</a></p>" +
+                "<p><a href='" + termsUrl + "' style='color: #888;'>Términos y Condiciones</a> | " +
+                "<a href='" + privacyUrl + "' style='color: #888;'>Política de Privacidad</a></p>" +
                 "</div>" +
                 "</div>" +
                 "</body>" +
@@ -323,6 +330,11 @@ public class AuthServiceImpl implements AuthService {
                 "<br>" +
                 "<p>Atentamente,</p>" +
                 "<p>El equipo de TigMotors</p>" +
+                "<div style='text-align: center; font-size: 12px; color: #888; margin-top: 20px;'>" +
+                "<p>TigMotors © 2024 | Todos los derechos reservados</p>" +
+                "<p><a href='" + termsUrl + "' style='color: #888;'>Términos y Condiciones</a> | " +
+                "<a href='" + privacyUrl + "' style='color: #888;'>Política de Privacidad</a></p>" +
+                "</div>" +
                 "</div>" +
                 "</body>" +
                 "</html>";

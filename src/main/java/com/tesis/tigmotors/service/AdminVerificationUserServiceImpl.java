@@ -43,6 +43,11 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
 
     @Value("${url.frontend.login}")
     private String urlLogin;
+    @Value("${app.terms.url}")
+    private String termsUrl;
+
+    @Value("${app.privacy.url}")
+    private String privacyUrl;
 
     /**
      * Obtiene el estado de los usuarios (pendientes y aprobados).
@@ -301,7 +306,6 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                 "<body style='font-family: Arial, sans-serif;'>" +
                 "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
                 "<div style='text-align: center;'>" +
-                "<img src='https://yourcompany.com/logo.png' alt='TigMotors Logo' style='width: 150px; margin-bottom: 20px;' />" +
                 "</div>" +
                 "<h2 style='color: #333;'>¡Tu cuenta ha sido aprobada!</h2>" +
                 "<p>Hola " + username + ",</p>" +
@@ -314,7 +318,8 @@ public class AdminVerificationUserServiceImpl implements AdminVerificationUserSe
                 "<p>El equipo de TigMotors</p>" +
                 "<div style='text-align: center; font-size: 12px; color: #888; margin-top: 20px;'>" +
                 "<p>TigMotors © 2024 | Todos los derechos reservados</p>" +
-                "<p><a href='https://yourcompany.com/terms' style='color: #888;'>Términos y Condiciones</a> | <a href='https://yourcompany.com/privacy' style='color: #888;'>Política de Privacidad</a></p>" +
+                "<p><a href='" + termsUrl + "' style='color: #888;'>Términos y Condiciones</a> | " +
+                "<a href='" + privacyUrl + "' style='color: #888;'>Política de Privacidad</a></p>" +
                 "</div>" +
                 "</div>" +
                 "</body>" +
