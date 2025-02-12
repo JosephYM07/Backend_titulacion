@@ -268,7 +268,7 @@ public class FacturaServiceImpl implements FacturaService {
             }
 
             // Validar que el formato del ID sea correcto
-            if (!facturaId.toUpperCase().startsWith("FACTURA-")) {
+            if (!facturaId.toUpperCase().startsWith("COMPROBANTE-")) {
                 log.error("El ID de la factura '{}' no tiene el formato correcto. Debe comenzar con 'FACTURA-'.", facturaId);
                 throw new IllegalArgumentException("El ID de la factura no es válido. Debe comenzar con 'FACTURA-' seguido de un número.");
             }

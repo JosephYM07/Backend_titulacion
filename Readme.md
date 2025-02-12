@@ -18,8 +18,8 @@ Este sistema ha sido diseñado para la gestión de **usuarios**, **solicitudes**
 - Generación automática basada en solicitudes aceptadas.
 - Filtrado por prioridad y estado, manteniendo un historial detallado.
 
-### 🧾 **Facturas**
-- Gestión de facturas con soporte para filtros de estado de pago.
+### 🧾 **Comprobantes de Pago**
+- Gestión de comprobantes con soporte para filtros de estado de pago.
 - Generación de documentos PDF para análisis y exportación.
 
 ---
