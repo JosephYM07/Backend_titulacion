@@ -291,7 +291,6 @@ public class AuthServiceImpl implements AuthService {
                 "<body style='font-family: Arial, sans-serif;'>" +
                 "<div style='max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>" +
                 "<div style='text-align: center;'>" +
-                "<img src='https://yourcompany.com/logo.png' alt='TigMotors Logo' style='width: 150px; margin-bottom: 20px;' />" +
                 "</div>" +
                 "<h2 style='color: #333;'>¡Tu cuenta ha sido creada!</h2>" +
                 "<p>Hola " + username + ",</p>" +
