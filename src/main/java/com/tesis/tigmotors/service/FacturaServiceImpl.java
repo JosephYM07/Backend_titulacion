@@ -40,15 +40,15 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional(readOnly = true)
     public List<FacturaDetalleResponseDTO> filtrarFacturasPorEstadoPagoUsuario(String username, String estadoPago) {
-        log.info("Iniciando el filtrado de facturas para el usuario '{}' con estado de pago '{}'", username, estadoPago);
+        log.info("Iniciando el filtrado de comprobantes para el usuario '{}' con estado de pago '{}'", username, estadoPago);
 
         try {
             // Buscar facturas asociadas al usuario y estado de pago
             List<Factura> facturas = facturaRepository.findByUsernameAndPago(username, estadoPago, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (facturas.isEmpty()) {
-                log.warn("No se encontraron facturas para el usuario '{}' con estado de pago '{}'", username, estadoPago);
+                log.warn("No se encontraron comprobantes para el usuario '{}' con estado de pago '{}'", username, estadoPago);
             } else {
-                log.info("Se encontraron {} facturas para el usuario '{}' con estado de pago '{}'", facturas.size(), username, estadoPago);
+                log.info("Se encontraron {} comprobantes para el usuario '{}' con estado de pago '{}'", facturas.size(), username, estadoPago);
             }
 
             // Convertir las facturas a DTO detallado y retornar
@@ -56,8 +56,8 @@ public class FacturaServiceImpl implements FacturaService {
                     .map(facturaConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error filtrando las facturas para el usuario '{}' con estado de pago '{}': {}", username, estadoPago, e.getMessage(), e);
-            throw new RuntimeException("Error filtrando las facturas del usuario por estado de pago.", e);
+            log.error("Error filtrando las comprobantes para el usuario '{}' con estado de pago '{}': {}", username, estadoPago, e.getMessage(), e);
+            throw new RuntimeException("Error filtrando las comprobantes del usuario por estado de pago.", e);
         }
     }
 
@@ -75,14 +75,14 @@ public class FacturaServiceImpl implements FacturaService {
         try {
             List<Factura> facturas = facturaRepository.findByUsername(username, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
             if (facturas.isEmpty()) {
-                log.warn("No se encontraron facturas para el usuario '{}'", username);
+                log.warn("No se encontraron comprobantes para el usuario '{}'", username);
             }
             return facturas.stream()
                     .map(facturaConverter::entityToDto)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Error obteniendo el historial de facturas para el usuario '{}': {}", username, e.getMessage(), e);
-            throw new RuntimeException("Error obteniendo el historial de facturas del usuario", e);
+            log.error("Error obteniendo el historial de comprobantes para el usuario '{}': {}", username, e.getMessage(), e);
+            throw new RuntimeException("Error obteniendo el historial de comprobantes del usuario", e);
         }
     }
 
@@ -105,17 +105,17 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     public List<FacturaDetalleResponseDTO> listarTodasLasFacturas() {
-        log.info("Iniciando proceso para listar todas las facturas...");
+        log.info("Iniciando proceso para listar todas los comprobantes...");
         try {
 
             List<Factura> facturas = facturaRepository.findAll(Sort.by(Sort.Direction.DESC, "fechaCreacion"));
 
             if (facturas.isEmpty()) {
-                log.warn("No se encontraron facturas registradas.");
-                throw new ResourceNotFoundException("No hay facturas registradas.");
+                log.warn("No se encontraron  comprobantes registrados.");
+                throw new ResourceNotFoundException("No hay comprobantes registrados.");
             }
 
-            log.info("Se encontraron {} facturas registradas.", facturas.size());
+            log.info("Se encontraron {} comprobantes registrados.", facturas.size());
             return facturas.stream()
                     .map(facturaConverter::entityToDto)
                     .collect(Collectors.toList());
@@ -124,14 +124,14 @@ public class FacturaServiceImpl implements FacturaService {
             log.error("Error: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            log.error("Error inesperado al listar facturas: {}", e.getMessage(), e);
-            throw new RuntimeException("Ocurrió un error inesperado al listar las facturas.", e);
+            log.error("Error inesperado al listar comprobantes: {}", e.getMessage(), e);
+            throw new RuntimeException("Ocurrió un error inesperado al listar las comprobantes.", e);
         }
     }
 
     @Override
     public FacturaResponseDTO listarFacturasConFiltros(FacturaRequestDTO requestDTO) {
-        log.info("Iniciando proceso para listar facturas con filtros: {}", requestDTO);
+        log.info("Iniciando proceso para listar comprobantes con filtros: {}", requestDTO);
 
         try {
             // Validar fechas
@@ -182,8 +182,8 @@ public class FacturaServiceImpl implements FacturaService {
             return responseBuilder.build();
 
         } catch (Exception e) {
-            log.error("Error inesperado al listar facturas con filtros: {}", e.getMessage(), e);
-            throw new RuntimeException("Ocurrió un error inesperado al listar las facturas con filtros.", e);
+            log.error("Error inesperado al listar comprobantes con filtros: {}", e.getMessage(), e);
+            throw new RuntimeException("Ocurrió un error inesperado al listar los comprobantes con filtros.", e);
         }
     }
 
@@ -258,19 +258,19 @@ public class FacturaServiceImpl implements FacturaService {
 
     @Override
     public FacturaDetalleResponseDTO actualizarEstadoPago(String facturaId) {
-        log.info("Iniciando proceso para actualizar el estado de pago de la factura con ID '{}'.", facturaId);
+        log.info("Iniciando proceso para actualizar el estado de pago del Comprobante con ID '{}'.", facturaId);
 
         try {
             // Validar que el ID de la factura no sea nulo o vacío
             if (facturaId == null || facturaId.trim().isEmpty()) {
-                log.error("El ID de la factura no puede ser nulo o vacío.");
+                log.error("El del Comprobante no puede ser nulo o vacío.");
                 throw new IllegalArgumentException("El ID de la factura no puede ser nulo o vacío.");
             }
 
             // Validar que el formato del ID sea correcto
             if (!facturaId.toUpperCase().startsWith("COMPROBANTE-")) {
-                log.error("El ID de la factura '{}' no tiene el formato correcto. Debe comenzar con 'COMPROBANTE-'.", facturaId);
-                throw new IllegalArgumentException("El ID de la factura no es válido. Debe comenzar con 'COMPROBANTE-' seguido de un número.");
+                log.error("El ID del Comprobante '{}' no tiene el formato correcto. Debe comenzar con 'COMPROBANTE-'.", facturaId);
+                throw new IllegalArgumentException("El ID del Comprobante no es válido. Debe comenzar con 'COMPROBANTE-' seguido de un número.");
             }
 
             // Convertir el ID a mayúsculas para garantizar consistencia
@@ -285,20 +285,20 @@ public class FacturaServiceImpl implements FacturaService {
 
             // Validar el estado actual del pago
             if (EstadoPago.VALOR_PAGADO.name().equals(factura.getPago())) {
-                log.warn("El estado de la factura ya está en 'VALOR_PAGADO'. ID: {}", facturaId);
-                throw new IllegalStateException("El estado de la factura ya está en 'VALOR_PAGADO'.");
+                log.warn("El estado del Comprobante ya está en 'VALOR_PAGADO'. ID: {}", facturaId);
+                throw new IllegalStateException("El estado del Comprobante ya está en 'VALOR_PAGADO'.");
             }
 
             if (!EstadoPago.PENDIENTE_PAGO.name().equals(factura.getPago())) {
-                log.warn("El estado de la factura no es 'PENDIENTE_PAGO', no se puede actualizar. ID: {}", facturaId);
-                throw new IllegalStateException("El estado de la factura no es 'PENDIENTE_PAGO', no se puede actualizar.");
+                log.warn("El estado del Comprobante no es 'PENDIENTE_PAGO', no se puede actualizar. ID: {}", facturaId);
+                throw new IllegalStateException("El estado del Comprobante no es 'PENDIENTE_PAGO', no se puede actualizar.");
             }
 
             // Actualizar el estado de pago
             factura.setPago(EstadoPago.VALOR_PAGADO.name());
             Factura facturaActualizada = facturaRepository.save(factura);
 
-            log.info("Estado de pago actualizado a 'VALOR_PAGADO' para la factura con ID '{}'.", facturaId);
+            log.info("Estado de pago actualizado a 'VALOR_PAGADO' para el comprobante con ID '{}'.", facturaId);
 
             // Convertir a DTO y retornar
             return facturaConverter.entityToDto(facturaActualizada);
@@ -307,7 +307,7 @@ public class FacturaServiceImpl implements FacturaService {
             log.error("Error controlado al actualizar el estado de pago: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Error inesperado al actualizar el estado de pago para la factura con ID '{}': {}", facturaId, e.getMessage(), e);
+            log.error("Error inesperado al actualizar el estado de pago para el comprobante con ID '{}': {}", facturaId, e.getMessage(), e);
             throw new RuntimeException("Error interno al actualizar el estado de pago.", e);
         }
     }
